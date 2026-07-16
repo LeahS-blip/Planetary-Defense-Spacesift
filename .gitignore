@@ -9,7 +9,9 @@ data/raw/
 # (digest2 binary + model; build steps in PIPELINE.md)
 tools/
 # trained model pickles; rebuild: py src/train.py --with-backfill
-models/
+# (the deployed vetting model IS committed — GitHub Actions needs it to score)
+models/*
+!models/vetting_model.pkl
 __pycache__/
 *.pyc
 

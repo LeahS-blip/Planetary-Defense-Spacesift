@@ -1,0 +1,63 @@
+name: capture-and-deploy
+
+# Runs in GitHub's cloud every 12 hours (06:00 & 18:00 UTC):
+#   capture NEOCP feed/tracklets/outcomes -> build digest2 -> score -> regenerate
+#   dashboard -> commit results. Vercel picks up the push and redeploys the site.
+# Manual trigger: repo -> Actions tab -> capture-and-deploy -> Run workflow.
+
+on:
+  schedule:
+    - cron: "0 6,18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: pip install numpy scikit-learn lightgbm
+
+      - name: Build digest2
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libxml2-dev
+          git clone --depth 1 https://github.com/Smithsonian/digest2 /tmp/digest2
+          make -C /tmp/digest2/digest2
+          mkdir -p /tmp/d2
+          cp /tmp/digest2/digest2/digest2 /tmp/digest2/population/digest2.model \
+             /tmp/digest2/population/digest2.obscodes /tmp/d2/
+
+      - name: Capture NEOCP (feed + tracklets + outcomes)
+        run: python src/capture_neocp.py
+
+      - name: Build features and labels
+        run: |
+          mkdir -p data/processed
+          python src/features.py /tmp/d2
+          python src/dataset.py
+
+      - name: Score current objects
+        run: python src/predict.py /tmp/d2
+
+      - name: Regenerate dashboard
+        run: python src/make_dashboard.py
+
+      - name: Commit and push updates
+        run: |
+          git config user.name "spacesift-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/capture outputs
+          if git diff --cached --quiet; then
+            echo "no changes"
+          else
+            git commit -m "auto: capture $(date -u +%Y-%m-%dT%H:%M) — refresh dashboard"
+            git push
+          fi
