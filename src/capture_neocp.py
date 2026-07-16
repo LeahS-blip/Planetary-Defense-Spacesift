@@ -81,10 +81,10 @@ def classify_outcome(line):
     """
     line = line.strip().lstrip("- ").strip()
     mpec = None
-    m = re.search(r"\[see \[\*?MPEC\*?\s+([0-9A-Z-]+)\]", line)
+    m = re.search(r"MPEC[\s\*\[\]]*(\d{4}-[A-Z]\d{1,3})", line)
     if m:
         mpec = m.group(1)
-    line_clean = re.sub(r"\s*\[see.*$", "", line)
+    line_clean = re.sub(r"\s*\[?\s*(?:see\b|MPEC\b).*$", "", line, flags=re.I)
     m = re.match(r"^(Comet\s+.+?)\s*=\s*(\S+)\s+\((.+?)\)$", line_clean)
     if m:
         return m.group(2), "comet", m.group(1), mpec
@@ -105,14 +105,24 @@ def classify_outcome(line):
     return None
 
 def parse_prev_des(html):
+    """Parse outcome lines from the Previous-NEOCP page.
+
+    Works on raw HTML (converts structural tags to newlines, strips the rest)
+    AND on markdown/plain-text renderings — the previous <li>-only version
+    silently parsed ZERO outcomes against the real page structure (bug found
+    2026-07-16 after two days of lost labels)."""
+    text = re.sub(r"(?i)<\s*(?:li|/li|br|p|/p|div|/div|tr|/tr|ul|/ul)[^>]*>", "\n", html)
+    text = re.sub(r"<[^>]+>", "", text)
     out = []
-    for raw in re.findall(r"<li>(.*?)</li>", html, flags=re.S) or html.splitlines():
-        txt = re.sub(r"<[^>]+>", "", raw).strip()
-        if not txt or "(" not in txt:
+    for raw in text.splitlines():
+        txt = raw.strip()
+        if not txt or "UT)" not in txt:
             continue
         rec = classify_outcome(txt)
         if rec:
             out.append(rec)
+    if not out:
+        print("WARNING: parse_prev_des found no outcomes — page format may have changed!")
     return out
 
 def main():
