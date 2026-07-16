@@ -24,6 +24,20 @@ def comet_svg(size=54):
             '<circle cx="70" cy="38" r="20" fill="#eef2fc"/>'
             '</g></svg>')
 
+def size_m(h):
+    """Rough diameter in meters from absolute magnitude H (albedo 0.14)."""
+    try:
+        return 1329000 / (0.14 ** 0.5) * 10 ** (-float(h) / 5)
+    except (TypeError, ValueError):
+        return None
+
+def fmt_size(m):
+    if m is None:
+        return ""
+    if m >= 1000:
+        return f"{m/1000:.1f} km"
+    return f"{m:.0f} m"
+
 def read_csv(p):
     if not Path(p).exists():
         return []
@@ -251,12 +265,45 @@ def main():
             p = 0.0
         cls = "hi" if p >= 0.8 else ("mid" if p >= 0.4 else "lo")
         bar = f'<div class="bar"><div class="fill {cls}" style="width:{p*100:.0f}%"></div></div>'
+        sm = size_m(r.get("H"))
+        big = sm is not None and sm >= 140
+        size_cell = (f'<td>{fmt_size(sm)}'
+                     + (' <span class="big" title="&#8805;140 m — regional-devastation class if real; catalog only ~40% complete at this size">&#9650;</span>' if big else '')
+                     + '</td>')
         rows_html.append(
-            f'<tr><td>{i}</td><td class="mono">{html.escape(r["trksub"])}</td>'
+            f'<tr{" class=bigrow" if big else ""}><td>{i}</td><td class="mono">{html.escape(r["trksub"])}</td>'
             f'<td class="pcell">{bar}<span>{p:.2f}</span></td>'
+            + size_cell +
             f'<td>{r.get("digest2_feed_score","")}</td><td>{r.get("V","")}</td>'
             f'<td>{r.get("H","")}</td><td>{r.get("nobs","")}</td>'
             f'<td>{r.get("arc_days","")}</td><td>{r.get("not_seen_dys","")}</td></tr>')
+
+    sentry = {}
+    sj = ROOT / "data" / "capture" / "sentry.json"
+    if sj.exists():
+        sentry = json.loads(sj.read_text())
+    sentry_rows = []
+    for s in (sentry.get("top") or [])[:8]:
+        d_m = (s.get("diameter_km") or 0) * 1000
+        ip = s.get("ip_cum") or 0
+        iptxt = f"1 in {round(1/ip):,}" if ip > 0 else "&lt;1 in 10&#8310;"
+        url = f'https://cneos.jpl.nasa.gov/sentry/details.html#?des={s.get("des","").replace(" ", "%20")}'
+        sentry_rows.append(
+            f'<tr><td><a class="mono" href="{url}" target="_blank">{html.escape(s.get("fullname") or s.get("des",""))}</a></td>'
+            f'<td>{fmt_size(d_m) if d_m else "?"}</td><td>{iptxt}</td>'
+            f'<td>{html.escape(str(s.get("range","")))}</td><td>{s.get("ps_cum","")}</td></tr>')
+    sentry_html = ""
+    if sentry_rows:
+        sentry_html = f"""
+<h2>Impact watch — NASA Sentry</h2>
+<table><tr><th>object</th><th>size</th><th>impact odds</th><th>when</th><th>palermo</th></tr>
+{''.join(sentry_rows)}</table>
+<p class="note">The highest-ranked <em>known</em> impact risks, from
+<a href="https://cneos.jpl.nasa.gov/sentry/" target="_blank" style="color:var(--acc)">JPL's Sentry monitor</a>
+(as of {html.escape(str(sentry.get('fetched_utc','')))}). Palermo scale is log&#8321;&#8320; risk vs.
+background: &#8722;2 &#8776; 1% of background risk; 0 would equal it — nothing known is close.
+None of these merit worry today; they merit <em>tracking</em>, which is the point of this whole
+pipeline: the dangerous one is the one nobody has found yet.</p>"""
 
     from collections import Counter
     oc = Counter(o["outcome_class"] for o in outcomes)
@@ -319,6 +366,8 @@ tr:last-child td {{ border-bottom:none; }}
 .fill.lo {{ background:var(--lo); }}
 .skycard {{ background:var(--card); border-radius:12px; padding:14px; }}
 .skycard svg {{ width:100%; height:auto; display:block; }}
+.big {{ color:#f87171; font-size:10px; }}
+.bigrow td {{ background:rgba(248,113,113,.05); }}
 .cols {{ display:grid; grid-template-columns:2fr 1fr; gap:20px; align-items:start; }}
 .note {{ color:var(--dim); font-size:12px; margin-top:10px; }}
 footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
@@ -359,7 +408,7 @@ and details.</p>
 <div>
 <h2>Current confirmation queue — ranked</h2>
 <table>
-<tr><th>#</th><th>desig</th><th>P(real NEO)</th><th>digest2</th><th>V</th><th>H</th>
+<tr><th>#</th><th>desig</th><th>P(real NEO)</th><th>~size</th><th>digest2</th><th>V</th><th>H</th>
 <th>obs</th><th>arc d</th><th>unseen d</th></tr>
 {''.join(rows_html)}
 </table>
@@ -368,6 +417,7 @@ and details.</p>
 not calibrated risk. Green ≥0.8, amber ≥0.4.</p>
 </div>
 <div>
+{sentry_html}
 <h2>Outcome archive</h2>
 <table><tr><th>class</th><th>n</th></tr>{oc_rows}</table>
 <p class="note">"neo" = confirmed via discovery MPEC. Negatives accrue from live capture;

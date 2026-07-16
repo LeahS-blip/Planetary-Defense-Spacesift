@@ -38,6 +38,9 @@ jobs:
       - name: Capture NEOCP (feed + tracklets + outcomes)
         run: python src/capture_neocp.py
 
+      - name: Fetch NASA Sentry impact-risk list
+        run: python src/fetch_sentry.py
+
       - name: Build features and labels
         run: |
           mkdir -p data/processed
