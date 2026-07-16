@@ -1,0 +1,13 @@
+[
+{"Temp_Desig": "A11Edxc", "Score": 100, "Discovery_year": 2026, "Discovery_month": 7, "Discovery_day": 4.3, "R.A.": 14.9002, "Decl.": -26.7113, "V": 18.7, "Updated": "Added July 4.46 UT", "NObs": 4, "Arc": 0.02, "H": 24.5, "Not_Seen_dys": 0.396},
+{"Temp_Desig": "CEQHXE2", "Score": 89, "Discovery_year": 2026, "Discovery_month": 7, "Discovery_day": 3.4, "R.A.": 18.8438, "Decl.": 35.3809, "V": 20.4, "Updated": "Updated July 4.60 UT", "NObs": 36, "Arc": 0.98, "H": 22.0, "Not_Seen_dys": 0.453},
+{"Temp_Desig": "MAS0006", "Score": 35, "Discovery_year": 2026, "Discovery_month": 6, "Discovery_day": 19.3, "R.A.": 18.4050, "Decl.": 23.7639, "V": 20.3, "Updated": "Updated July 4.63 UT", "NObs": 64, "Arc": 15.03, "H": 9.3, "Not_Seen_dys": 0.410},
+{"Temp_Desig": "CEQCZT2", "Score": 100, "Discovery_year": 2026, "Discovery_month": 6, "Discovery_day": 27.4, "R.A.": 22.7079, "Decl.": 5.5248, "V": 21.0, "Updated": "Updated July 3.43 UT", "NObs": 33, "Arc": 5.97, "H": 20.7, "Not_Seen_dys": 1.326},
+{"Temp_Desig": "P12nRYz", "Score": 100, "Discovery_year": 2026, "Discovery_month": 6, "Discovery_day": 26.6, "R.A.": 22.1878, "Decl.": 1.2316, "V": 21.2, "Updated": "Updated July 4.22 UT", "NObs": 15, "Arc": 2.84, "H": 20.9, "Not_Seen_dys": 5.346},
+{"Temp_Desig": "OMO0297", "Score": 89, "Discovery_year": 2026, "Discovery_month": 6, "Discovery_day": 25.8, "R.A.": 23.4379, "Decl.": 3.3026, "V": 22.1, "Updated": "Updated July 4.22 UT", "NObs": 8, "Arc": 4.31, "H": 20.2, "Not_Seen_dys": 4.609},
+{"Temp_Desig": "TF26F96", "Score": 100, "Discovery_year": 2026, "Discovery_month": 6, "Discovery_day": 25.4, "R.A.": 20.1670, "Decl.": -7.3215, "V": 18.7, "Updated": "Updated July 3.22 UT", "NObs": 2, "Arc": 0.00, "H": 15.6, "Not_Seen_dys": 9.362},
+{"Temp_Desig": "P22nLcH", "Score": 68, "Discovery_year": 2026, "Discovery_month": 6, "Discovery_day": 23.5, "R.A.": 21.8075, "Decl.": 1.9913, "V": 22.2, "Updated": "Updated July 4.22 UT", "NObs": 11, "Arc": 2.98, "H": 20.7, "Not_Seen_dys": 8.283},
+{"Temp_Desig": "P22nL5u", "Score": 58, "Discovery_year": 2026, "Discovery_month": 6, "Discovery_day": 22.6, "R.A.": 23.7207, "Decl.": 20.0582, "V": 21.7, "Updated": "Updated July 3.22 UT", "NObs": 9, "Arc": 4.87, "H": 17.9, "Not_Seen_dys": 7.288},
+{"Temp_Desig": "P22nJzF", "Score": 99, "Discovery_year": 2026, "Discovery_month": 6, "Discovery_day": 22.5, "R.A.": 22.6138, "Decl.": 19.2736, "V": 21.5, "Updated": "Updated July 4.22 UT", "NObs": 22, "Arc": 12.00, "H": 14.0, "Not_Seen_dys": 8.194},
+{"Temp_Desig": "P12nCdO", "Score": 98, "Discovery_year": 2026, "Discovery_month": 6, "Discovery_day": 20.4, "R.A.": 18.9505, "Decl.": -23.0462, "V": 22.3, "Updated": "Updated July 3.22 UT", "NObs": 8, "Arc": 0.88, "H": 26.2, "Not_Seen_dys": 13.451}
+]

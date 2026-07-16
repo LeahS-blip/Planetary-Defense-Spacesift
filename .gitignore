@@ -1,0 +1,21 @@
+# bulky / re-fetchable data — NOT committed
+# (~120 MB Zooniverse images; re-fetch: py src/fetch_css_bulk.py)
+data/css_zooniverse/
+# derived tables; rebuild: features.py + dataset.py + build_backfill.py
+data/processed/
+data/raw/
+
+# binaries & build artifacts
+# (digest2 binary + model; build steps in PIPELINE.md)
+tools/
+# trained model pickles; rebuild: py src/train.py --with-backfill
+models/
+__pycache__/
+*.pyc
+
+# local/session config
+.claude/
+
+# NOTE: data/capture/ IS committed on purpose — snapshots, tracklets, and
+# outcomes are the irreplaceable training archive (MPC stops serving them
+# once objects leave the NEOCP). Small text files, ~3 MB.
