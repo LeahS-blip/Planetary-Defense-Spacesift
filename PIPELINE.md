@@ -98,7 +98,20 @@ requires chunked runs, see D2_PRECOMPUTED env hook in build_backfill.py).
   Zooniverse/IRSA/Wayback all unreachable (Wayback is blocklisted for
   Claude's fetch tool too — historical snapshots are NOT an option).
 
-## Image side (CSS / Zooniverse)
+## Image side (CSS / Zooniverse) — first results 2026-07-16
+
+693 labeled 4-frame subjects (CSS vetting verdict as label: 'normal'=real vs
+'rjct'=artifact). Test AUC, same split: **digest2-only 0.46** (uninformative —
+every subject here already passed survey screening), motion-physics features +
+GBM **0.73**, downsampled pixels + GBM **0.71**. The image signal is orthogonal
+to digest2 — a trained image model sees what the tabular pipeline is blind to.
+Caveats: GBM-on-pixels is a weak CNN stand-in; 693 subjects is ~3% of the
+available set; the hand-tuned motion heuristic scored 0.41 (worse than random —
+good features, bad hand-weights; never trust untested heuristics).
+Full numbers: outputs/css_image_results.json. Feature matrices cached at
+data/processed/css_matrices.npz for CNN training.
+
+## Image side (original notes)
 
 - `src/fetch_css_bulk.py --max-subjects 2000` (local machine, ~30–60 min,
   1–2 GB) → `data/css_zooniverse/subject_*/` + `css_subjects.csv` index.

@@ -42,6 +42,14 @@ def load_subject(sdir, crop=256):
     x = (x - mu) / sd
     lab = meta.get("label", {})
     y = lab.get("is_real_asteroid")
+    if y is None:
+        # fall back to CSS's own vetting verdict: 'normal' = accepted real detection,
+        # 'rjct' = rejected as artifact. This IS the operational real/bogus label.
+        kw = (meta.get("metadata") or {}).get("keyword")
+        if kw == "normal":
+            y = True
+        elif kw == "rjct":
+            y = False
     return {"x": x.astype(np.float32),
             "y": None if y is None else int(bool(y)),
             "subject_id": meta.get("subject_id"),

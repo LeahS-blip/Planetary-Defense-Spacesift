@@ -1,0 +1,18 @@
+{
+ "experiment": "CSS 4-frame real-vs-bogus, 693 labeled subjects (241 real/452 bogus within retrieved set), stratified 75/25 split, test n=174",
+ "note": "ALL subjects already passed CSS survey screening with high digest2 \u2014 this is the hard residual where the current system needs human eyes",
+ "auc": {
+  "digest2_only": 0.459,
+  "motion_heuristic": 0.413,
+  "motion_gbm": 0.733,
+  "pixels_gbm": 0.707,
+  "fused_gbm": 0.716
+ },
+ "junk_excluded_at_95pct_real_recall_fused": 0.143,
+ "finding": "image-derived signal (motion features AUC 0.73, raw pixels 0.71) is orthogonal to digest2 (AUC 0.46 = uninformative on this subset); a trained image model recovers discrimination where the tabular pipeline is blind",
+ "caveats": [
+  "GBM on downsampled pixels is a weak stand-in for a CNN",
+  "693 subjects is ~3% of the available dataset \u2014 scale up before strong claims",
+  "hand-tuned motion heuristic was WORSE than random (0.41): features good, hand-weights bad"
+ ]
+}
