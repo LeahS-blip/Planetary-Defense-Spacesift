@@ -330,8 +330,10 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
 body {{ background:var(--bg); color:var(--ink);
        font:14px/1.55 "Space Mono",ui-monospace,Consolas,monospace; padding:28px; }}
 svg text {{ font-family:"Space Mono",ui-monospace,Consolas,monospace; }}
-h1 {{ font-size:34px; font-weight:700; letter-spacing:.5px; }}
-.topbar {{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }}
+h1 {{ font-size:32px; font-weight:700; letter-spacing:.18em; }}
+.topbar {{ display:flex; justify-content:flex-start; align-items:center; gap:18px; }}
+.topbar svg {{ flex:0 0 auto; }}
+.subtitle {{ color:var(--dim); font-size:13px; margin-top:2px; }}
 .brand {{ text-align:center; flex:0 0 auto; }}
 .brand svg {{ display:block; margin:0 auto; }}
 .brandname {{ font-size:12px; font-weight:700; letter-spacing:.38em; color:var(--ink);
@@ -374,8 +376,11 @@ footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
 @media (max-width:900px) {{ .cols {{ grid-template-columns:1fr; }} }}
 </style></head><body>
 <div class="topbar">
-<h1>NEOCP Vetting <small>real-NEO probability for objects awaiting confirmation · generated {now}</small></h1>
-<div class="brand">{logo}<div class="brandname">{brand}</div></div>
+{logo}
+<div>
+<h1>{brand}</h1>
+<div class="subtitle">NEOCP vetting — real-NEO probability for objects awaiting confirmation · generated {now}</div>
+</div>
 </div>
 <div class="intro">
 <p><strong>What is this?</strong> Every night, survey telescopes flag possible new near-Earth
