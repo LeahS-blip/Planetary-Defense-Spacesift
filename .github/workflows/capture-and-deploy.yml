@@ -62,5 +62,8 @@ jobs:
             echo "no changes"
           else
             git commit -m "auto: capture $(date -u +%Y-%m-%dT%H:%M) — refresh dashboard"
-            git push
+            # rebase onto latest main first: survives concurrent pushes and
+            # accidental re-runs of old workflow runs (stale checkout base)
+            git pull --rebase origin main || true
+            git push origin HEAD:main
           fi
