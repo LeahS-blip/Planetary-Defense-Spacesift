@@ -1,6 +1,6 @@
 {
- "fetched_utc": "2026-07-18 07:46 UTC",
- "total_monitored": 2164,
+ "fetched_utc": "2026-07-18 19:01 UTC",
+ "total_monitored": 2165,
  "top": [
   {
    "des": "29075",
@@ -123,6 +123,18 @@
    "last_obs": "2021-04-17"
   },
   {
+   "des": "2026 OD",
+   "fullname": "(2026 OD)",
+   "ip_cum": 6.94817267e-05,
+   "ps_cum": -3.36,
+   "ts_max": "0",
+   "diameter_km": 0.0681,
+   "h": 23.47,
+   "n_imp": 47,
+   "range": "2059-2123",
+   "last_obs": "2026-07-18"
+  },
+  {
    "des": "2023 DO",
    "fullname": "(2023 DO)",
    "ip_cum": 0.000454910373,
@@ -133,18 +145,6 @@
    "n_imp": 25,
    "range": "2057-2092",
    "last_obs": "2023-03-26"
-  },
-  {
-   "des": "620100",
-   "fullname": "620100 (2016 WJ1)",
-   "ip_cum": 7.676e-06,
-   "ps_cum": -3.57,
-   "ts_max": "0",
-   "diameter_km": 0.18,
-   "h": 21.35,
-   "n_imp": 1,
-   "range": "2124-2124",
-   "last_obs": "2023-06-27"
   }
  ]
 }
