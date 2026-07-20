@@ -258,6 +258,11 @@ def main():
              f'{100*op.get("non_neo_excluded_frac", 0):.0f}%' if op else "—",
              f'baseline {100*op_b.get("non_neo_excluded_frac", 0):.0f}% · benchmark 80%'),
     ])
+    _c = (res.get("conformal") or {}).get("0.05")
+    if _c:
+        stats += stat("junk excluded @ 95% NEO guarantee",
+                      f'{100*_c["junk_excluded_mean"]:.0f}%',
+                      "conformal — statistical promise, not estimate")
 
     rows_html = []
     for i, r in enumerate(vet, 1):

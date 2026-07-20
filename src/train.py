@@ -26,7 +26,10 @@ NUMERIC_PREFIXES = ("d2_",)
 NUMERIC_COLS = ["feed_score", "V", "H", "arc_feed", "nobs_feed", "not_seen_dys",
                 "nobs_tracklet", "arc_days_tracklet", "sky_rate_deg_day", "motion_pa_deg",
                 "ecl_lat_deg", "solar_elong_deg", "opposition_dist_deg", "gc_rms_arcsec",
-                "mag_mean", "mag_range", "multi_night"]
+                "mag_mean", "mag_range", "multi_night",
+                "ts_n_snapshots", "ts_span_days", "ts_score_delta", "ts_score_slope",
+                "ts_arc_growth", "ts_nobs_growth", "ts_nobs_rate", "ts_unseen_max",
+                "ts_unseen_trend", "ts_v_faded"]
 
 def load(labeled_csv, with_backfill=False):
     with open(labeled_csv) as f:
@@ -168,8 +171,16 @@ def main(labeled_csv, models_dir, results_json, with_backfill=False):
                 aucs.append(roc_auc_score(y[tei], mm.predict_proba(Xa_full[tei])[:, 1]))
             results["cv_auc"] = float(np.mean(aucs))
             results["cv_auc_std"] = float(np.std(aucs))
+            # conformal operating points: out-of-fold probs -> guaranteed NEO retention
+            from sklearn.model_selection import cross_val_predict, StratifiedKFold
+            from conformal import evaluate_conformal
+            oof = cross_val_predict(make_model(), Xa_full, y,
+                                    cv=StratifiedKFold(5, shuffle=True, random_state=1),
+                                    method="predict_proba", n_jobs=4)[:, 1]
+            results["conformal"] = {str(a): evaluate_conformal(y, oof, alpha=a)
+                                     for a in (0.01, 0.05, 0.10)}
         except Exception as e:
-            print("cv_auc skipped:", e)
+            print("cv_auc/conformal skipped:", e)
     else:
         pipe = Pipeline([("imp", SimpleImputer(strategy="median")),
                          ("sc", StandardScaler()),

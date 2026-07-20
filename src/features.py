@@ -143,6 +143,13 @@ def run_digest2(obs80_paths, digest2_dir):
         out[desig] = row
     return out
 
+def _load_ts(capture_dir):
+    try:
+        from ts_features import build as _ts_build
+        return _ts_build(capture_dir)
+    except Exception as e:
+        print("ts_features unavailable:", e); return {}
+
 def build_feature_table(capture_dir, digest2_dir=None, out_csv=None):
     """Combine latest snapshot fields + tracklet features + digest2 scores per object."""
     cap = Path(capture_dir)
@@ -156,6 +163,7 @@ def build_feature_table(capture_dir, digest2_dir=None, out_csv=None):
                 latest[rec["Temp_Desig"]][f"latest_{k}"] = rec.get(k)
     tk_paths = list((cap / "tracklets").glob("*.obs80"))
     d2 = run_digest2(tk_paths, digest2_dir) if digest2_dir else {}
+    ts = _load_ts(cap)
     if digest2_dir and tk_paths and not d2:
         print("WARNING: digest2 returned no scores — check the binary/model paths; "
               "d2_* feature columns will be missing!", file=sys.stderr)
@@ -175,6 +183,7 @@ def build_feature_table(capture_dir, digest2_dir=None, out_csv=None):
             if tf:
                 row.update(tf)
         row.update(d2.get(desig, {}))
+        row.update(ts.get(desig, {}))
         rows.append(row)
     if out_csv and rows:
         keys = sorted({k for r in rows for k in r}, key=lambda k: (k != "trksub", k))
