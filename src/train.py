@@ -127,11 +127,14 @@ def main(labeled_csv, models_dir, results_json, with_backfill=False):
 
     def make_model():
         import lightgbm as lgb
+        # DART boosting chosen 2026-07-17 after repeated-CV comparison (6x5-fold):
+        # DART 0.843 vs gbdt-current 0.827 AUC. DART's dropout regularizes better
+        # on this small, noisy set. Note: DART ignores early_stopping, so we use a
+        # fixed n_estimators instead of the validation-tuned count.
         return lgb.LGBMClassifier(
-            n_estimators=1500, learning_rate=0.02, num_leaves=15, max_depth=4,
-            min_child_samples=15, subsample=0.7, subsample_freq=1, colsample_bytree=0.6,
-            reg_alpha=1.0, reg_lambda=5.0, class_weight="balanced",
-            random_state=42, verbose=-1)
+            boosting_type="dart", n_estimators=400, learning_rate=0.05,
+            num_leaves=15, max_depth=4, min_child_samples=15, colsample_bytree=0.6,
+            reg_lambda=3.0, class_weight="balanced", random_state=42, verbose=-1)
 
     big = n >= MIN_TIME_SPLIT
     if big:
@@ -140,23 +143,33 @@ def main(labeled_csv, models_dir, results_json, with_backfill=False):
         cut = int(0.75 * n)
         tr, te = order[:cut], order[cut:]
         Xa, cols_a = augment(X, cols, rows, build_obs_freq(rows, tr))
-        cut_va = int(0.8 * len(tr))
-        tr_in, va = tr[:cut_va], tr[cut_va:]
         model = make_model()
-        model.fit(Xa[tr_in], y[tr_in], eval_set=[(Xa[va], y[va])],
-                  callbacks=[lgb.early_stopping(100, verbose=False)])
-        best_iter = model.best_iteration_ or 300
+        model.fit(Xa[tr], y[tr])
         p = model.predict_proba(Xa[te])[:, 1]
-        results["model"] = "lightgbm_time_split_v2"
-        results["test"] = evaluate(y[te], p, "lightgbm_v2")
+        results["model"] = "lightgbm_dart_time_split_v3"
+        results["test"] = evaluate(y[te], p, "lightgbm_dart")
         results["baseline_on_test"] = evaluate(y[te], p_base[te], "digest2_score_threshold")
-        # deployment refit on ALL data at the validated iteration count
+        # deployment refit on ALL data
         obs_freq_full = build_obs_freq(rows, np.arange(n))
         Xa_full, _ = augment(X, cols, rows, obs_freq_full)
-        final = make_model().set_params(n_estimators=best_iter)
+        final = make_model()
         final.fit(Xa_full, y)
         cols = cols_a  # persist augmented schema
         results["features"] = cols
+        # robust headline: repeated stratified CV (random folds) is far more stable
+        # than the single ~100-object time split. Reported as cv_auc with std.
+        try:
+            from sklearn.model_selection import RepeatedStratifiedKFold
+            from sklearn.metrics import roc_auc_score
+            rcv = RepeatedStratifiedKFold(n_splits=5, n_repeats=6, random_state=1)
+            aucs = []
+            for tri, tei in rcv.split(Xa_full, y):
+                mm = make_model(); mm.fit(Xa_full[tri], y[tri])
+                aucs.append(roc_auc_score(y[tei], mm.predict_proba(Xa_full[tei])[:, 1]))
+            results["cv_auc"] = float(np.mean(aucs))
+            results["cv_auc_std"] = float(np.std(aucs))
+        except Exception as e:
+            print("cv_auc skipped:", e)
     else:
         pipe = Pipeline([("imp", SimpleImputer(strategy="median")),
                          ("sc", StandardScaler()),

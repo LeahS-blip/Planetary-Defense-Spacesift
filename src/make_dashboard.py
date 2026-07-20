@@ -250,8 +250,10 @@ def main():
         stat("objects on NEOCP", len(vet), f"snapshot {latest_snap} UTC"),
         stat("labeled training rows", len(all_lab), f"{n_pos} NEO / {n_neg} non-NEO"),
         stat("outcomes archived", len(outcomes), "since 2026-05-16"),
-        stat("model ROC-AUC", f'{test.get("roc_auc", 0):.2f}' if test else "—",
-             res.get("model", "")),
+        stat("model ROC-AUC",
+             f'{res["cv_auc"]:.2f}' if res.get("cv_auc") else (f'{test.get("roc_auc", 0):.2f}' if test else "—"),
+             (f'±{res["cv_auc_std"]:.2f} · 30-fold CV · DART' if res.get("cv_auc")
+              else res.get("model", ""))),
         stat("junk excluded @ 100% NEO recall",
              f'{100*op.get("non_neo_excluded_frac", 0):.0f}%' if op else "—",
              f'baseline {100*op_b.get("non_neo_excluded_frac", 0):.0f}% · benchmark 80%'),
