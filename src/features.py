@@ -164,6 +164,11 @@ def build_feature_table(capture_dir, digest2_dir=None, out_csv=None):
     tk_paths = list((cap / "tracklets").glob("*.obs80"))
     d2 = run_digest2(tk_paths, digest2_dir) if digest2_dir else {}
     ts = _load_ts(cap)
+    try:
+        from ztf_features import build as _ztf_build
+        ztf = _ztf_build(cap / "ztf_cutouts")
+    except Exception as e:
+        print("ztf_features unavailable:", e); ztf = {}
     if digest2_dir and tk_paths and not d2:
         print("WARNING: digest2 returned no scores — check the binary/model paths; "
               "d2_* feature columns will be missing!", file=sys.stderr)
@@ -184,6 +189,7 @@ def build_feature_table(capture_dir, digest2_dir=None, out_csv=None):
                 row.update(tf)
         row.update(d2.get(desig, {}))
         row.update(ts.get(desig, {}))
+        row.update(ztf.get(desig, {}))
         rows.append(row)
     if out_csv and rows:
         keys = sorted({k for r in rows for k in r}, key=lambda k: (k != "trksub", k))

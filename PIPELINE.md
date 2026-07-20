@@ -130,3 +130,50 @@ data/processed/css_matrices.npz for CNN training.
 3. at ~500+ labeled tracklet rows: first honest time-split benchmark run
 4. verify designated-other labels against MPCORB; decide comet handling
 5. Rubin-era stress test: reweight test priors to ~8% NEO fraction
+
+
+## ZTF difference-image fusion (per-object, real fusion) — added 2026-07-20
+
+The CSS/Zooniverse image result (pixels 0.71 where digest2 0.46) was on a
+DIFFERENT object population, so it couldn't fuse with the tabular model. This
+pipeline closes that gap using each NEOCP object's OWN discovery image:
+
+- `src/fetch_ztf_cutouts.py` (LOCAL run — IRSA unreachable from sandbox): for
+  every tracklet with a ZTF detection (obs code I41), queries IRSA IBE at that
+  observation's exact RA/Dec/UT (so the asteroid is centered — avoids the v1
+  Appendix C.4 ephemeris-offset bug) and saves a 60" difference-image cutout to
+  data/capture/ztf_cutouts/<trksub>.fits.
+- `src/ztf_features.py`: per-cutout features (peak SNR, positive-residual flux,
+  compactness, negative-fraction, masked-fraction, background scatter). Validated
+  on the committed ztf_2019aq3_diff.fits sample (recovers SNR + ~12 DN bkg MAD).
+- `features.py` merges ztf_* by trksub; `train.py` registers them. Because the
+  cutout is the SAME object the tabular row describes, these are true fusion
+  features — the model can learn "digest2 says maybe, but the difference image
+  shows a clean point source" per object.
+
+Current ZTF-detected fraction: ~12 capture objects + whatever backfilled
+2018-2024 objects were ZTF-detected (public archive era). Run:
+  python3 src/fetch_ztf_cutouts.py
+then rebuild features + retrain. Sample grows ~2 ZTF objects/day via capture.
+
+### HARD FINDING (2026-07-20): ZTF public-data lag blocks live fusion
+
+Scanned all captured + backfilled tracklets for ZTF (I41) detections:
+**99 objects have an I41 obs, but 97 are dated 2026 — outside ZTF's public
+archive (2018-2024).** ZTF live data is collaboration-proprietary with a ~1-2yr
+public-release lag, so current NEOCP objects have NO fetchable difference images.
+Only **2** objects fall in the public window — far too few to test fusion.
+
+Conclusion: the ZTF fusion pipeline is BUILT and VALIDATED (feature extractor
+verified on the 2019 AQ3 sample) but cannot be exercised on this dataset today.
+Its real value is twofold:
+  1. TEMPLATE for Rubin/LSST, which will publish real-time alerts WITH cutouts —
+     the same fetch->features->fuse code ports directly. This is the actual
+     future fusion source and the reason the whole project matters.
+  2. Activates RETROACTIVELY: as ZTF public releases catch up to 2026 (~2028),
+     today's captured objects become fetchable and the labels are already stored.
+
+fetch_ztf_cutouts.py now only attempts I41 obs inside 2018-2024 (skips the
+unfetchable 2026 majority with no wasted queries). Live image second-opinion for
+CURRENT NEOCP objects remains an open problem — no survey offers real-time public
+per-position difference-image cutouts yet. Rubin changes that.

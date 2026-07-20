@@ -29,7 +29,9 @@ NUMERIC_COLS = ["feed_score", "V", "H", "arc_feed", "nobs_feed", "not_seen_dys",
                 "mag_mean", "mag_range", "multi_night",
                 "ts_n_snapshots", "ts_span_days", "ts_score_delta", "ts_score_slope",
                 "ts_arc_growth", "ts_nobs_growth", "ts_nobs_rate", "ts_unseen_max",
-                "ts_unseen_trend", "ts_v_faded"]
+                "ts_unseen_trend", "ts_v_faded",
+                "ztf_has_cutout", "ztf_snr", "ztf_pos_flux", "ztf_compactness",
+                "ztf_neg_frac", "ztf_masked_frac", "ztf_bkg_mad"]
 
 def load(labeled_csv, with_backfill=False):
     with open(labeled_csv) as f:
