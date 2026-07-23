@@ -1,0 +1,30 @@
+{
+  "n": 693,
+  "n_test": 174,
+  "protocol": "mean over 3 stratified 75/25 splits (AUC mean +/- std)",
+  "note": "GBM stand-in for the CNN (torch unavailable in sandbox); run src/train_cnn.py locally for the true CNN result.",
+  "digest2_only_auc": [
+    0.515,
+    0.028
+  ],
+  "motion_only_auc": [
+    0.721,
+    0.02
+  ],
+  "image_pixels_only_auc": [
+    0.66,
+    0.019
+  ],
+  "image_pixels_only_ap": [
+    0.534,
+    0.006
+  ],
+  "fused_auc": [
+    0.706,
+    0.022
+  ],
+  "junk_excl95_fused": [
+    0.147,
+    0.044
+  ]
+}
