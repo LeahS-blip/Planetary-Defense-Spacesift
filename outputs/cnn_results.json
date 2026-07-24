@@ -1,0 +1,13 @@
+{
+  "n": 3712,
+  "n_test": 743,
+  "n_val": 557,
+  "checkpoint": "best val-AUC epoch (early-stopping); test never used for selection",
+  "best_epoch": 4,
+  "best_val_auc": 0.6274509803921569,
+  "digest2_only_auc": 0.5015909477624638,
+  "cnn_only_auc": 0.6136294027565085,
+  "cnn_only_ap": 0.9114704798619526,
+  "fused_auc": 0.6360558107878169,
+  "fused_with_motion_auc": null
+}

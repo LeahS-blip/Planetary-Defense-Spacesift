@@ -29,7 +29,10 @@ def load_frame(path, crop=256):
 
 def load_subject(sdir, crop=256):
     sdir = Path(sdir)
-    meta = json.loads((sdir / "subject.json").read_text())
+    meta_fp = sdir / "subject.json"
+    if not meta_fp.exists():
+        return None  # incomplete subject (e.g. interrupted fetch / OneDrive placeholder)
+    meta = json.loads(meta_fp.read_text())
     frames = []
     for i in range(1, 5):
         fp = sdir / f"frame_{i}.png"
@@ -58,9 +61,16 @@ def load_subject(sdir, crop=256):
             "label_source": lab.get("label_source")}
 
 def load_all(css_dir, crop=256, labeled_only=True):
+    import sys, time
+    dirs = sorted(Path(css_dir).glob("subject_*"))
+    total = len(dirs)
     out = []
-    for sdir in sorted(Path(css_dir).glob("subject_*")):
+    t0 = time.time()
+    for i, sdir in enumerate(dirs, 1):
         s = load_subject(sdir, crop)
+        if i % 250 == 0 or i == total:
+            print(f"  loading images: {i}/{total} dirs  "
+                  f"({len(out)} labeled kept, {time.time()-t0:.0f}s)", file=sys.stderr, flush=True)
         if s is None:
             continue
         if labeled_only and s["y"] is None:
