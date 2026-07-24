@@ -285,8 +285,9 @@ def main():
         ("unseen d", "Days since the object was last observed."),
     ]
     queue_header = "<tr>" + "".join(
-        f'<th>{html.escape(lbl)}<span class="hint" data-tip="{html.escape(tip)}">?</span></th>'
-        for lbl, tip in QUEUE_COLS) + "</tr>"
+        f'<th>{html.escape(lbl)}'
+        f'<span class="{"hint r" if i >= 6 else "hint"}" data-tip="{html.escape(tip)}">?</span></th>'
+        for i, (lbl, tip) in enumerate(QUEUE_COLS)) + "</tr>"
 
     rows_html = []
     for i, r in enumerate(vet, 1):
@@ -418,8 +419,11 @@ th {{ position:relative; }}
 .hint:hover::after {{ content:attr(data-tip); position:absolute; left:0; top:130%; z-index:20;
          width:210px; padding:8px 10px; background:#0e1430; color:#cdd5ee;
          border:1px solid #2a3358; border-radius:7px; font-size:11px; font-weight:400;
-         line-height:1.4; text-align:left; white-space:normal; letter-spacing:0;
+         line-height:1.45; text-align:left; white-space:normal; letter-spacing:normal;
+         text-transform:none; font-family:ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif;
          box-shadow:0 6px 18px rgba(0,0,0,.45); }}
+/* right-half columns: grow the tooltip leftward so the table's overflow:hidden can't clip it */
+.hint.r:hover::after {{ left:auto; right:0; }}
 .cols {{ display:grid; grid-template-columns:2fr 1fr; gap:20px; align-items:start; }}
 .note {{ color:var(--dim); font-size:12px; margin-top:10px; }}
 footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
