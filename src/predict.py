@@ -9,6 +9,7 @@ import csv, pickle, sys
 from pathlib import Path
 import numpy as np
 from features import build_feature_table
+from followup import classify
 
 def main(capture_dir, digest2_dir, model_pkl, out_csv):
     rows = build_feature_table(capture_dir, digest2_dir)
@@ -31,6 +32,7 @@ def main(capture_dir, digest2_dir, model_pkl, out_csv):
         rec = {"trksub": r["trksub"], "digest2_feed_score": r.get("feed_score"),
                "V": r.get("V"), "H": r.get("H"), "nobs": r.get("nobs_feed"),
                "arc_days": r.get("arc_feed"), "not_seen_dys": r.get("not_seen_dys")}
+        rec["followup_status"] = classify(rec["nobs"], rec["arc_days"], rec["not_seen_dys"])
         if model is not None and Xall is not None:
             rec["p_real_neo"] = float(model.predict_proba(Xall[i:i+1])[0, 1])
         elif model is not None:
@@ -46,7 +48,11 @@ def main(capture_dir, digest2_dir, model_pkl, out_csv):
     out.sort(key=lambda r: -(r["p_real_neo"] or 0))
     with open(out_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(out[0].keys())); w.writeheader(); w.writerows(out)
+    tally = {}
+    for r in out:
+        tally[r["followup_status"]] = tally.get(r["followup_status"], 0) + 1
     print(f"vetting list: {len(out)} objects -> {out_csv}")
+    print("  follow-up: " + ", ".join(f"{k}={v}" for k, v in sorted(tally.items())))
     for r in out[:10]:
         print(f'  {r["trksub"]:10s} p={r["p_real_neo"]:.3f}  digest2={r["digest2_feed_score"]}')
 

@@ -10,6 +10,7 @@ Re-run after each capture/train cycle:  python3 src/make_dashboard.py
 import csv, json, html
 from datetime import datetime, timezone
 from pathlib import Path
+from followup import classify_row, STATUS, STALE_DAYS
 
 ROOT = Path(__file__).resolve().parent.parent
 BRAND = "SPACESIFT"
@@ -277,9 +278,15 @@ def main():
         size_cell = (f'<td>{fmt_size(sm)}'
                      + (' <span class="big" title="&#8805;140 m — regional-devastation class if real; catalog only ~40% complete at this size">&#9650;</span>' if big else '')
                      + '</td>')
+        st = r.get("followup_status") or classify_row(r)
+        meta = STATUS.get(st, STATUS["unknown"])
+        badge = (f'<span class="fu" style="--c:{meta["color"]}" '
+                 f'title="{meta["label"]} — from arc length, obs count and days-since-seen">'
+                 f'{meta["label"]}</span>')
         rows_html.append(
             f'<tr{" class=bigrow" if big else ""}><td>{i}</td><td class="mono">{html.escape(r["trksub"])}</td>'
             f'<td class="pcell">{bar}<span>{p:.2f}</span></td>'
+            f'<td>{badge}</td>'
             + size_cell +
             f'<td>{r.get("digest2_feed_score","")}</td><td>{r.get("V","")}</td>'
             f'<td>{r.get("H","")}</td><td>{r.get("nobs","")}</td>'
@@ -375,6 +382,9 @@ tr:last-child td {{ border-bottom:none; }}
 .fill.lo {{ background:var(--lo); }}
 .skycard {{ background:var(--card); border-radius:12px; padding:14px; }}
 .skycard svg {{ width:100%; height:auto; display:block; }}
+.fu {{ display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px;
+       font-weight:600; white-space:nowrap; color:var(--c);
+       border:1px solid var(--c); background:rgba(255,255,255,.04); }}
 .big {{ color:#f87171; font-size:10px; }}
 .bigrow td {{ background:rgba(248,113,113,.05); }}
 .cols {{ display:grid; grid-template-columns:2fr 1fr; gap:20px; align-items:start; }}
@@ -420,13 +430,18 @@ and details.</p>
 <div>
 <h2>Current confirmation queue — ranked</h2>
 <table>
-<tr><th>#</th><th>desig</th><th>P(real NEO)</th><th>~size</th><th>digest2</th><th>V</th><th>H</th>
+<tr><th>#</th><th>desig</th><th>P(real NEO)</th><th>follow-up</th><th>~size</th><th>digest2</th><th>V</th><th>H</th>
 <th>obs</th><th>arc d</th><th>unseen d</th></tr>
 {''.join(rows_html)}
 </table>
 <p class="note">Model: {html.escape(str(res.get('model','feed-score fallback')))} trained on
 {res.get('n','?')} labeled objects. Probabilities are early-stage — treat as ranking,
-not calibrated risk. Green ≥0.8, amber ≥0.4.</p>
+not calibrated risk. Green ≥0.8, amber ≥0.4.<br>
+Follow-up status: <b style="color:{STATUS['needs_followup']['color']}">Needs follow-up</b>
+= fresh single-night candidate, no one's tracked it yet ·
+<b style="color:{STATUS['tracked']['color']}">Being tracked</b> = multi-night arc, seen recently ·
+<b style="color:{STATUS['going_stale']['color']}">Going stale</b> = not seen in
+&gt;{int(STALE_DAYS)} days, at risk of loss.</p>
 </div>
 <div>
 {sentry_html}
