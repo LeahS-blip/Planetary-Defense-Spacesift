@@ -265,6 +265,29 @@ def main():
                       f'{100*_c["junk_excluded_mean"]:.0f}%',
                       "conformal — statistical promise, not estimate")
 
+    # Queue table header with hoverable "?" help on every column.
+    QUEUE_COLS = [
+        ("#", "Rank — candidates sorted by the model's P(real NEO), highest first."),
+        ("desig", "MPC temporary designation (trksub) for this unconfirmed candidate."),
+        ("P(real NEO)", "Machine-learned probability (0–1) that this is a genuine near-Earth "
+                        "object rather than a false positive. Use as a ranking, not calibrated risk."),
+        ("follow-up", "Observation status from the feed. Needs follow-up: single-night, no one has "
+                      "tracked it yet. Being tracked: multi-night arc, seen recently. Going stale: "
+                      "not observed in over 3 days — at risk of being lost."),
+        ("~size", "Rough diameter from absolute magnitude H (assumes 0.14 albedo). ▲ marks "
+                  "≥140 m — regional-devastation class if real."),
+        ("digest2", "The feed's own digest2 score (0–100): higher = more NEO-like orbit. "
+                    "Near-chance on the hard cases, which is why the model adds value."),
+        ("V", "Apparent magnitude — how bright it looks now. Larger number = fainter."),
+        ("H", "Absolute magnitude — intrinsic brightness, a stand-in for size."),
+        ("obs", "Number of observations reported so far."),
+        ("arc d", "Arc length in days: span between first and last observation. Under 1 = single night."),
+        ("unseen d", "Days since the object was last observed."),
+    ]
+    queue_header = "<tr>" + "".join(
+        f'<th>{html.escape(lbl)}<span class="hint" data-tip="{html.escape(tip)}">?</span></th>'
+        for lbl, tip in QUEUE_COLS) + "</tr>"
+
     rows_html = []
     for i, r in enumerate(vet, 1):
         try:
@@ -387,6 +410,16 @@ tr:last-child td {{ border-bottom:none; }}
        border:1px solid var(--c); background:rgba(255,255,255,.04); }}
 .big {{ color:#f87171; font-size:10px; }}
 .bigrow td {{ background:rgba(248,113,113,.05); }}
+th {{ position:relative; }}
+.hint {{ display:inline-block; margin-left:4px; width:13px; height:13px; border-radius:50%;
+         border:1px solid var(--dim); color:var(--dim); font-size:9px; line-height:12px;
+         text-align:center; font-weight:700; cursor:help; vertical-align:middle; }}
+.hint:hover {{ color:var(--acc); border-color:var(--acc); }}
+.hint:hover::after {{ content:attr(data-tip); position:absolute; left:0; top:130%; z-index:20;
+         width:210px; padding:8px 10px; background:#0e1430; color:#cdd5ee;
+         border:1px solid #2a3358; border-radius:7px; font-size:11px; font-weight:400;
+         line-height:1.4; text-align:left; white-space:normal; letter-spacing:0;
+         box-shadow:0 6px 18px rgba(0,0,0,.45); }}
 .cols {{ display:grid; grid-template-columns:2fr 1fr; gap:20px; align-items:start; }}
 .note {{ color:var(--dim); font-size:12px; margin-top:10px; }}
 footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
@@ -430,8 +463,7 @@ and details.</p>
 <div>
 <h2>Current confirmation queue — ranked</h2>
 <table>
-<tr><th>#</th><th>desig</th><th>P(real NEO)</th><th>follow-up</th><th>~size</th><th>digest2</th><th>V</th><th>H</th>
-<th>obs</th><th>arc d</th><th>unseen d</th></tr>
+{queue_header}
 {''.join(rows_html)}
 </table>
 <p class="note">Model: {html.escape(str(res.get('model','feed-score fallback')))} trained on
