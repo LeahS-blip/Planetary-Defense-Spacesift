@@ -167,6 +167,7 @@ def sky_map(objects, replay_label=""):
 
 def main():
     vet = read_csv(ROOT / "outputs" / "daily_vetting.csv")
+    vet_all = list(vet)   # full list before the current-snapshot filter, for the tracked archive
     lab = read_csv(ROOT / "data" / "processed" / "labeled.csv")
     bf = read_csv(ROOT / "data" / "processed" / "backfill_labeled.csv")
     outcomes = read_csv(ROOT / "data" / "capture" / "outcomes.csv")
@@ -348,6 +349,68 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
     oc_rows = "".join(f'<tr><td>{html.escape(k)}</td><td>{v}</td></tr>'
                       for k, v in oc.most_common())
 
+    # Tracked-objects archive: every candidate ever captured while "being tracked",
+    # kept so they aren't lost when they roll off the live NEOCP page (and out of the
+    # current-snapshot queue above). Built from vet_all — the unfiltered vetting CSV.
+    TRACKED_COLS = [
+        ("#", "Position in this archive, highest model probability first."),
+        ("desig", "MPC temporary designation (trksub)."),
+        ("P(real NEO)", "Model probability (0-1) this is a genuine near-Earth object. "
+                        "Ranking, not calibrated risk."),
+        ("~size", "Rough diameter from absolute magnitude H (assumes 0.14 albedo). ▲ marks ≥140 m."),
+        ("digest2", "The feed's own digest2 score (0-100): higher = more NEO-like orbit."),
+        ("V", "Apparent magnitude — how bright it looks now. Larger = fainter."),
+        ("H", "Absolute magnitude — intrinsic brightness, a stand-in for size."),
+        ("obs", "Number of observations reported so far."),
+        ("arc d", "Arc length in days between first and last observation."),
+        ("unseen d", "Days since the object was last observed — how close it is to being lost."),
+    ]
+    def _is_tracked(r):
+        return (r.get("followup_status") or classify_row(r)) == "tracked"
+    tracked = sorted((r for r in vet_all if _is_tracked(r)),
+                     key=lambda r: float(r.get("p_real_neo") or 0), reverse=True)
+    tracked_html = ""
+    if tracked:
+        thead = "<tr>" + "".join(
+            f'<th>{html.escape(lbl)}'
+            f'<span class="{"hint r" if i >= 5 else "hint"}" data-tip="{html.escape(tip)}">?</span></th>'
+            for i, (lbl, tip) in enumerate(TRACKED_COLS)) + "</tr>"
+        trows = []
+        for i, r in enumerate(tracked, 1):
+            try:
+                p = float(r.get("p_real_neo") or 0)
+            except ValueError:
+                p = 0.0
+            cls = "hi" if p >= 0.8 else ("mid" if p >= 0.4 else "lo")
+            bar = f'<div class="bar"><div class="fill {cls}" style="width:{p*100:.0f}%"></div></div>'
+            sm = size_m(r.get("H"))
+            big = sm is not None and sm >= 140
+            size_cell = (f'<td>{fmt_size(sm)}'
+                         + (' <span class="big" title="&#8805;140 m — regional-devastation class if real">&#9650;</span>' if big else '')
+                         + '</td>')
+            trows.append(
+                f'<tr{" class=bigrow" if big else ""}><td>{i}</td>'
+                f'<td class="mono">{html.escape(r["trksub"])}</td>'
+                f'<td class="pcell">{bar}<span>{p:.2f}</span></td>'
+                + size_cell +
+                f'<td>{html.escape(str(r.get("digest2_feed_score","")))}</td>'
+                f'<td>{html.escape(str(r.get("V","")))}</td><td>{html.escape(str(r.get("H","")))}</td>'
+                f'<td>{html.escape(str(r.get("nobs","")))}</td><td>{html.escape(str(r.get("arc_days","")))}</td>'
+                f'<td>{html.escape(str(r.get("not_seen_dys","")))}</td></tr>')
+        tracked_html = (
+            '<h2>Tracked objects &mdash; archive</h2>\n'
+            '<div class="searchwrap"><input id="trackedSearch" class="tsearch" type="search" '
+            'placeholder="Search designation…" autocomplete="off" '
+            'aria-label="Search the tracked archive by designation">'
+            '<span id="trackedSearch-count" class="scount"></span></div>\n'
+            '<table id="trackedTable">\n'
+            + thead + '\n' + "".join(trows) + '\n</table>\n'
+            '<p class="note">Every candidate our capture has ever seen reach '
+            f'<b style="color:{STATUS["tracked"]["color"]}">being tracked</b> (a multi-night arc with recent '
+            'follow-up), kept here so they aren&#x27;t lost when they roll off the live NEO Confirmation Page '
+            f'and out of the queue above. {len(tracked)} objects, ranked by model P(real NEO). Sourced from '
+            '<span class="mono">outputs/daily_vetting.csv</span>; unseen-d is days since last observation.</p>')
+
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     logo = comet_svg(54)
     brand = BRAND
@@ -427,6 +490,12 @@ th {{ position:relative; }}
 .cols {{ display:grid; grid-template-columns:2fr 1fr; gap:20px; align-items:start; }}
 .note {{ color:var(--dim); font-size:12px; margin-top:10px; }}
 footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
+.searchwrap {{ display:flex; align-items:center; gap:10px; margin:0 0 10px; }}
+.tsearch {{ background:#0e1430; border:1px solid #2a3358; color:var(--ink); border-radius:8px;
+           padding:7px 12px; font:13px "Space Mono",ui-monospace,monospace; width:230px; max-width:60vw; }}
+.tsearch:focus {{ outline:none; border-color:var(--acc); }}
+.tsearch::placeholder {{ color:var(--dim); }}
+.scount {{ color:var(--dim); font-size:12px; white-space:nowrap; }}
 @media (max-width:900px) {{ .cols {{ grid-template-columns:1fr; }} }}
 </style></head><body>
 <div class="topbar">
@@ -466,7 +535,8 @@ and details.</p>
 <div class="cols">
 <div>
 <h2>Current confirmation queue — ranked</h2>
-<table>
+<div class="searchwrap"><input id="queueSearch" class="tsearch" type="search" placeholder="Search designation…" autocomplete="off" aria-label="Search the confirmation queue by designation"><span id="queueSearch-count" class="scount"></span></div>
+<table id="queueTable">
 {queue_header}
 {''.join(rows_html)}
 </table>
@@ -487,8 +557,33 @@ Follow-up status: <b style="color:{STATUS['needs_followup']['color']}">Needs fol
 designated_other are mostly main-belt identifications.</p>
 </div>
 </div>
+{tracked_html}
 <footer>planetary-defense-neocp-vetting · data: MPC NEOCP / Previous-NEOCP / MPECs ·
 regenerate with <span class="mono">python3 src/make_dashboard.py</span></footer>
+<script>
+(function(){{
+  function wire(inputId, tableId){{
+    var inp=document.getElementById(inputId), tbl=document.getElementById(tableId);
+    if(!inp||!tbl) return;
+    var rows=Array.prototype.filter.call(tbl.rows, function(r){{ return !r.querySelector('th'); }});
+    var note=document.getElementById(inputId+'-count');
+    function apply(){{
+      var q=inp.value.trim().toLowerCase(), shown=0;
+      rows.forEach(function(r){{
+        var cell=r.querySelector('.mono');
+        var hay=(cell?cell.textContent:r.textContent).toLowerCase();
+        var match=!q || hay.indexOf(q)>-1;
+        r.style.display=match?'':'none';
+        if(match) shown++;
+      }});
+      if(note) note.textContent = q ? (shown+' match'+(shown===1?'':'es')) : '';
+    }}
+    inp.addEventListener('input', apply);
+  }}
+  wire('queueSearch','queueTable');
+  wire('trackedSearch','trackedTable');
+}})();
+</script>
 </body></html>"""
     out = ROOT / "outputs" / "dashboard.html"
     out.write_text(doc, encoding="utf-8")
