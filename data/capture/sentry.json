@@ -1,6 +1,6 @@
 {
- "fetched_utc": "2026-08-09 06:53 UTC",
- "total_monitored": 2178,
+ "fetched_utc": "2026-08-09 18:38 UTC",
+ "total_monitored": 2179,
  "top": [
   {
    "des": "29075",
@@ -123,6 +123,18 @@
    "last_obs": "2021-04-17"
   },
   {
+   "des": "2026 PJ1",
+   "fullname": "(2026 PJ1)",
+   "ip_cum": 7.3413705e-05,
+   "ps_cum": -3.5,
+   "ts_max": "0",
+   "diameter_km": 0.0603,
+   "h": 23.74,
+   "n_imp": 26,
+   "range": "2039-2101",
+   "last_obs": "2026-08-09"
+  },
+  {
    "des": "2023 DO",
    "fullname": "(2023 DO)",
    "ip_cum": 0.000454910373,
@@ -133,18 +145,6 @@
    "n_imp": 25,
    "range": "2057-2092",
    "last_obs": "2023-03-26"
-  },
-  {
-   "des": "2019 VB37",
-   "fullname": "(2019 VB37)",
-   "ip_cum": 5.697875e-05,
-   "ps_cum": -3.59,
-   "ts_max": "0",
-   "diameter_km": 0.043,
-   "h": 24.5,
-   "n_imp": 5,
-   "range": "2049-2067",
-   "last_obs": "2019-11-03"
   }
  ]
 }
