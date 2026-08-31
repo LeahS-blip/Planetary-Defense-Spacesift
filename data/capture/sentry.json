@@ -1,5 +1,5 @@
 {
- "fetched_utc": "2026-08-31 12:42 UTC",
+ "fetched_utc": "2026-08-31 22:27 UTC",
  "total_monitored": 2186,
  "top": [
   {
@@ -54,7 +54,7 @@
    "des": "2000 SG344",
    "fullname": "(2000 SG344)",
    "ip_cum": 0.002743395186,
-   "ps_cum": -2.77,
+   "ps_cum": -2.76,
    "ts_max": "0",
    "diameter_km": 0.037,
    "h": 24.79,
