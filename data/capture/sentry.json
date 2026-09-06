@@ -1,5 +1,5 @@
 {
- "fetched_utc": "2026-09-06 10:17 UTC",
+ "fetched_utc": "2026-09-06 19:59 UTC",
  "total_monitored": 2190,
  "top": [
   {
@@ -66,7 +66,7 @@
    "des": "2010 RF12",
    "fullname": "(2010 RF12)",
    "ip_cum": 0.102637259069,
-   "ps_cum": -2.97,
+   "ps_cum": -2.96,
    "ts_max": "0",
    "diameter_km": 0.0071,
    "h": 28.39,
