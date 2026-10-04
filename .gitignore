@@ -1,0 +1,8 @@
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+# Downloaded light curves: re-fetchable from MAST, too large for git
+cache/
+# Experiment outputs are kept; scratch runs are not
+experiments/_scratch*/
