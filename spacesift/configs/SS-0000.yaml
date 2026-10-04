@@ -1,0 +1,26 @@
+# Smoke test on synthetic light curves: no downloads, runs in minutes.
+# Use it to check the harness end to end before spending compute on real data.
+id: SS-0000
+question: Does the harness recover synthetic transits with the expected completeness-vs-SNR shape?
+seed: 20261003
+mission: synthetic
+synthetic:
+  n_stars: 12
+  baseline_d: 360
+  noise_ppm: [150, 400]
+  var_amp_ppm: [0, 0]
+injection:
+  trials_per_star: 25
+  expected_snr: [3, 30]
+  period_d: [1, 30]
+  b: [0, 0.9]
+detrend: [biweight-1.0]
+search:
+  method: bls
+  oversample: 3
+  bin_min: 60
+recovery:
+  sde_threshold: 7
+  period_tol: 0.01
+  min_transits: 2
+n_jobs: 4
