@@ -1,17 +1,24 @@
-# Run an experiment on GitHub's runners: N parallel shards, then one merge job
-# that commits the final record back to the repo under experiments/<id>/.
-name: run-experiment
+# SpaceSift: run an injection-recovery experiment on GitHub's runners.
+# 10 parallel shards, then one merge job that commits the final record to
+# spacesift/experiments/<id>/. Manual trigger only:
+#   Actions tab -> spacesift-experiment -> Run workflow.
+
+name: spacesift-experiment
 
 on:
   workflow_dispatch:
     inputs:
       config:
-        description: Experiment config file
+        description: Experiment config, relative to spacesift/
         default: configs/SS-0001.yaml
         required: true
 
 permissions:
   contents: write
+
+defaults:
+  run:
+    working-directory: spacesift
 
 jobs:
   shard:
@@ -26,19 +33,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
       - run: pip install -e .
       - name: Cache downloaded light curves
         uses: actions/cache@v4
         with:
-          path: cache
-          key: lightcurves-${{ hashFiles(inputs.config, 'configs/stars/**') }}-shard${{ matrix.shard }}
+          path: spacesift/cache
+          key: spacesift-lc-${{ hashFiles('spacesift/configs/stars/**') }}-shard${{ matrix.shard }}
       - name: Run shard
         run: spacesift run "${{ inputs.config }}" --shard ${{ matrix.shard }}/10 --jobs 4
       - uses: actions/upload-artifact@v4
         with:
           name: shard-${{ matrix.shard }}
-          path: experiments/*/shards/shard-${{ matrix.shard }}/
+          path: spacesift/experiments/*/shards/shard-${{ matrix.shard }}/
           if-no-files-found: error
 
   merge:
@@ -49,7 +55,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
       - run: pip install -e .
       - name: Find experiment id
         id: exp
@@ -57,7 +62,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: shard-*
-          path: experiments/${{ steps.exp.outputs.id }}/shards
+          path: spacesift/experiments/${{ steps.exp.outputs.id }}/shards
       - name: Merge
         run: |
           cp "${{ inputs.config }}" "experiments/${{ steps.exp.outputs.id }}/config.yaml"
@@ -65,11 +70,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.exp.outputs.id }}
-          path: experiments/${{ steps.exp.outputs.id }}/
+          path: spacesift/experiments/${{ steps.exp.outputs.id }}/
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "experiments/${{ steps.exp.outputs.id }}"
-          git commit -m "results: ${{ steps.exp.outputs.id }} (run ${{ github.run_id }})"
-          git push
+          git commit -m "spacesift results: ${{ steps.exp.outputs.id }} (run ${{ github.run_id }})"
+          # capture-and-deploy may have pushed meanwhile; rebase onto it and retry.
+          for i in 1 2 3; do git pull --rebase -q && git push && break; sleep 10; done

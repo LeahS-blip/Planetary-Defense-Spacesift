@@ -31,7 +31,7 @@ spacesift replay experiments/SS-0001 --star 1868918 --trial 3   # re-run + plot 
 
 ### In the cloud (GitHub Actions)
 
-On GitHub: **Actions → run-experiment → Run workflow**, then pick a config. The run
+On GitHub: **Actions â†’ run-experiment â†’ Run workflow**, then pick a config. The run
 is split into 10 parallel shards (`spacesift run ... --shard i/10`), and a merge
 job (`spacesift merge experiments/<id>`) combines them. The merge job commits the
 finished `experiments/<id>/` back to the repo and uploads it as a workflow artifact.
@@ -56,7 +56,7 @@ refuses to overwrite a finished experiment.
 
 1. Load the star's light curve: Kepler PDCSAP long cadence via lightkurve, normalised per quarter and cached in `cache/`.
 2. Measure noise once per star on a light curve detrended with `injection.noise_detrend`, so the SNR scale doesn't change with the detrending under test.
-3. Draw P (log-uniform), b, t0, and a **target expected SNR**. Solve for the planet radius that gives that SNR on this star: depth = SNR · σ_CDPP(T14) / √N_transits.
+3. Draw P (log-uniform), b, t0, and a **target expected SNR**. Solve for the planet radius that gives that SNR on this star: depth = SNR Â· Ïƒ_CDPP(T14) / âˆšN_transits.
 4. Inject the limb-darkened transit (supersampled over the 29.4-min exposure) into the raw flux.
 5. Detrend (each `detrend` spec in turn), clip upward outliers, bin to `search.bin_min`, and run BLS.
 6. Classify: `recovered`, `alias_half`, `alias_double`, `wrong_period`, `below_threshold`, or `not_observable` (fewer than `min_transits` transits in the data).
@@ -68,10 +68,10 @@ Trial seeds are derived from `(seed, star_index, trial)`, so any single trial ca
 - **Transit model.** Instead of batman, it numerically integrates the quadratically limb-darkened stellar disk over the planet's shadow (`spacesift/inject.py`). It is tested against the analytic uniform-disk overlap. It assumes circular orbits only.
 - **Limb darkening.** Fixed at u1 = 0.40, u2 = 0.25 (roughly Sun-like, Kepler band). Claret-table coefficients per Teff/logg are a to-do.
 - **Injection level.** Transits are injected into PDCSAP light curves, after the pipeline's systematics correction. Christiansen et al. inject at pixel level, so measured completeness here is likely optimistic. State this in any write-up.
-- **Period grid.** Adaptive: the step keeps phase drift below duration / oversample, using the shortest plausible duration at each period (Sun-density star, b = 0.9). That's about 54k periods for 1 year of data, 1–30 d. For M dwarfs, lower the factor in `search.shortest_duration`.
+- **Period grid.** Adaptive: the step keeps phase drift below duration / oversample, using the shortest plausible duration at each period (Sun-density star, b = 0.9). That's about 54k periods for 1 year of data, 1â€“30 d. For M dwarfs, lower the factor in `search.shortest_duration`.
 - **SDE depends on the grid.** The noise-floor SDE changes with the period grid and binning. Re-check the threshold (default 7) against the pre-injection SDE distribution in `stars.parquet` whenever those settings change.
 - **TLS and the CNN / gradient-boosting vetters** (SS-0003) are not implemented yet. New searches register in `search.SEARCHES`.
 
 ## Cost
 
-Measured on Kepler Q2–Q5 (about 1 year, ~17k cadences binned to 1 h): about 16 s per BLS search on one core. So SS-0001 at 200 stars × 50 trials comes to about 45 CPU-hours, or roughly 11 h with 4 workers. Using all 17 quarters roughly quadruples the grid.
+Measured on Kepler Q2â€“Q5 (about 1 year, ~17k cadences binned to 1 h): about 16 s per BLS search on one core. So SS-0001 at 200 stars Ã— 50 trials comes to about 45 CPU-hours, or roughly 11 h with 4 workers. Using all 17 quarters roughly quadruples the grid.
