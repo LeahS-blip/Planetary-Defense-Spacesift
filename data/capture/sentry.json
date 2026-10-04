@@ -1,6 +1,6 @@
 {
- "fetched_utc": "2026-10-03 20:36 UTC",
- "total_monitored": 2208,
+ "fetched_utc": "2026-10-04 11:49 UTC",
+ "total_monitored": 2209,
  "top": [
   {
    "des": "29075",
@@ -78,7 +78,7 @@
    "des": "2007 FT3",
    "fullname": "(2007 FT3)",
    "ip_cum": 7.744342e-07,
-   "ps_cum": -3.06,
+   "ps_cum": -3.0,
    "ts_max": "0",
    "diameter_km": 0.341,
    "h": 19.97,
