@@ -11,8 +11,20 @@ import pandas as pd
 def cmd_run(args):
     from .runner import run_experiment
 
+    shard = None
+    if args.shard:
+        i, n = map(int, args.shard.split("/"))
+        if not 0 <= i < n:
+            raise SystemExit("--shard must be i/n with 0 <= i < n")
+        shard = (i, n)
     run_experiment(Path(args.config), allow_dirty=args.dirty, max_stars=args.max_stars, n_jobs=args.jobs,
-                   out_root=Path(args.out) if args.out else None)
+                   out_root=Path(args.out) if args.out else None, shard=shard)
+
+
+def cmd_merge(args):
+    from .runner import merge_shards
+
+    merge_shards(Path(args.experiment))
 
 
 def cmd_replay(args):
@@ -63,7 +75,12 @@ def main(argv=None):
     r.add_argument("--max-stars", type=int, help="limit stars, e.g. for a timing run")
     r.add_argument("--jobs", type=int, help="parallel workers (overrides config)")
     r.add_argument("--out", help="output root (default: experiments/)")
+    r.add_argument("--shard", help="run one slice of the stars, e.g. 3/10 (merge afterwards)")
     r.set_defaults(func=cmd_run)
+
+    m = sub.add_parser("merge", help="combine shards into the final experiment record")
+    m.add_argument("experiment")
+    m.set_defaults(func=cmd_merge)
 
     rp = sub.add_parser("replay", help="re-run and plot one trial")
     rp.add_argument("experiment")

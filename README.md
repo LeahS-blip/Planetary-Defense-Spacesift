@@ -29,6 +29,15 @@ spacesift run configs/SS-0001.yaml               # the real thing, from a clean 
 spacesift replay experiments/SS-0001 --star 1868918 --trial 3   # re-run + plot one trial
 ```
 
+### In the cloud (GitHub Actions)
+
+On GitHub: **Actions → run-experiment → Run workflow**, then pick a config. The run
+is split into 10 parallel shards (`spacesift run ... --shard i/10`), and a merge
+job (`spacesift merge experiments/<id>`) combines them. The merge job commits the
+finished `experiments/<id>/` back to the repo and uploads it as a workflow artifact.
+Star indices are global, so a sharded run gives exactly the same trials as an
+unsharded one (this is tested).
+
 Each experiment writes `experiments/<id>/`:
 
 | File | Contents |

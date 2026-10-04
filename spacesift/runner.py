@@ -141,7 +141,13 @@ def run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[d
 # ------------------------------------------------------------- experiment
 
 def run_experiment(config_path: Path, *, allow_dirty: bool = False, out_root: Path | None = None,
-                   max_stars: int | None = None, n_jobs: int | None = None) -> Path:
+                   max_stars: int | None = None, n_jobs: int | None = None,
+                   shard: tuple[int, int] | None = None) -> Path:
+    """Run every star (or one shard of them) and write results.
+
+    With shard=(i, n), runs stars i, i+n, i+2n, ... into <out>/<id>/shards/shard-i;
+    star indices stay global, so seeds match an unsharded run. Combine with merge_shards.
+    """
     cfg, cfg_sha = load_config(config_path)
     if max_stars is not None:
         cfg.max_stars = max_stars
@@ -152,27 +158,29 @@ def run_experiment(config_path: Path, *, allow_dirty: bool = False, out_root: Pa
         raise SystemExit("Refusing to run: code or configs have uncommitted changes (or no git repo). "
                          "Commit first, or pass --dirty; the record will say so.")
 
-    out = (out_root or PROJECT_ROOT / "experiments") / cfg.id
-    if (out / "record.json").exists():
-        raise SystemExit(f"{out} already holds a finished experiment; bump the id or delete it.")
+    exp = (out_root or PROJECT_ROOT / "experiments") / cfg.id
+    if (exp / "record.json").exists():
+        raise SystemExit(f"{exp} already holds a finished experiment; bump the id or delete it.")
+    out = exp / "shards" / f"shard-{shard[0]}" if shard else exp
     out.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(config_path, out / "config.yaml")
+    shutil.copyfile(config_path, exp / "config.yaml")
 
-    stars = build_stars(cfg)
+    indexed = list(enumerate(build_stars(cfg)))
+    if shard:
+        indexed = indexed[shard[0]::shard[1]]
     started = datetime.now(timezone.utc)
-    print(f"{cfg.id}: {len(stars)} stars x {cfg.injection.trials_per_star} trials x {len(cfg.detrend)} detrend")
-    results = Parallel(n_jobs=cfg.n_jobs, verbose=5)(
-        delayed(run_star)(cfg, s, i) for i, s in enumerate(stars)
-    )
-    rows = [r for star_rows, _ in results for r in star_rows]
+    label = f" (shard {shard[0]}/{shard[1]})" if shard else ""
+    print(f"{cfg.id}{label}: {len(indexed)} stars x {cfg.injection.trials_per_star} trials "
+          f"x {len(cfg.detrend)} detrend")
+    results = Parallel(n_jobs=cfg.n_jobs, verbose=5)(delayed(run_star)(cfg, s, i) for i, s in indexed)
+    trials = pd.DataFrame([r for star_rows, _ in results for r in star_rows])
     star_table = pd.DataFrame([s for _, s in results])
     for s in star_table[star_table["error"].notna()].itertuples():
         print(f"  star {s.star_id} failed: {s.error}")
-    trials = pd.DataFrame(rows)
     trials.to_parquet(out / "trials.parquet")
     star_table.to_parquet(out / "stars.parquet")
 
-    record = {
+    provenance = {
         "id": cfg.id,
         "question": cfg.question,
         "config_file": str(config_path),
@@ -184,19 +192,58 @@ def run_experiment(config_path: Path, *, allow_dirty: bool = False, out_root: Pa
         "preprocessing_version": PREPROCESSING_VERSION,
         "package_versions": package_versions(),
         "seed": cfg.seed,
-        "n_stars": len(stars),
-        "n_stars_failed": int(star_table["error"].notna().sum()) if len(star_table) else 0,
-        "n_trials": int(len(trials)),
         "started": started.isoformat(),
         "finished": datetime.now(timezone.utc).isoformat(),
-        "summary": summarize(trials) if len(trials) else {},
     }
-    (out / "record.json").write_text(json.dumps(record, indent=2))
-    if len(trials):
-        from .plots import plot_experiment
-        plot_experiment(trials, out / "plots")
+    if shard:
+        provenance["shard"] = list(shard)
+        (out / "shard.json").write_text(json.dumps(provenance, indent=2))
+    else:
+        write_record(exp, provenance, trials, star_table)
     print(f"wrote {out}")
     return out
+
+
+def merge_shards(exp: Path) -> Path:
+    """Combine shards/shard-*/ into the experiment's final record. Refuses mixed provenance."""
+    metas = [json.loads(p.read_text()) for p in sorted((exp / "shards").glob("shard-*/shard.json"))]
+    if not metas:
+        raise SystemExit(f"no shards under {exp / 'shards'}")
+    n = metas[0]["shard"][1]
+    found = sorted(m["shard"][0] for m in metas)
+    if found != list(range(n)):
+        raise SystemExit(f"expected shards 0..{n - 1}, found {found}")
+    for key in ("config_sha256", "git_commit", "git_dirty", "package_versions", "preprocessing_version"):
+        if len({json.dumps(m[key], sort_keys=True) for m in metas}) > 1:
+            raise SystemExit(f"shards disagree on {key}; they were not run from the same code/config")
+
+    dirs = [exp / "shards" / f"shard-{i}" for i in range(n)]
+    trials = pd.concat([pd.read_parquet(d / "trials.parquet") for d in dirs], ignore_index=True)
+    stars = pd.concat([pd.read_parquet(d / "stars.parquet") for d in dirs], ignore_index=True)
+    trials = trials.sort_values(["star_index", "trial", "detrend"], ignore_index=True)
+    provenance = {k: v for k, v in metas[0].items() if k != "shard"}
+    provenance["started"] = min(m["started"] for m in metas)
+    provenance["finished"] = max(m["finished"] for m in metas)
+    provenance["n_shards"] = n
+    write_record(exp, provenance, trials, stars)
+    print(f"merged {n} shards into {exp}")
+    return exp
+
+
+def write_record(exp: Path, provenance: dict, trials: pd.DataFrame, star_table: pd.DataFrame) -> None:
+    trials.to_parquet(exp / "trials.parquet")
+    star_table.to_parquet(exp / "stars.parquet")
+    record = {
+        **provenance,
+        "n_stars": int(len(star_table)),
+        "n_stars_failed": int(star_table["error"].notna().sum()) if len(star_table) else 0,
+        "n_trials": int(len(trials)),
+        "summary": summarize(trials) if len(trials) else {},
+    }
+    (exp / "record.json").write_text(json.dumps(record, indent=2))
+    if len(trials):
+        from .plots import plot_experiment
+        plot_experiment(trials, exp / "plots")
 
 
 def summarize(trials: pd.DataFrame) -> dict:
@@ -209,3 +256,5 @@ def summarize(trials: pd.DataFrame) -> dict:
             "completeness_vs_snr": completeness(d).round(4).to_dict("records"),
         }
     return out
+
+

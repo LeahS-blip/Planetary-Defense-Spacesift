@@ -72,3 +72,10 @@ def test_runner_is_reproducible(tmp_path: Path):
     pd.testing.assert_frame_equal(ta, tb)
     assert (a / "record.json").exists() and (a / "plots" / "completeness_vs_snr.png").exists()
     assert not completeness(ta).empty
+
+    # Sharded run + merge must reproduce the unsharded trials exactly.
+    from spacesift.runner import merge_shards
+    for i in range(2):
+        run_experiment(path, allow_dirty=True, out_root=tmp_path / "s", shard=(i, 2))
+    merged = merge_shards(tmp_path / "s" / "SS-TEST")
+    pd.testing.assert_frame_equal(pd.read_parquet(merged / "trials.parquet"), ta)
