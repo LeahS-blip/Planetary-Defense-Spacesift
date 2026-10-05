@@ -54,6 +54,15 @@ def test_gamma_fit_recovers_known_curve():
     assert abs(fit["snr_50pct"] - 8.9) < 0.6  # median of Gamma(20, 0.45) scaled by a=0.97
 
 
+def test_bad_star_is_recorded_not_fatal():
+    from spacesift.config import ExperimentConfig
+    from spacesift.runner import run_star
+
+    cfg = ExperimentConfig(id="X", question="q", seed=1, mission="synthetic")
+    rows, star_row = run_star(cfg, Star("bad", mass=0.0), 0)
+    assert rows == [] and "ZeroDivisionError" in star_row["error"]
+
+
 def test_runner_is_reproducible(tmp_path: Path):
     from spacesift.runner import run_experiment
 

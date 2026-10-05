@@ -93,6 +93,8 @@ def read_stars(path: Path) -> list[Star]:
     stars = []
     for row in df.to_dict("records"):
         kw = {k: float(v) for k, v in row.items() if k in fields and pd.notna(v)}
+        if kw.get("radius", 1.0) <= 0 or kw.get("mass", 1.0) <= 0:
+            raise ValueError(f"{path}: star {row['star_id']} has non-positive radius or mass")
         stars.append(Star(star_id=str(row["star_id"]), **kw))
     return stars
 
@@ -115,6 +117,8 @@ def select_kepler_stars(n: int, seed: int, out: Path, kepmag=(11.0, 13.0), teff=
     ).to_pandas()
     kois = NEA.query_criteria(table="q1_q17_dr25_koi", select="kepid").to_pandas()
     stellar = stellar[~stellar.kepid.isin(kois.kepid)].dropna(subset=["rrmscdpp06p0", "radius", "mass"])
+    # Some DR25 rows carry placeholder parameters (mass 0); the transit geometry needs real ones.
+    stellar = stellar[(stellar.mass > 0) & (stellar.radius > 0)]
     quiet = stellar[stellar.rrmscdpp06p0 < stellar.rrmscdpp06p0.median()]
     pick = quiet.sample(n=min(n, len(quiet)), random_state=seed).sort_values("kepid")
     df = pd.DataFrame({
