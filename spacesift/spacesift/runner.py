@@ -105,12 +105,17 @@ def run_trial(cfg: ExperimentConfig, lc: LightCurve, star: Star, inj: Injection,
 
 
 def run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[dict], dict]:
-    started = clock.perf_counter()
+    """All trials for one star. Any failure drops the whole star (no partial rows) and is
+    recorded in stars.parquet, so one bad star cannot end a long run."""
     try:
-        lc = load_star(cfg, star, star_index)
-    except Exception as exc:  # a missing star is logged, not fatal
+        return _run_star(cfg, star, star_index)
+    except Exception as exc:
         return [], {"star_id": star.star_id, "error": repr(exc)}
 
+
+def _run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[dict], dict]:
+    started = clock.perf_counter()
+    lc = load_star(cfg, star, star_index)
     noise_flat = flatten(lc.time, lc.flux, cfg.injection.noise_detrend)
     t_noise, f_noise = clean(lc.time, noise_flat)
 
