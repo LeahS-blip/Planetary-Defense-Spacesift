@@ -211,18 +211,24 @@ def run_experiment(config_path: Path, *, allow_dirty: bool = False, out_root: Pa
 
 def merge_shards(exp: Path) -> Path:
     """Combine shards/shard-*/ into the experiment's final record. Refuses mixed provenance."""
-    metas = [json.loads(p.read_text()) for p in sorted((exp / "shards").glob("shard-*/shard.json"))]
-    if not metas:
-        raise SystemExit(f"no shards under {exp / 'shards'}")
+    # Search recursively: downloaded CI artifacts may nest the shard folders.
+    by_index = {}
+    for p in sorted((exp / "shards").rglob("shard.json")):
+        meta = json.loads(p.read_text())
+        by_index[meta["shard"][0]] = (p.parent, meta)
+    if not by_index:
+        raise SystemExit(f"no shard.json found under {exp / 'shards'}")
+    metas = [m for _, m in by_index.values()]
     n = metas[0]["shard"][1]
-    found = sorted(m["shard"][0] for m in metas)
+    found = sorted(by_index)
     if found != list(range(n)):
         raise SystemExit(f"expected shards 0..{n - 1}, found {found}")
     for key in ("config_sha256", "git_commit", "git_dirty", "package_versions", "preprocessing_version"):
         if len({json.dumps(m[key], sort_keys=True) for m in metas}) > 1:
             raise SystemExit(f"shards disagree on {key}; they were not run from the same code/config")
 
-    dirs = [exp / "shards" / f"shard-{i}" for i in range(n)]
+    dirs = [by_index[i][0] for i in range(n)]
+    metas = [by_index[i][1] for i in range(n)]
     trials = pd.concat([pd.read_parquet(d / "trials.parquet") for d in dirs], ignore_index=True)
     stars = pd.concat([pd.read_parquet(d / "stars.parquet") for d in dirs], ignore_index=True)
     trials = trials.sort_values(["star_index", "trial", "detrend"], ignore_index=True)

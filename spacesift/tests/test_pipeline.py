@@ -88,3 +88,11 @@ def test_runner_is_reproducible(tmp_path: Path):
         run_experiment(path, allow_dirty=True, out_root=tmp_path / "s", shard=(i, 2))
     merged = merge_shards(tmp_path / "s" / "SS-TEST")
     pd.testing.assert_frame_equal(pd.read_parquet(merged / "trials.parquet"), ta)
+
+    # CI artifacts can arrive nested (shards/shard-1/SS-TEST/shards/shard-1/...); merge must still work.
+    import shutil
+    nested = tmp_path / "n" / "SS-TEST"
+    for i in range(2):
+        src = tmp_path / "s" / "SS-TEST" / "shards" / f"shard-{i}"
+        shutil.copytree(src, nested / "shards" / f"shard-{i}" / "SS-TEST" / "shards" / f"shard-{i}")
+    pd.testing.assert_frame_equal(pd.read_parquet(merge_shards(nested) / "trials.parquet"), ta)
