@@ -1,0 +1,24 @@
+# False-alarm calibration for SS-0001: same stars, quarters, detrending and
+# search, but every light curve is inverted and/or block-scrambled so it cannot
+# hold a real periodic transit. The SDE distribution of these searches sets the
+# detection threshold for a chosen false-alarm rate (spacesift analyze --null).
+id: SS-0001-null
+question: What SDE threshold gives a 1% false-alarm rate for the SS-0001 pipeline?
+seed: 29481
+kind: false_alarm
+mission: kepler
+stars_file: configs/stars/SS-0001.csv
+quarters: [2, 3, 4, 5]
+injection:
+  noise_detrend: biweight-1.0
+detrend: [biweight-1.0]
+search:
+  method: bls
+  durations_hr: [1.5, 2.5, 4.0, 6.0, 9.0]
+  oversample: 3
+  bin_min: 60
+false_alarm:
+  inverted: true
+  scrambles: 4
+  block_d: 10.0
+n_jobs: 4

@@ -1,0 +1,102 @@
+{
+  "id": "SS-0001-null",
+  "question": "What SDE threshold gives a 1% false-alarm rate for the SS-0001 pipeline?",
+  "config_file": "configs/SS-0001-null.yaml",
+  "config_sha256": "f46d192171600c199dacdaf98dc33cc420ec7a99ed41dbabf6bcc7967546e4a4",
+  "config": {
+    "id": "SS-0001-null",
+    "question": "What SDE threshold gives a 1% false-alarm rate for the SS-0001 pipeline?",
+    "seed": 29481,
+    "kind": "false_alarm",
+    "mission": "kepler",
+    "stars_file": "configs/stars/SS-0001.csv",
+    "quarters": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "max_stars": null,
+    "synthetic": {
+      "n_stars": 20,
+      "baseline_d": 360.0,
+      "noise_ppm": [
+        100.0,
+        400.0
+      ],
+      "var_amp_ppm": [
+        0.0,
+        0.0
+      ],
+      "var_period_d": [
+        5.0,
+        30.0
+      ]
+    },
+    "injection": {
+      "trials_per_star": 50,
+      "expected_snr": [
+        3.0,
+        30.0
+      ],
+      "period_d": [
+        1.0,
+        30.0
+      ],
+      "b": [
+        0.0,
+        0.9
+      ],
+      "noise_detrend": "biweight-1.0",
+      "supersample": 7
+    },
+    "detrend": [
+      "biweight-1.0"
+    ],
+    "search": {
+      "method": "bls",
+      "durations_hr": [
+        1.5,
+        2.5,
+        4.0,
+        6.0,
+        9.0
+      ],
+      "oversample": 3.0,
+      "bin_min": 60.0
+    },
+    "recovery": {
+      "sde_threshold": 7.0,
+      "period_tol": 0.01,
+      "min_transits": 2
+    },
+    "false_alarm": {
+      "inverted": true,
+      "scrambles": 4,
+      "block_d": 10.0
+    },
+    "n_jobs": 4,
+    "cache_dir": "cache"
+  },
+  "git_commit": "932b588e8521565c80f69673f95d1eab9dbf789a",
+  "git_dirty": false,
+  "spacesift_version": "0.1.0",
+  "preprocessing_version": "0.1",
+  "package_versions": {
+    "spacesift": "0.1.0",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "pandas": "2.3.3",
+    "astropy": "8.0.1",
+    "lightkurve": "2.6.0",
+    "wotan": "1.10",
+    "pydantic": "2.13.5"
+  },
+  "seed": 29481,
+  "started": "2026-10-06T03:13:07.307999+00:00",
+  "finished": "2026-10-06T03:20:55.582741+00:00",
+  "shard": [
+    6,
+    10
+  ]
+}
