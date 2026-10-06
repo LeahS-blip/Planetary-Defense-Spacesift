@@ -1,0 +1,236 @@
+{
+  "id": "SS-0001",
+  "question": "Does our BLS injection-recovery reproduce the published completeness-vs-SNR curve?",
+  "config_file": "configs/SS-0001.yaml",
+  "config_sha256": "ecbc705bdcac28dbd0f810c31089e6638c11785b305a6337dfe3ade9552f16fc",
+  "config": {
+    "id": "SS-0001",
+    "question": "Does our BLS injection-recovery reproduce the published completeness-vs-SNR curve?",
+    "seed": 29481,
+    "mission": "kepler",
+    "stars_file": "configs/stars/SS-0001.csv",
+    "quarters": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "max_stars": null,
+    "synthetic": {
+      "n_stars": 20,
+      "baseline_d": 360.0,
+      "noise_ppm": [
+        100.0,
+        400.0
+      ],
+      "var_amp_ppm": [
+        0.0,
+        0.0
+      ],
+      "var_period_d": [
+        5.0,
+        30.0
+      ]
+    },
+    "injection": {
+      "trials_per_star": 50,
+      "expected_snr": [
+        3.0,
+        30.0
+      ],
+      "period_d": [
+        1.0,
+        30.0
+      ],
+      "b": [
+        0.0,
+        0.9
+      ],
+      "noise_detrend": "biweight-1.0",
+      "supersample": 7
+    },
+    "detrend": [
+      "biweight-1.0"
+    ],
+    "search": {
+      "method": "bls",
+      "durations_hr": [
+        1.5,
+        2.5,
+        4.0,
+        6.0,
+        9.0
+      ],
+      "oversample": 3.0,
+      "bin_min": 60.0
+    },
+    "recovery": {
+      "sde_threshold": 7.0,
+      "period_tol": 0.01,
+      "min_transits": 2
+    },
+    "n_jobs": 4,
+    "cache_dir": "cache"
+  },
+  "git_commit": "a03c831be28776638ec1be204c713f91a101ba7a",
+  "git_dirty": false,
+  "spacesift_version": "0.1.0",
+  "preprocessing_version": "0.1",
+  "package_versions": {
+    "spacesift": "0.1.0",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "pandas": "2.3.3",
+    "astropy": "8.0.1",
+    "lightkurve": "2.6.0",
+    "wotan": "1.10",
+    "pydantic": "2.13.5"
+  },
+  "seed": 29481,
+  "started": "2026-10-05T01:14:38.672709+00:00",
+  "finished": "2026-10-05T02:20:01.316306+00:00",
+  "n_shards": 10,
+  "n_stars": 200,
+  "n_stars_failed": 0,
+  "n_trials": 10000,
+  "summary": {
+    "biweight-1.0": {
+      "status_counts": {
+        "recovered": 4318,
+        "alias_half": 1,
+        "alias_double": 5,
+        "wrong_period": 259,
+        "below_threshold": 5417,
+        "not_observable": 0
+      },
+      "gamma_cdf_fit": {
+        "a": 0.9624115230669605,
+        "k": 20.84720573364418,
+        "theta": 0.5143445776927188,
+        "snr_50pct": 10.666032407389384
+      },
+      "completeness_vs_snr": [
+        {
+          "lo": 2.8985,
+          "hi": 3.5405,
+          "n": 742,
+          "k": 0,
+          "mid": 3.2034,
+          "frac": 0.0,
+          "lo68": 0.0,
+          "hi68": 0.0013
+        },
+        {
+          "lo": 3.5405,
+          "hi": 4.3247,
+          "n": 892,
+          "k": 1,
+          "mid": 3.913,
+          "frac": 0.0011,
+          "lo68": 0.0004,
+          "hi68": 0.0029
+        },
+        {
+          "lo": 4.3247,
+          "hi": 5.2827,
+          "n": 870,
+          "k": 0,
+          "mid": 4.7798,
+          "frac": 0.0,
+          "lo68": 0.0,
+          "hi68": 0.0011
+        },
+        {
+          "lo": 5.2827,
+          "hi": 6.4528,
+          "n": 898,
+          "k": 11,
+          "mid": 5.8385,
+          "frac": 0.0122,
+          "lo68": 0.0091,
+          "hi68": 0.0165
+        },
+        {
+          "lo": 6.4528,
+          "hi": 7.8821,
+          "n": 885,
+          "k": 32,
+          "mid": 7.1317,
+          "frac": 0.0362,
+          "lo68": 0.0304,
+          "hi68": 0.043
+        },
+        {
+          "lo": 7.8821,
+          "hi": 9.628,
+          "n": 870,
+          "k": 176,
+          "mid": 8.7115,
+          "frac": 0.2023,
+          "lo68": 0.189,
+          "hi68": 0.2163
+        },
+        {
+          "lo": 9.628,
+          "hi": 11.7607,
+          "n": 861,
+          "k": 444,
+          "mid": 10.6411,
+          "frac": 0.5157,
+          "lo68": 0.4986,
+          "hi68": 0.5327
+        },
+        {
+          "lo": 11.7607,
+          "hi": 14.3657,
+          "n": 878,
+          "k": 700,
+          "mid": 12.9981,
+          "frac": 0.7973,
+          "lo68": 0.7834,
+          "hi68": 0.8105
+        },
+        {
+          "lo": 14.3657,
+          "hi": 17.5478,
+          "n": 829,
+          "k": 760,
+          "mid": 15.8773,
+          "frac": 0.9168,
+          "lo68": 0.9067,
+          "hi68": 0.9259
+        },
+        {
+          "lo": 17.5478,
+          "hi": 21.4347,
+          "n": 868,
+          "k": 823,
+          "mid": 19.3941,
+          "frac": 0.9482,
+          "lo68": 0.9401,
+          "hi68": 0.9552
+        },
+        {
+          "lo": 21.4347,
+          "hi": 26.1826,
+          "n": 839,
+          "k": 819,
+          "mid": 23.69,
+          "frac": 0.9762,
+          "lo68": 0.9703,
+          "hi68": 0.9809
+        },
+        {
+          "lo": 26.1826,
+          "hi": 31.9821,
+          "n": 567,
+          "k": 552,
+          "mid": 28.9374,
+          "frac": 0.9735,
+          "lo68": 0.9659,
+          "hi68": 0.9795
+        }
+      ]
+    }
+  }
+}
