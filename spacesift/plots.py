@@ -114,9 +114,13 @@ def plot_star(time, flux, flat, cand, inv_cand, star_id: str, path: Path) -> Non
     axes[1].plot(time, flat, ",k", alpha=0.5)
     axes[1].set_title("Detrended")
     phase = ((time - cand.t0 + 0.5 * cand.period) % cand.period) - 0.5 * cand.period
-    axes[2].plot(phase * 24, flat, ".k", ms=1.5, alpha=0.3)
+    # Show at most +-12 h (or half the period): enough for several cycles of fast
+    # variability, and narrow enough that a short dip at long period stays visible.
+    half = min(12.0, 12 * cand.period)
+    win = np.abs(phase * 24) < half
+    axes[2].plot(phase[win] * 24, flat[win], ".k", ms=1.5, alpha=0.3)
     # Binned fold so a shallow dip is visible over the scatter.
-    bins = np.linspace(-12 * cand.period, 12 * cand.period, 121)
+    bins = np.linspace(-half, half, 121)
     idx = np.digitize(phase * 24, bins)
     centers = 0.5 * (bins[1:] + bins[:-1])
     med = [np.median(flat[idx == i]) if (idx == i).sum() > 5 else np.nan for i in range(1, len(bins))]
