@@ -49,7 +49,7 @@ def cmd_replay(args):
     star_index = int(row.star_index)
     star = build_stars(cfg)[star_index]
     lc = load_star(cfg, star, star_index)
-    status, cand = run_trial(cfg, lc, star, inj, row.detrend)
+    status, cand, _ = run_trial(cfg, lc, star, inj, row.detrend)
     print(f"stored status: {row.status} | replayed status: {status}")
     model = transit_model(lc.time, inj, star.u1, star.u2, lc.exptime, cfg.injection.supersample)
     flat = flatten(lc.time, lc.flux * model, row.detrend)

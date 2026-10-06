@@ -19,7 +19,7 @@ from .config import ExperimentConfig, load_config
 from .data import LightCurve, load_mission, read_stars, synthetic
 from .detrend import clean, flatten
 from .evaluate import STATUSES, completeness, fit_gamma_cdf, match
-from .inject import Injection, Star, inject, sample_injection
+from .inject import Injection, Star, sample_injection, transit_model
 from .search import SEARCHES, Candidate
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -93,15 +93,34 @@ def run_search(cfg: ExperimentConfig, time: np.ndarray, flux_flat: np.ndarray) -
     )
 
 
-def run_trial(cfg: ExperimentConfig, lc: LightCurve, star: Star, inj: Injection, spec: str) -> tuple[str, Candidate | None]:
+def depth_metrics(t: np.ndarray, f_flat: np.ndarray, model: np.ndarray, inj: Injection) -> dict:
+    """How much transit survives detrending, measured without any search.
+
+    model_mean_depth: mean of (1 - model) over in-transit cadences (the injected signal).
+    detrended_depth_ratio: the same mean measured on the detrended flux, over the model's.
+    A ratio below 1 means detrending removed part of the transit; noise averages out
+    over many trials. BLS box bias is then found_depth / model_mean_depth.
+    """
+    phase = np.abs(((t - inj.t0 + 0.5 * inj.period) % inj.period) - 0.5 * inj.period)
+    inside = phase < inj.duration / 2
+    if not inside.any():
+        return {"model_mean_depth": np.nan, "detrended_depth_ratio": np.nan}
+    model_mean = float(np.mean(1 - model[inside]))
+    return {"model_mean_depth": model_mean,
+            "detrended_depth_ratio": float(np.mean(1 - f_flat[inside]) / model_mean)}
+
+
+def run_trial(cfg: ExperimentConfig, lc: LightCurve, star: Star, inj: Injection,
+              spec: str) -> tuple[str, Candidate | None, dict]:
     if inj.n_transits < cfg.recovery.min_transits:
-        return "not_observable", None
-    flux = inject(lc.time, lc.flux, inj, star, lc.exptime, cfg.injection.supersample)
-    t, f = clean(lc.time, flatten(lc.time, flux, spec))
+        return "not_observable", None, {}
+    model = transit_model(lc.time, inj, star.u1, star.u2, lc.exptime, cfg.injection.supersample)
+    t, f = clean(lc.time, flatten(lc.time, lc.flux * model, spec))
+    metrics = depth_metrics(t, f, model[np.isin(lc.time, t)], inj)
     cand = run_search(cfg, t, f)
     r = cfg.recovery
-    return match(inj, cand, sde_threshold=r.sde_threshold, period_tol=r.period_tol,
-                 min_transits=r.min_transits), cand
+    status = match(inj, cand, sde_threshold=r.sde_threshold, period_tol=r.period_tol, min_transits=r.min_transits)
+    return status, cand, metrics
 
 
 def null_rows(cfg: ExperimentConfig, lc: LightCurve, star: Star, star_index: int) -> list[dict]:
@@ -153,11 +172,11 @@ def _run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[
         inj = sample_injection(rng, t_noise, f_noise, star, cfg.injection.expected_snr,
                                cfg.injection.period_d, cfg.injection.b)
         for spec in cfg.detrend:
-            status, cand = run_trial(cfg, lc, star, inj, spec)
+            status, cand, metrics = run_trial(cfg, lc, star, inj, spec)
             rows.append({
                 "star_id": star.star_id, "star_index": star_index, "trial": j, "trial_seed": seed,
                 "detrend": spec, "search": cfg.search.method, "status": status,
-                **inj.to_dict(), **(cand.to_dict() if cand else {}),
+                **inj.to_dict(), **(cand.to_dict() if cand else {}), **metrics,
             })
     star_row["seconds"] = clock.perf_counter() - started
     return rows, star_row
@@ -308,6 +327,14 @@ def summarize(trials: pd.DataFrame) -> dict:
             "gamma_cdf_fit": fit_gamma_cdf(obs.inj_expected_snr, obs.status == "recovered"),
             "completeness_vs_snr": completeness(d).round(4).to_dict("records"),
         }
+        if "detrended_depth_ratio" in d.columns:
+            rec = d[d.status == "recovered"]
+            out[spec]["depth"] = {
+                "median_detrended_depth_ratio": float(obs.detrended_depth_ratio.median()),
+                "median_found_over_injected_central_depth": float((rec.found_depth / rec.inj_depth).median()),
+                "median_found_over_model_mean_depth": float((rec.found_depth / rec.model_mean_depth).median()),
+                "median_model_mean_over_central_depth": float((obs.model_mean_depth / obs.inj_depth).median()),
+            }
     return out
 
 
