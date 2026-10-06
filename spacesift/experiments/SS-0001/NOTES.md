@@ -21,10 +21,22 @@ that survive biweight detrending with a 1-day window. Fast coherent variability 
 therefore a concrete false-alarm source for this pipeline, and probably also a source of
 missed injections on those stars. That makes it a candidate failure mode for SS-0002.
 
+## Detection threshold (from SS-0001-null, 1,800 noise-only searches)
+
+| False-alarm rate | SDE threshold | Stars excluded | 50% completeness at SNR | Plateau |
+| --- | --- | --- | --- | --- |
+| 1.3% (old fixed SDE 7) | 7.00 | none | 10.67 | 0.962 |
+| 1% | 7.25 | 5 | 10.85 | 0.973 |
+| 0.1% (unreliable, see below) | 9.88 | 2 | 13.50 | 0.960 |
+
+Results: `analysis/far0.01/` and `analysis/far0.001/` (`spacesift analyze ... --null experiments/SS-0001-null --far <rate>`).
+
+- **The SS-0001 curve holds up.** Moving from SDE 7 to a calibrated 1% false-alarm threshold shifts the 50% point by 0.2 in SNR.
+- **The pulsating stars hide every planet.** On KIC 6205852 and 4280576, all 50 trials each returned the stellar oscillation period instead of the injected planet, whatever its SNR. Together they produced 100 of the 259 "wrong period" results. This is variability *masking* detection, not just causing false alarms.
+- **The 0.1% threshold is driven by those two stars.** Their inverted searches (SDE 15–16) are the only null samples above ~8.5. Scrambling breaks their coherent oscillation, so the scrambled tails end near 8.5. With 1,800 samples, 0.1% rests on ~2 points. Re-derive it with the pulsators removed from the null set, and with more scrambles, before using it.
+
 ## Open items
 
-- Detection threshold: set from SS-0001-null at a fixed false-alarm rate, then
-  `spacesift analyze experiments/SS-0001 --null experiments/SS-0001-null --name far1pct`.
 - Recovered transits come out ~21% shallower than injected (median found/injected
   depth 0.79): detrending suppression vs BLS box-shape bias still to be separated.
 - 4% of injections above SNR 16 are missed (103 trials): inspect with `spacesift replay`.
