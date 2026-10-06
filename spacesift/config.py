@@ -42,10 +42,23 @@ class RecoveryCfg(BaseModel):
     min_transits: int = 2
 
 
+class NullCfg(BaseModel):
+    """False-alarm test: search light curves that cannot contain a real periodic transit.
+
+    inverted: flux flipped about 1, so dips become bumps (the 'snr' BLS objective
+    only rewards dips). scrambled: blocks of block_d days shuffled in time, which
+    destroys any strict periodicity but keeps the noise. Kepler DR25 used both.
+    """
+    inverted: bool = True
+    scrambles: int = 4  # scrambled realisations per star, each also searched inverted
+    block_d: float = 10.0
+
+
 class ExperimentConfig(BaseModel):
     id: str
     question: str
     seed: int
+    kind: Literal["injection", "null"] = "injection"
     mission: Literal["kepler", "tess", "synthetic"]
     stars_file: str | None = None
     quarters: list[int] | None = None  # Kepler quarters, or TESS sectors
@@ -55,6 +68,7 @@ class ExperimentConfig(BaseModel):
     detrend: list[str] = Field(default_factory=lambda: ["biweight-1.0"])
     search: SearchCfg = Field(default_factory=SearchCfg)
     recovery: RecoveryCfg = Field(default_factory=RecoveryCfg)
+    null: NullCfg = Field(default_factory=NullCfg)
     n_jobs: int = 1
     cache_dir: str = "cache"
 
