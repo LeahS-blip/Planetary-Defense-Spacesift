@@ -37,6 +37,9 @@ Results: `analysis/far0.01/` and `analysis/far0.001/` (`spacesift analyze ... --
 
 ## Open items
 
-- Recovered transits come out ~21% shallower than injected (median found/injected
-  depth 0.79): detrending suppression vs BLS box-shape bias still to be separated.
+- ~~Recovered transits come out ~21% shallower than injected.~~ Resolved by
+  `experiments/SS-0001-depth`. About 15% is definition: BLS measures the box-average
+  depth, and a limb-darkened transit averages 0.85 of its central depth. About 10% is
+  real loss: the 1-day biweight removes 8% of transits under 3 h and 17% at 5-7 h.
+  Expected SNR should be defined from the mean in-transit depth, not the central depth.
 - 4% of injections above SNR 16 are missed (103 trials): inspect with `spacesift replay`.
