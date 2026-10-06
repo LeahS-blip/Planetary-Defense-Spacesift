@@ -104,6 +104,21 @@ def run_trial(cfg: ExperimentConfig, lc: LightCurve, star: Star, inj: Injection,
                  min_transits=r.min_transits), cand
 
 
+def null_rows(cfg: ExperimentConfig, lc: LightCurve, star: Star, star_index: int) -> list[dict]:
+    """Search every null variant of the star's detrended light curve; one row per search."""
+    from .null import null_variants
+
+    rows = []
+    for spec in cfg.detrend:
+        t, f = clean(lc.time, flatten(lc.time, lc.flux, spec))
+        rng_for = lambda k: np.random.default_rng(trial_seed(cfg.seed, star_index, k))
+        for kind, k, tv, fv in null_variants(t, f, cfg.null, rng_for):
+            cand = run_search(cfg, tv, fv)
+            rows.append({"star_id": star.star_id, "star_index": star_index, "trial": k, "detrend": spec,
+                         "search": cfg.search.method, "status": "null", "null_kind": kind, **cand.to_dict()})
+    return rows
+
+
 def run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[dict], dict]:
     """All trials for one star. Any failure drops the whole star (no partial rows) and is
     recorded in stars.parquet, so one bad star cannot end a long run."""
@@ -125,6 +140,11 @@ def _run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[
     star_row = {"star_id": star.star_id, "n_points": lc.time.size,
                 "baseline_d": float(lc.time.max() - lc.time.min()),
                 "pre_sde": pre.sde, "pre_period": pre.period, "error": None}
+
+    if cfg.kind == "null":
+        rows = null_rows(cfg, lc, star, star_index)
+        star_row["seconds"] = clock.perf_counter() - started
+        return rows, star_row
 
     rows = []
     for j in range(cfg.injection.trials_per_star):
@@ -244,17 +264,39 @@ def merge_shards(exp: Path) -> Path:
 def write_record(exp: Path, provenance: dict, trials: pd.DataFrame, star_table: pd.DataFrame) -> None:
     trials.to_parquet(exp / "trials.parquet")
     star_table.to_parquet(exp / "stars.parquet")
+    is_null = "null_kind" in trials.columns
     record = {
         **provenance,
         "n_stars": int(len(star_table)),
         "n_stars_failed": int(star_table["error"].notna().sum()) if len(star_table) else 0,
         "n_trials": int(len(trials)),
-        "summary": summarize(trials) if len(trials) else {},
+        "summary": (summarize_null(trials) if is_null else summarize(trials)) if len(trials) else {},
     }
     (exp / "record.json").write_text(json.dumps(record, indent=2))
     if len(trials):
-        from .plots import plot_experiment
-        plot_experiment(trials, exp / "plots")
+        from .plots import plot_experiment, plot_null
+        (plot_null if is_null else plot_experiment)(trials, exp / "plots")
+
+
+FALSE_ALARM_RATES = (0.01, 0.005, 0.001)
+
+
+def summarize_null(trials: pd.DataFrame) -> dict:
+    """SDE distribution of null searches and the threshold that gives each false-alarm rate.
+
+    False-alarm rate = fraction of noise-only searches whose top peak beats the threshold.
+    """
+    out = {}
+    for spec, d in trials.groupby("detrend"):
+        sde = d.found_sde.to_numpy()
+        out[spec] = {
+            "n_null_searches": int(len(d)),
+            "sde_quantiles_by_kind": {k: g.found_sde.quantile([.5, .9, .99]).round(3).tolist()
+                                      for k, g in d.groupby("null_kind")},
+            "threshold_for_far": {str(far): float(np.quantile(sde, 1 - far)) for far in FALSE_ALARM_RATES},
+            "far_at_sde_7": float((sde > 7).mean()),
+        }
+    return out
 
 
 def summarize(trials: pd.DataFrame) -> dict:

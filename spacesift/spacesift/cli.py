@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 
@@ -58,6 +59,36 @@ def cmd_replay(args):
     print(f"wrote {out}")
 
 
+def cmd_analyze(args):
+    from .analysis import analyze
+
+    analyze(Path(args.experiment), args.name, sde_threshold=args.sde_threshold,
+            null_exp=Path(args.null) if args.null else None, far=args.far, exclude=args.exclude)
+
+
+def cmd_inspect_star(args):
+    """Plot a star's own light curve and best pre-injection signal (downloads if not cached)."""
+    from .config import load_config
+    from .detrend import clean, flatten
+    from .null import invert
+    from .plots import plot_star
+    from .runner import build_stars, load_star, run_search
+
+    cfg, _ = load_config(Path(args.config))
+    stars = build_stars(cfg)
+    index = next(i for i, s in enumerate(stars) if s.star_id == args.star)
+    lc = load_star(cfg, stars[index], index)
+    t, f = clean(lc.time, flatten(lc.time, lc.flux, cfg.injection.noise_detrend))
+    cand = run_search(cfg, t, f)
+    inv = run_search(cfg, t, invert(f))
+    out = Path(args.out or f"experiments/{cfg.id}/stars/KIC{args.star}.png")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    keep = np.isin(lc.time, t)
+    plot_star(t, lc.flux[keep], f, cand, inv, args.star, out)
+    print(f"{args.star}: P={cand.period:.5f} SDE={cand.sde:.2f} depth={cand.depth * 1e6:.0f}ppm "
+          f"dur={cand.duration * 24:.1f}h | inverted SDE={inv.sde:.2f} -> {out}")
+
+
 def cmd_select(args):
     from .data import select_kepler_stars
 
@@ -89,6 +120,21 @@ def main(argv=None):
     rp.add_argument("--detrend")
     rp.add_argument("--out")
     rp.set_defaults(func=cmd_replay)
+
+    a = sub.add_parser("analyze", help="re-derive results under a new threshold / star exclusions")
+    a.add_argument("experiment")
+    a.add_argument("--name", required=True, help="output folder under <experiment>/analysis/")
+    a.add_argument("--sde-threshold", type=float)
+    a.add_argument("--null", help="null experiment folder; threshold taken at --far")
+    a.add_argument("--far", type=float, default=0.01, choices=[0.01, 0.005, 0.001])
+    a.add_argument("--exclude", nargs="*", default=[], help="star ids to drop")
+    a.set_defaults(func=cmd_analyze)
+
+    i = sub.add_parser("inspect-star", help="plot a star's own best signal before injection")
+    i.add_argument("config")
+    i.add_argument("--star", required=True)
+    i.add_argument("--out")
+    i.set_defaults(func=cmd_inspect_star)
 
     s = sub.add_parser("select-stars", help="freeze a Kepler star sample to CSV")
     s.add_argument("--n", type=int, default=200)
