@@ -1,0 +1,60 @@
+# SpaceSift: merge the shard artifacts of an earlier spacesift-experiment run
+# without recomputing them (e.g. when that run's merge job failed).
+#   Actions tab -> spacesift-merge -> Run workflow, with the earlier run's id
+#   (the number at the end of its URL: .../actions/runs/<run_id>).
+
+name: spacesift-merge
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Run id of the spacesift-experiment run whose shards to merge
+        required: true
+      config:
+        description: Experiment config, relative to spacesift/
+        default: configs/SS-0001.yaml
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+defaults:
+  run:
+    working-directory: spacesift
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Find experiment id
+        id: exp
+        run: echo "id=$(python -c "import yaml; print(yaml.safe_load(open('${{ inputs.config }}'))['id'])")" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shard-*
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: spacesift/experiments/${{ steps.exp.outputs.id }}/shards
+      - name: Merge
+        # Provenance (git commit, versions) comes from the shards, i.e. the code that produced the trials.
+        run: |
+          cp "${{ inputs.config }}" "experiments/${{ steps.exp.outputs.id }}/config.yaml"
+          spacesift merge "experiments/${{ steps.exp.outputs.id }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.exp.outputs.id }}
+          path: spacesift/experiments/${{ steps.exp.outputs.id }}/
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "experiments/${{ steps.exp.outputs.id }}"
+          git commit -m "spacesift results: ${{ steps.exp.outputs.id }} (shards from run ${{ inputs.run_id }})"
+          for i in 1 2 3; do git pull --rebase -q && git push && break; sleep 10; done

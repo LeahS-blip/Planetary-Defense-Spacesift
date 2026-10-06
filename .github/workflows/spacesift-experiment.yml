@@ -39,12 +39,16 @@ jobs:
         with:
           path: spacesift/cache
           key: spacesift-lc-${{ hashFiles('spacesift/configs/stars/**') }}-shard${{ matrix.shard }}
+      - name: Find experiment id
+        id: exp
+        run: echo "id=$(python -c "import yaml; print(yaml.safe_load(open('${{ inputs.config }}'))['id'])")" >> "$GITHUB_OUTPUT"
       - name: Run shard
         run: spacesift run "${{ inputs.config }}" --shard ${{ matrix.shard }}/10 --jobs 4
+      # No wildcard in the path: the artifact root is then the shard folder itself.
       - uses: actions/upload-artifact@v4
         with:
           name: shard-${{ matrix.shard }}
-          path: spacesift/experiments/*/shards/shard-${{ matrix.shard }}/
+          path: spacesift/experiments/${{ steps.exp.outputs.id }}/shards/shard-${{ matrix.shard }}/
           if-no-files-found: error
 
   merge:
