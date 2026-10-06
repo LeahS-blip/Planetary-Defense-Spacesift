@@ -112,7 +112,7 @@ def null_rows(cfg: ExperimentConfig, lc: LightCurve, star: Star, star_index: int
     for spec in cfg.detrend:
         t, f = clean(lc.time, flatten(lc.time, lc.flux, spec))
         rng_for = lambda k: np.random.default_rng(trial_seed(cfg.seed, star_index, k))
-        for kind, k, tv, fv in null_variants(t, f, cfg.null, rng_for):
+        for kind, k, tv, fv in null_variants(t, f, cfg.false_alarm, rng_for):
             cand = run_search(cfg, tv, fv)
             rows.append({"star_id": star.star_id, "star_index": star_index, "trial": k, "detrend": spec,
                          "search": cfg.search.method, "status": "null", "null_kind": kind, **cand.to_dict()})
@@ -141,7 +141,7 @@ def _run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[
                 "baseline_d": float(lc.time.max() - lc.time.min()),
                 "pre_sde": pre.sde, "pre_period": pre.period, "error": None}
 
-    if cfg.kind == "null":
+    if cfg.kind == "false_alarm":
         rows = null_rows(cfg, lc, star, star_index)
         star_row["seconds"] = clock.perf_counter() - started
         return rows, star_row

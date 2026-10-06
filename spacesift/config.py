@@ -42,7 +42,7 @@ class RecoveryCfg(BaseModel):
     min_transits: int = 2
 
 
-class NullCfg(BaseModel):
+class FalseAlarmCfg(BaseModel):
     """False-alarm test: search light curves that cannot contain a real periodic transit.
 
     inverted: flux flipped about 1, so dips become bumps (the 'snr' BLS objective
@@ -58,7 +58,8 @@ class ExperimentConfig(BaseModel):
     id: str
     question: str
     seed: int
-    kind: Literal["injection", "null"] = "injection"
+    # Not "null": YAML would read that as None.
+    kind: Literal["injection", "false_alarm"] = "injection"
     mission: Literal["kepler", "tess", "synthetic"]
     stars_file: str | None = None
     quarters: list[int] | None = None  # Kepler quarters, or TESS sectors
@@ -68,7 +69,7 @@ class ExperimentConfig(BaseModel):
     detrend: list[str] = Field(default_factory=lambda: ["biweight-1.0"])
     search: SearchCfg = Field(default_factory=SearchCfg)
     recovery: RecoveryCfg = Field(default_factory=RecoveryCfg)
-    null: NullCfg = Field(default_factory=NullCfg)
+    false_alarm: FalseAlarmCfg = Field(default_factory=FalseAlarmCfg)
     n_jobs: int = 1
     cache_dir: str = "cache"
 

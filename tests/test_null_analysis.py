@@ -33,7 +33,7 @@ def test_null_experiment_and_reanalysis(tmp_path: Path):
     import json
     from spacesift.analysis import analyze
 
-    null = _run(tmp_path, "NULL", {"kind": "null", "null": {"scrambles": 2}})
+    null = _run(tmp_path, "NULL", {"kind": "false_alarm", "false_alarm": {"scrambles": 2}})
     rows = pd.read_parquet(null / "trials.parquet")
     assert len(rows) == 2 * (1 + 2 * 2)  # per star: inverted + 2 x (scrambled, scrambled_inverted)
     thr = json.loads((null / "record.json").read_text())["summary"]["biweight-1.0"]["threshold_for_far"]

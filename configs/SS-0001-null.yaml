@@ -5,7 +5,7 @@
 id: SS-0001-null
 question: What SDE threshold gives a 1% false-alarm rate for the SS-0001 pipeline?
 seed: 29481
-kind: null
+kind: false_alarm
 mission: kepler
 stars_file: configs/stars/SS-0001.csv
 quarters: [2, 3, 4, 5]
@@ -17,7 +17,7 @@ search:
   durations_hr: [1.5, 2.5, 4.0, 6.0, 9.0]
   oversample: 3
   bin_min: 60
-null:
+false_alarm:
   inverted: true
   scrambles: 4
   block_d: 10.0
