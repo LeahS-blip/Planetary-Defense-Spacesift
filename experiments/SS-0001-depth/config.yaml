@@ -1,0 +1,30 @@
+# Why do recovered SS-0001 transits come out ~21% shallower than injected?
+# Synthetic, quiet (white-noise) light curves with the same baseline and
+# cadence as SS-0001, and high-SNR injections so depths are measured cleanly.
+# Detrending is varied, including none, to separate two causes:
+#   detrended_depth_ratio < 1      -> detrending removes part of the transit
+#   found_depth / model_mean_depth -> BLS box-shape bias, independent of detrending
+id: SS-0001-depth
+question: Is the depth shortfall in SS-0001 caused by detrending or by the BLS box shape?
+seed: 4242
+mission: synthetic
+synthetic:
+  n_stars: 8
+  baseline_d: 368
+  noise_ppm: [100, 200]
+  var_amp_ppm: [0, 0]
+injection:
+  trials_per_star: 20
+  expected_snr: [15, 40]
+  period_d: [1, 30]
+  b: [0, 0.9]
+  noise_detrend: biweight-1.0
+detrend: [none, biweight-0.5, biweight-1.0, biweight-2.0]
+search:
+  method: bls
+  durations_hr: [1.5, 2.5, 4.0, 6.0, 9.0]
+  oversample: 3
+  bin_min: 60
+recovery:
+  sde_threshold: 7.25  # 1% false-alarm rate from SS-0001-null
+n_jobs: 8

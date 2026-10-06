@@ -1,0 +1,677 @@
+{
+  "id": "SS-0001-depth",
+  "question": "Is the depth shortfall in SS-0001 caused by detrending or by the BLS box shape?",
+  "config_file": "configs\\SS-0001-depth.yaml",
+  "config_sha256": "9e2bb26814a4c93f3c2dcbc227f1a92cd36111ee726cd5d5d8f86fd0df90354e",
+  "config": {
+    "id": "SS-0001-depth",
+    "question": "Is the depth shortfall in SS-0001 caused by detrending or by the BLS box shape?",
+    "seed": 4242,
+    "kind": "injection",
+    "mission": "synthetic",
+    "stars_file": null,
+    "quarters": null,
+    "max_stars": null,
+    "synthetic": {
+      "n_stars": 8,
+      "baseline_d": 368.0,
+      "noise_ppm": [
+        100.0,
+        200.0
+      ],
+      "var_amp_ppm": [
+        0.0,
+        0.0
+      ],
+      "var_period_d": [
+        5.0,
+        30.0
+      ]
+    },
+    "injection": {
+      "trials_per_star": 20,
+      "expected_snr": [
+        15.0,
+        40.0
+      ],
+      "period_d": [
+        1.0,
+        30.0
+      ],
+      "b": [
+        0.0,
+        0.9
+      ],
+      "noise_detrend": "biweight-1.0",
+      "supersample": 7
+    },
+    "detrend": [
+      "none",
+      "biweight-0.5",
+      "biweight-1.0",
+      "biweight-2.0"
+    ],
+    "search": {
+      "method": "bls",
+      "durations_hr": [
+        1.5,
+        2.5,
+        4.0,
+        6.0,
+        9.0
+      ],
+      "oversample": 3.0,
+      "bin_min": 60.0
+    },
+    "recovery": {
+      "sde_threshold": 7.25,
+      "period_tol": 0.01,
+      "min_transits": 2
+    },
+    "false_alarm": {
+      "inverted": true,
+      "scrambles": 4,
+      "block_d": 10.0
+    },
+    "n_jobs": 8,
+    "cache_dir": "cache"
+  },
+  "git_commit": "54fedba39aa748230a5b72312ac7b58ac6878bf4",
+  "git_dirty": false,
+  "spacesift_version": "0.1.0",
+  "preprocessing_version": "0.1",
+  "package_versions": {
+    "spacesift": "0.1.0",
+    "numpy": "2.4.2",
+    "scipy": "1.17.0",
+    "pandas": "2.3.3",
+    "astropy": "8.0.1",
+    "lightkurve": "2.6.0",
+    "wotan": "1.10",
+    "pydantic": "2.13.4"
+  },
+  "seed": 4242,
+  "started": "2026-10-06T03:33:44.715825+00:00",
+  "finished": "2026-10-06T04:02:34.871932+00:00",
+  "n_stars": 8,
+  "n_stars_failed": 0,
+  "n_trials": 640,
+  "summary": {
+    "biweight-0.5": {
+      "status_counts": {
+        "recovered": 160,
+        "alias_half": 0,
+        "alias_double": 0,
+        "wrong_period": 0,
+        "below_threshold": 0,
+        "not_observable": 0
+      },
+      "gamma_cdf_fit": {
+        "a": 0.999999999639456,
+        "k": 10.47823762219226,
+        "theta": 0.3308713463942846,
+        "snr_50pct": 3.3573037698081443
+      },
+      "completeness_vs_snr": [
+        {
+          "lo": 14.7627,
+          "hi": 16.0745,
+          "n": 5,
+          "k": 5,
+          "mid": 15.4046,
+          "frac": 1.0,
+          "lo68": 0.8333,
+          "hi68": 1.0
+        },
+        {
+          "lo": 16.0745,
+          "hi": 17.5029,
+          "n": 10,
+          "k": 10,
+          "mid": 16.7735,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        },
+        {
+          "lo": 17.5029,
+          "hi": 19.0582,
+          "n": 12,
+          "k": 12,
+          "mid": 18.264,
+          "frac": 1.0,
+          "lo68": 0.9231,
+          "hi68": 1.0
+        },
+        {
+          "lo": 19.0582,
+          "hi": 20.7517,
+          "n": 18,
+          "k": 18,
+          "mid": 19.8869,
+          "frac": 1.0,
+          "lo68": 0.9474,
+          "hi68": 1.0
+        },
+        {
+          "lo": 20.7517,
+          "hi": 22.5957,
+          "n": 14,
+          "k": 14,
+          "mid": 21.6541,
+          "frac": 1.0,
+          "lo68": 0.9333,
+          "hi68": 1.0
+        },
+        {
+          "lo": 22.5957,
+          "hi": 24.6035,
+          "n": 17,
+          "k": 17,
+          "mid": 23.5782,
+          "frac": 1.0,
+          "lo68": 0.9444,
+          "hi68": 1.0
+        },
+        {
+          "lo": 24.6035,
+          "hi": 26.7898,
+          "n": 10,
+          "k": 10,
+          "mid": 25.6734,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        },
+        {
+          "lo": 26.7898,
+          "hi": 29.1703,
+          "n": 13,
+          "k": 13,
+          "mid": 27.9547,
+          "frac": 1.0,
+          "lo68": 0.9286,
+          "hi68": 1.0
+        },
+        {
+          "lo": 29.1703,
+          "hi": 31.7624,
+          "n": 22,
+          "k": 22,
+          "mid": 30.4388,
+          "frac": 1.0,
+          "lo68": 0.9565,
+          "hi68": 1.0
+        },
+        {
+          "lo": 31.7624,
+          "hi": 34.5848,
+          "n": 15,
+          "k": 15,
+          "mid": 33.1436,
+          "frac": 1.0,
+          "lo68": 0.9375,
+          "hi68": 1.0
+        },
+        {
+          "lo": 34.5848,
+          "hi": 37.658,
+          "n": 13,
+          "k": 13,
+          "mid": 36.0887,
+          "frac": 1.0,
+          "lo68": 0.9286,
+          "hi68": 1.0
+        },
+        {
+          "lo": 37.658,
+          "hi": 41.0043,
+          "n": 10,
+          "k": 10,
+          "mid": 39.2956,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        }
+      ],
+      "depth": {
+        "median_detrended_depth_ratio": 0.7855590442889657,
+        "median_found_over_injected_central_depth": 0.7004750971065609,
+        "median_found_over_model_mean_depth": 0.8257730793182245,
+        "median_model_mean_over_central_depth": 0.8511562985891223
+      }
+    },
+    "biweight-1.0": {
+      "status_counts": {
+        "recovered": 160,
+        "alias_half": 0,
+        "alias_double": 0,
+        "wrong_period": 0,
+        "below_threshold": 0,
+        "not_observable": 0
+      },
+      "gamma_cdf_fit": {
+        "a": 0.999999999639456,
+        "k": 10.47823762219226,
+        "theta": 0.3308713463942846,
+        "snr_50pct": 3.3573037698081443
+      },
+      "completeness_vs_snr": [
+        {
+          "lo": 14.7627,
+          "hi": 16.0745,
+          "n": 5,
+          "k": 5,
+          "mid": 15.4046,
+          "frac": 1.0,
+          "lo68": 0.8333,
+          "hi68": 1.0
+        },
+        {
+          "lo": 16.0745,
+          "hi": 17.5029,
+          "n": 10,
+          "k": 10,
+          "mid": 16.7735,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        },
+        {
+          "lo": 17.5029,
+          "hi": 19.0582,
+          "n": 12,
+          "k": 12,
+          "mid": 18.264,
+          "frac": 1.0,
+          "lo68": 0.9231,
+          "hi68": 1.0
+        },
+        {
+          "lo": 19.0582,
+          "hi": 20.7517,
+          "n": 18,
+          "k": 18,
+          "mid": 19.8869,
+          "frac": 1.0,
+          "lo68": 0.9474,
+          "hi68": 1.0
+        },
+        {
+          "lo": 20.7517,
+          "hi": 22.5957,
+          "n": 14,
+          "k": 14,
+          "mid": 21.6541,
+          "frac": 1.0,
+          "lo68": 0.9333,
+          "hi68": 1.0
+        },
+        {
+          "lo": 22.5957,
+          "hi": 24.6035,
+          "n": 17,
+          "k": 17,
+          "mid": 23.5782,
+          "frac": 1.0,
+          "lo68": 0.9444,
+          "hi68": 1.0
+        },
+        {
+          "lo": 24.6035,
+          "hi": 26.7898,
+          "n": 10,
+          "k": 10,
+          "mid": 25.6734,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        },
+        {
+          "lo": 26.7898,
+          "hi": 29.1703,
+          "n": 13,
+          "k": 13,
+          "mid": 27.9547,
+          "frac": 1.0,
+          "lo68": 0.9286,
+          "hi68": 1.0
+        },
+        {
+          "lo": 29.1703,
+          "hi": 31.7624,
+          "n": 22,
+          "k": 22,
+          "mid": 30.4388,
+          "frac": 1.0,
+          "lo68": 0.9565,
+          "hi68": 1.0
+        },
+        {
+          "lo": 31.7624,
+          "hi": 34.5848,
+          "n": 15,
+          "k": 15,
+          "mid": 33.1436,
+          "frac": 1.0,
+          "lo68": 0.9375,
+          "hi68": 1.0
+        },
+        {
+          "lo": 34.5848,
+          "hi": 37.658,
+          "n": 13,
+          "k": 13,
+          "mid": 36.0887,
+          "frac": 1.0,
+          "lo68": 0.9286,
+          "hi68": 1.0
+        },
+        {
+          "lo": 37.658,
+          "hi": 41.0043,
+          "n": 10,
+          "k": 10,
+          "mid": 39.2956,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        }
+      ],
+      "depth": {
+        "median_detrended_depth_ratio": 0.8948308410975302,
+        "median_found_over_injected_central_depth": 0.7748077070692017,
+        "median_found_over_model_mean_depth": 0.911727741420702,
+        "median_model_mean_over_central_depth": 0.8511562985891223
+      }
+    },
+    "biweight-2.0": {
+      "status_counts": {
+        "recovered": 160,
+        "alias_half": 0,
+        "alias_double": 0,
+        "wrong_period": 0,
+        "below_threshold": 0,
+        "not_observable": 0
+      },
+      "gamma_cdf_fit": {
+        "a": 0.999999999639456,
+        "k": 10.47823762219226,
+        "theta": 0.3308713463942846,
+        "snr_50pct": 3.3573037698081443
+      },
+      "completeness_vs_snr": [
+        {
+          "lo": 14.7627,
+          "hi": 16.0745,
+          "n": 5,
+          "k": 5,
+          "mid": 15.4046,
+          "frac": 1.0,
+          "lo68": 0.8333,
+          "hi68": 1.0
+        },
+        {
+          "lo": 16.0745,
+          "hi": 17.5029,
+          "n": 10,
+          "k": 10,
+          "mid": 16.7735,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        },
+        {
+          "lo": 17.5029,
+          "hi": 19.0582,
+          "n": 12,
+          "k": 12,
+          "mid": 18.264,
+          "frac": 1.0,
+          "lo68": 0.9231,
+          "hi68": 1.0
+        },
+        {
+          "lo": 19.0582,
+          "hi": 20.7517,
+          "n": 18,
+          "k": 18,
+          "mid": 19.8869,
+          "frac": 1.0,
+          "lo68": 0.9474,
+          "hi68": 1.0
+        },
+        {
+          "lo": 20.7517,
+          "hi": 22.5957,
+          "n": 14,
+          "k": 14,
+          "mid": 21.6541,
+          "frac": 1.0,
+          "lo68": 0.9333,
+          "hi68": 1.0
+        },
+        {
+          "lo": 22.5957,
+          "hi": 24.6035,
+          "n": 17,
+          "k": 17,
+          "mid": 23.5782,
+          "frac": 1.0,
+          "lo68": 0.9444,
+          "hi68": 1.0
+        },
+        {
+          "lo": 24.6035,
+          "hi": 26.7898,
+          "n": 10,
+          "k": 10,
+          "mid": 25.6734,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        },
+        {
+          "lo": 26.7898,
+          "hi": 29.1703,
+          "n": 13,
+          "k": 13,
+          "mid": 27.9547,
+          "frac": 1.0,
+          "lo68": 0.9286,
+          "hi68": 1.0
+        },
+        {
+          "lo": 29.1703,
+          "hi": 31.7624,
+          "n": 22,
+          "k": 22,
+          "mid": 30.4388,
+          "frac": 1.0,
+          "lo68": 0.9565,
+          "hi68": 1.0
+        },
+        {
+          "lo": 31.7624,
+          "hi": 34.5848,
+          "n": 15,
+          "k": 15,
+          "mid": 33.1436,
+          "frac": 1.0,
+          "lo68": 0.9375,
+          "hi68": 1.0
+        },
+        {
+          "lo": 34.5848,
+          "hi": 37.658,
+          "n": 13,
+          "k": 13,
+          "mid": 36.0887,
+          "frac": 1.0,
+          "lo68": 0.9286,
+          "hi68": 1.0
+        },
+        {
+          "lo": 37.658,
+          "hi": 41.0043,
+          "n": 10,
+          "k": 10,
+          "mid": 39.2956,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        }
+      ],
+      "depth": {
+        "median_detrended_depth_ratio": 0.9456522468452444,
+        "median_found_over_injected_central_depth": 0.8139895247578064,
+        "median_found_over_model_mean_depth": 0.9614018843320419,
+        "median_model_mean_over_central_depth": 0.8511562985891223
+      }
+    },
+    "none": {
+      "status_counts": {
+        "recovered": 160,
+        "alias_half": 0,
+        "alias_double": 0,
+        "wrong_period": 0,
+        "below_threshold": 0,
+        "not_observable": 0
+      },
+      "gamma_cdf_fit": {
+        "a": 0.999999999639456,
+        "k": 10.47823762219226,
+        "theta": 0.3308713463942846,
+        "snr_50pct": 3.3573037698081443
+      },
+      "completeness_vs_snr": [
+        {
+          "lo": 14.7627,
+          "hi": 16.0745,
+          "n": 5,
+          "k": 5,
+          "mid": 15.4046,
+          "frac": 1.0,
+          "lo68": 0.8333,
+          "hi68": 1.0
+        },
+        {
+          "lo": 16.0745,
+          "hi": 17.5029,
+          "n": 10,
+          "k": 10,
+          "mid": 16.7735,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        },
+        {
+          "lo": 17.5029,
+          "hi": 19.0582,
+          "n": 12,
+          "k": 12,
+          "mid": 18.264,
+          "frac": 1.0,
+          "lo68": 0.9231,
+          "hi68": 1.0
+        },
+        {
+          "lo": 19.0582,
+          "hi": 20.7517,
+          "n": 18,
+          "k": 18,
+          "mid": 19.8869,
+          "frac": 1.0,
+          "lo68": 0.9474,
+          "hi68": 1.0
+        },
+        {
+          "lo": 20.7517,
+          "hi": 22.5957,
+          "n": 14,
+          "k": 14,
+          "mid": 21.6541,
+          "frac": 1.0,
+          "lo68": 0.9333,
+          "hi68": 1.0
+        },
+        {
+          "lo": 22.5957,
+          "hi": 24.6035,
+          "n": 17,
+          "k": 17,
+          "mid": 23.5782,
+          "frac": 1.0,
+          "lo68": 0.9444,
+          "hi68": 1.0
+        },
+        {
+          "lo": 24.6035,
+          "hi": 26.7898,
+          "n": 10,
+          "k": 10,
+          "mid": 25.6734,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        },
+        {
+          "lo": 26.7898,
+          "hi": 29.1703,
+          "n": 13,
+          "k": 13,
+          "mid": 27.9547,
+          "frac": 1.0,
+          "lo68": 0.9286,
+          "hi68": 1.0
+        },
+        {
+          "lo": 29.1703,
+          "hi": 31.7624,
+          "n": 22,
+          "k": 22,
+          "mid": 30.4388,
+          "frac": 1.0,
+          "lo68": 0.9565,
+          "hi68": 1.0
+        },
+        {
+          "lo": 31.7624,
+          "hi": 34.5848,
+          "n": 15,
+          "k": 15,
+          "mid": 33.1436,
+          "frac": 1.0,
+          "lo68": 0.9375,
+          "hi68": 1.0
+        },
+        {
+          "lo": 34.5848,
+          "hi": 37.658,
+          "n": 13,
+          "k": 13,
+          "mid": 36.0887,
+          "frac": 1.0,
+          "lo68": 0.9286,
+          "hi68": 1.0
+        },
+        {
+          "lo": 37.658,
+          "hi": 41.0043,
+          "n": 10,
+          "k": 10,
+          "mid": 39.2956,
+          "frac": 1.0,
+          "lo68": 0.9091,
+          "hi68": 1.0
+        }
+      ],
+      "depth": {
+        "median_detrended_depth_ratio": 0.9732383013085011,
+        "median_found_over_injected_central_depth": 0.836849176722152,
+        "median_found_over_model_mean_depth": 0.9877977030839409,
+        "median_model_mean_over_central_depth": 0.8511562985891223
+      }
+    }
+  }
+}
