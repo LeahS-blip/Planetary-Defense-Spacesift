@@ -21,7 +21,9 @@ from .runner import summarize
 from .search import Candidate
 
 
-def rematch(trials: pd.DataFrame, sde_threshold: float, period_tol: float, min_transits: int) -> pd.Series:
+def rematch(trials: pd.DataFrame, sde_threshold: float, period_tol: float, min_transits: int,
+            star_period: pd.Series | None = None) -> pd.Series:
+    """Re-derive each trial's status. star_period (aligned with trials) enables 'star_signal'."""
     inj_cols = [c for c in trials.columns if c.startswith("inj_")]
     found_cols = [c for c in trials.columns if c.startswith("found_")]
 
@@ -29,9 +31,76 @@ def rematch(trials: pd.DataFrame, sde_threshold: float, period_tol: float, min_t
         inj = Injection(**{c[4:]: row[c] for c in inj_cols})
         has_cand = pd.notna(row["found_sde"])
         cand = Candidate(**{c[6:]: row[c] for c in found_cols}) if has_cand else None
-        return match(inj, cand, sde_threshold=sde_threshold, period_tol=period_tol, min_transits=min_transits)
+        sp = star_period.loc[row.name] if star_period is not None else None
+        return match(inj, cand, sde_threshold=sde_threshold, period_tol=period_tol, min_transits=min_transits,
+                     star_period=sp if sp is not None and pd.notna(sp) else None)
 
     return trials.apply(one, axis=1)
+
+
+def analyze_grid(exp: Path, far: float = 0.01, snr_band: tuple[float, float] = (10.0, 16.0),
+                 name: str = "grid") -> Path:
+    """SS-0002-style grid analysis: per-method thresholds from the inverted baseline
+    searches, statuses re-derived with 'star_signal', and per-cell completeness.
+
+    Each method gets ONE threshold, pooled over every cell (a pipeline cannot know a
+    star's variability in advance), at the given false-alarm rate. Completeness is
+    measured in snr_band; capture rate ('star_signal') over all observable trials.
+    """
+    from .evaluate import wilson
+
+    cfg, _ = load_config(exp / "config.yaml")
+    trials = pd.read_parquet(exp / "trials.parquet")
+    base = pd.read_parquet(exp / "baselines.parquet")
+    inverted = base[base.baseline == "inverted"]
+    thresholds = {spec: float(np.quantile(g.found_sde, 1 - far)) for spec, g in inverted.groupby("detrend")}
+    plain = base[base.baseline == "plain"].set_index(["star_id", "detrend"]).found_period
+
+    r = cfg.recovery
+    parts = []
+    for spec, d in trials.groupby("detrend"):
+        sp = pd.Series([plain.get((s, spec)) for s in d.star_id], index=d.index)
+        d = d.copy()
+        d["status"] = rematch(d, thresholds[spec], r.period_tol, r.min_transits, star_period=sp)
+        parts.append(d)
+    trials = pd.concat(parts).sort_index()
+
+    obs = trials[trials.status != "not_observable"]
+    band = obs[(obs.inj_expected_snr >= snr_band[0]) & (obs.inj_expected_snr < snr_band[1])]
+    keys = ["detrend", "cell", "var_kind", "var_period_d", "var_amp_ppm"]
+    g_band = band.groupby(keys)
+    cells = pd.DataFrame({
+        "n_band": g_band.size(),
+        "k_band": g_band.apply(lambda x: (x.status == "recovered").sum(), include_groups=False),
+    })
+    g_all = obs.groupby(keys)
+    cells["capture_rate"] = g_all.apply(lambda x: (x.status == "star_signal").mean(), include_groups=False)
+    cells["completeness_all_snr"] = g_all.apply(lambda x: (x.status == "recovered").mean(), include_groups=False)
+    cells["depth_kept"] = g_all.detrended_depth_ratio.median()
+    cells = cells.reset_index()
+    cells["completeness"] = cells.k_band / cells.n_band
+    cells["lo68"], cells["hi68"] = wilson(cells.k_band, cells.n_band)
+    fa = (inverted.assign(false_alarm_rate=inverted.found_sde > inverted.detrend.map(thresholds))
+          .groupby(["detrend", "cell"]).false_alarm_rate.mean().reset_index())
+    cells = cells.merge(fa, on=["detrend", "cell"], how="left")
+
+    out = exp / "analysis" / name
+    out.mkdir(parents=True, exist_ok=True)
+    trials.to_parquet(out / "trials.parquet")
+    cells.to_csv(out / "cells.csv", index=False)
+    summary = {
+        "experiment": cfg.id,
+        "false_alarm_rate": far,
+        "snr_band": list(snr_band),
+        "thresholds": thresholds,
+        "status_counts": {spec: d.status.value_counts().to_dict() for spec, d in trials.groupby("detrend")},
+        "control_completeness": cells[cells.var_kind == "none"].set_index("detrend").completeness.round(3).to_dict(),
+    }
+    (out / "analysis.json").write_text(json.dumps(summary, indent=2))
+    from .plots import plot_grid
+    plot_grid(cells, trials, out)
+    print(f"thresholds: { {k: round(v, 2) for k, v in thresholds.items()} }; wrote {out}")
+    return out
 
 
 def analyze(exp: Path, name: str, sde_threshold: float | None = None, null_exp: Path | None = None,

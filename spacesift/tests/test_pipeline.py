@@ -59,7 +59,7 @@ def test_bad_star_is_recorded_not_fatal():
     from spacesift.runner import run_star
 
     cfg = ExperimentConfig(id="X", question="q", seed=1, mission="synthetic")
-    rows, star_row = run_star(cfg, Star("bad", mass=0.0), 0)
+    rows, star_row, _ = run_star(cfg, Star("bad", mass=0.0), 0)
     assert rows == [] and "ZeroDivisionError" in star_row["error"]
 
 

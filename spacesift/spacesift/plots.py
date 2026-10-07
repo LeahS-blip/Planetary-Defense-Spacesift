@@ -106,6 +106,89 @@ def plot_null(trials: pd.DataFrame, out: Path) -> None:
     plt.close(fig)
 
 
+def _grid_panel(ax, cells: pd.DataFrame, kind: str, value: str, cmap: str, title: str) -> None:
+    """Heatmap of one value over variability period (rows) x amplitude (columns), with numbers."""
+    d = cells[cells.var_kind == kind]
+    periods = sorted(d.var_period_d.unique())
+    amps = sorted(d.var_amp_ppm.unique())
+    grid = np.full((len(periods), len(amps)), np.nan)
+    for r in d.itertuples():
+        grid[periods.index(r.var_period_d), amps.index(r.var_amp_ppm)] = getattr(r, value)
+    ax.imshow(grid, vmin=0, vmax=1, cmap=cmap, aspect="auto", origin="lower")
+    for i in range(len(periods)):
+        for j in range(len(amps)):
+            if np.isfinite(grid[i, j]):
+                ax.text(j, i, f"{grid[i, j]:.2f}", ha="center", va="center", fontsize=7,
+                        color="white" if (grid[i, j] < 0.5) == (cmap == "viridis") else "black")
+    ax.set_xticks(range(len(amps)), [f"{a:g}" for a in amps], fontsize=7)
+    labels = [f"{p * 24:g} h" if p < 1 else f"{p:g} d" for p in periods]
+    ax.set_yticks(range(len(periods)), labels, fontsize=7)
+    ax.set_title(title, fontsize=8)
+
+
+def plot_grid(cells: pd.DataFrame, trials: pd.DataFrame, out: Path) -> None:
+    """SS-0002 maps: completeness and capture rate per method; best method per cell; depth kept."""
+    out.mkdir(parents=True, exist_ok=True)
+    specs = list(dict.fromkeys(trials.detrend))  # config order
+    kinds = [k for k in ("pulsation", "spots") if (cells.var_kind == k).any()]
+    for value, cmap, fname, label in (("completeness", "viridis", "completeness_maps.png", "completeness"),
+                                      ("capture_rate", "magma_r", "capture_maps.png", "captured by star")):
+        fig, axes = plt.subplots(len(specs), len(kinds), figsize=(4.2 * len(kinds), 2.4 * len(specs)),
+                                 squeeze=False)
+        for row, spec in enumerate(specs):
+            ctrl = cells[(cells.detrend == spec) & (cells.var_kind == "none")]
+            note = f" | no variability: {ctrl[value].iloc[0]:.2f}" if len(ctrl) else ""
+            for col, kind in enumerate(kinds):
+                _grid_panel(axes[row, col], cells[cells.detrend == spec], kind, value, cmap,
+                            f"{spec} · {kind} · {label}{note}")
+        for ax in axes[-1]:
+            ax.set_xlabel("Variability amplitude (ppm)", fontsize=8)
+        for ax in axes[:, 0]:
+            ax.set_ylabel("Variability period", fontsize=8)
+        fig.tight_layout()
+        fig.savefig(out / fname, dpi=140)
+        plt.close(fig)
+
+    # Best method per cell: highest completeness in the SNR band.
+    best = cells.loc[cells.groupby("cell").completeness.idxmax()]
+    fig, axes = plt.subplots(1, len(kinds), figsize=(5 * len(kinds), 3.4), squeeze=False)
+    for ax, kind in zip(axes[0], kinds):
+        d = best[best.var_kind == kind]
+        periods, amps = sorted(d.var_period_d.unique()), sorted(d.var_amp_ppm.unique())
+        ax.set_xlim(-0.5, len(amps) - 0.5)
+        ax.set_ylim(-0.5, len(periods) - 0.5)
+        for r in d.itertuples():
+            ax.text(amps.index(r.var_amp_ppm), periods.index(r.var_period_d),
+                    f"{r.detrend}\n{r.completeness:.2f}", ha="center", va="center", fontsize=6.5)
+        ax.set_xticks(range(len(amps)), [f"{a:g}" for a in amps], fontsize=7)
+        ax.set_yticks(range(len(periods)), [f"{p * 24:g} h" if p < 1 else f"{p:g} d" for p in periods], fontsize=7)
+        ax.set_xlabel("Variability amplitude (ppm)", fontsize=8)
+        ax.set_title(f"Best method per cell ({kind})", fontsize=9)
+        ax.grid(alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(out / "best_method.png", dpi=140)
+    plt.close(fig)
+
+    # The cost side: how much transit each method keeps, by transit duration (no variability).
+    ctrl = trials[(trials.var_kind == "none") & trials.detrended_depth_ratio.notna()]
+    if len(ctrl):
+        fig, ax = plt.subplots(figsize=(6.5, 4))
+        bins = [0, 2, 3, 4, 5, 7, 12]
+        for spec in specs:
+            d = ctrl[ctrl.detrend == spec]
+            med = d.groupby(pd.cut(d.inj_duration * 24, bins), observed=True).detrended_depth_ratio.median()
+            ax.plot([iv.mid for iv in med.index], med.to_numpy(), "o-", label=spec)
+        ax.axhline(1, color="k", lw=0.8, alpha=0.5)
+        ax.set_xlabel("Transit duration (hours)")
+        ax.set_ylabel("Transit depth kept after detrending")
+        ax.set_title("Cost of each method on a quiet star")
+        ax.grid(alpha=0.3)
+        ax.legend(fontsize=7)
+        fig.tight_layout()
+        fig.savefig(out / "depth_kept.png", dpi=140)
+        plt.close(fig)
+
+
 def plot_star(time, flux, flat, cand, inv_cand, star_id: str, path: Path) -> None:
     """Why does this star have a pre-injection signal? Raw, detrended, and folded on the best period."""
     fig, axes = plt.subplots(3, 1, figsize=(10, 8))

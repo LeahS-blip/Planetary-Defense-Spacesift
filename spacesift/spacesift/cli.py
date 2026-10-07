@@ -66,6 +66,12 @@ def cmd_analyze(args):
             null_exp=Path(args.null) if args.null else None, far=args.far, exclude=args.exclude)
 
 
+def cmd_analyze_grid(args):
+    from .analysis import analyze_grid
+
+    analyze_grid(Path(args.experiment), far=args.far, snr_band=(args.snr_lo, args.snr_hi), name=args.name)
+
+
 def cmd_inspect_star(args):
     """Plot a star's own light curve and best pre-injection signal (downloads if not cached)."""
     from .config import load_config
@@ -129,6 +135,14 @@ def main(argv=None):
     a.add_argument("--far", type=float, default=0.01, choices=[0.01, 0.005, 0.001])
     a.add_argument("--exclude", nargs="*", default=[], help="star ids to drop")
     a.set_defaults(func=cmd_analyze)
+
+    g = sub.add_parser("analyze-grid", help="per-cell completeness maps for a variability-grid experiment")
+    g.add_argument("experiment")
+    g.add_argument("--name", default="grid")
+    g.add_argument("--far", type=float, default=0.01)
+    g.add_argument("--snr-lo", type=float, default=10.0)
+    g.add_argument("--snr-hi", type=float, default=16.0)
+    g.set_defaults(func=cmd_analyze_grid)
 
     i = sub.add_parser("inspect-star", help="plot a star's own best signal before injection")
     i.add_argument("config")
