@@ -146,6 +146,14 @@ def count_transits(time: np.ndarray, period: float, t0: float, duration: float) 
     return int((counts >= need).sum())
 
 
+def mean_over_central(k: float, b: float, a_rs: float, period: float, u1: float, u2: float) -> float:
+    """Mean depth over the full T14 divided by the central depth (ingress, egress, limb darkening)."""
+    dur = t14(period, a_rs, k, b)
+    inj = Injection(period, 0.0, k, b, a_rs, dur, 0.0, 0.0, 0.0, 0.0, 0)
+    t = np.linspace(-dur / 2, dur / 2, 401)[1:-1]
+    return float(np.mean(1 - transit_model(t, inj, u1, u2)) / central_depth(k, b, u1, u2))
+
+
 def sample_injection(
     rng: np.random.Generator,
     time: np.ndarray,
@@ -154,25 +162,35 @@ def sample_injection(
     snr_range: tuple[float, float],
     period_range: tuple[float, float],
     b_range: tuple[float, float],
+    depth_basis: str = "central",
 ) -> Injection:
-    """Draw P, b, t0 and a target SNR, then solve for the radius that gives that SNR here."""
+    """Draw P, b, t0 and a target SNR, then solve for the radius that gives that SNR here.
+
+    depth_basis: which depth the SNR is defined on. "central" (SS-0001) uses the
+    mid-transit depth; "mean" uses the mean over the full transit, which is what a
+    box search measures (SS-0001-depth), so the SNR is not overstated by ~1/0.85.
+    flux_flat: the light curve whose duration-scale scatter sets the noise.
+    """
     period = float(np.exp(rng.uniform(*np.log(period_range))))
     b = float(rng.uniform(*b_range))
     t0 = float(time.min() + rng.uniform(0, period))
     target = float(np.exp(rng.uniform(*np.log(snr_range))))
     a_rs = a_over_rs(period, star)
 
-    k = 0.01  # first guess; T14 depends only weakly on k, so two passes suffice
-    for _ in range(2):
+    def shape(k):
+        return mean_over_central(k, b, a_rs, period, star.u1, star.u2) if depth_basis == "mean" else 1.0
+
+    k = 0.01  # first guess; T14 and the shape factor depend only weakly on k
+    for _ in range(3 if depth_basis == "mean" else 2):
         dur = t14(period, a_rs, k, b)
         sigma = cdpp(time, flux_flat, dur)
         n_tr = count_transits(time, period, t0, dur)
         depth = target * sigma / np.sqrt(max(n_tr, 1))
-        k = float(np.sqrt(depth / central_depth(1.0, b, star.u1, star.u2)))
+        k = float(np.sqrt(depth / (central_depth(1.0, b, star.u1, star.u2) * shape(k))))
     dur = t14(period, a_rs, k, b)
     n_tr = count_transits(time, period, t0, dur)
     depth = central_depth(k, b, star.u1, star.u2)
-    expected = depth / cdpp(time, flux_flat, dur) * np.sqrt(n_tr)
+    expected = depth * shape(k) / cdpp(time, flux_flat, dur) * np.sqrt(n_tr)
     return Injection(
         period=period,
         t0=t0,

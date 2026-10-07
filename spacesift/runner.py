@@ -16,7 +16,7 @@ from joblib import Parallel, delayed
 
 from . import PREPROCESSING_VERSION, __version__
 from .config import ExperimentConfig, load_config
-from .data import LightCurve, load_mission, read_stars, synthetic
+from .data import LightCurve, load_mission, read_stars, synthetic, synthetic_variable
 from .detrend import clean, flatten
 from .evaluate import STATUSES, completeness, fit_gamma_cdf, match
 from .inject import Injection, Star, sample_injection, transit_model
@@ -59,17 +59,34 @@ def trial_seed(master: int, star_index: int, trial: int) -> int:
 # ------------------------------------------------------------------ stars
 
 def build_stars(cfg: ExperimentConfig) -> list[Star]:
-    if cfg.mission == "synthetic":
+    if cfg.grid:
+        spc = cfg.grid.stars_per_cell
+        stars = [Star(star_id=f"G{ci:03d}-{j:02d}") for ci in range(len(cfg.grid.cells())) for j in range(spc)]
+    elif cfg.mission == "synthetic":
         stars = [Star(star_id=f"SYN-{i:04d}") for i in range(cfg.synthetic.n_stars)]
     else:
         stars = read_stars(PROJECT_ROOT / cfg.stars_file)
     return stars[: cfg.max_stars] if cfg.max_stars else stars
 
 
+def cell_for(cfg: ExperimentConfig, star_index: int) -> dict:
+    """The variability cell a grid star belongs to ({} outside a grid)."""
+    if not cfg.grid:
+        return {}
+    ci = star_index // cfg.grid.stars_per_cell
+    return {"cell": ci, **cfg.grid.cells()[ci]}
+
+
 def load_star(cfg: ExperimentConfig, star: Star, star_index: int) -> LightCurve:
     if cfg.mission == "synthetic":
         s = cfg.synthetic
         rng = np.random.default_rng(trial_seed(cfg.seed, star_index, LIGHTCURVE_STREAM))
+        if cfg.grid:
+            cell = cell_for(cfg, star_index)
+            return synthetic_variable(rng, baseline=s.baseline_d,
+                                      noise_ppm=float(np.exp(rng.uniform(*np.log(s.noise_ppm)))),
+                                      kind=cell["var_kind"], period_d=cell["var_period_d"],
+                                      amp_ppm=cell["var_amp_ppm"])
         return synthetic(
             rng,
             baseline=s.baseline_d,
@@ -111,7 +128,7 @@ def depth_metrics(t: np.ndarray, f_flat: np.ndarray, model: np.ndarray, inj: Inj
 
 
 def run_trial(cfg: ExperimentConfig, lc: LightCurve, star: Star, inj: Injection,
-              spec: str) -> tuple[str, Candidate | None, dict]:
+              spec: str, star_period: float | None = None) -> tuple[str, Candidate | None, dict]:
     if inj.n_transits < cfg.recovery.min_transits:
         return "not_observable", None, {}
     model = transit_model(lc.time, inj, star.u1, star.u2, lc.exptime, cfg.injection.supersample)
@@ -119,8 +136,24 @@ def run_trial(cfg: ExperimentConfig, lc: LightCurve, star: Star, inj: Injection,
     metrics = depth_metrics(t, f, model[np.isin(lc.time, t)], inj)
     cand = run_search(cfg, t, f)
     r = cfg.recovery
-    status = match(inj, cand, sde_threshold=r.sde_threshold, period_tol=r.period_tol, min_transits=r.min_transits)
+    status = match(inj, cand, sde_threshold=r.sde_threshold, period_tol=r.period_tol, min_transits=r.min_transits,
+                   star_period=star_period)
     return status, cand, metrics
+
+
+def baseline_rows(cfg: ExperimentConfig, lc: LightCurve, star: Star, star_index: int) -> list[dict]:
+    """Per detrending method, search the star with nothing injected: plain (its own best
+    signal, used to label 'star_signal') and inverted (a false-alarm sample)."""
+    from .null import invert
+
+    rows = []
+    for spec in cfg.detrend:
+        t, f = clean(lc.time, flatten(lc.time, lc.flux, spec))
+        for kind, flux in (("plain", f), ("inverted", invert(f))):
+            cand = run_search(cfg, t, flux)
+            rows.append({"star_id": star.star_id, "star_index": star_index, "detrend": spec,
+                         "baseline": kind, **cell_for(cfg, star_index), **cand.to_dict()})
+    return rows
 
 
 def null_rows(cfg: ExperimentConfig, lc: LightCurve, star: Star, star_index: int) -> list[dict]:
@@ -138,48 +171,56 @@ def null_rows(cfg: ExperimentConfig, lc: LightCurve, star: Star, star_index: int
     return rows
 
 
-def run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[dict], dict]:
-    """All trials for one star. Any failure drops the whole star (no partial rows) and is
-    recorded in stars.parquet, so one bad star cannot end a long run."""
+def run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[dict], dict, list[dict]]:
+    """All trials for one star -> (trial rows, star row, baseline rows). Any failure drops
+    the whole star (no partial rows) and is recorded in stars.parquet, so one bad star
+    cannot end a long run."""
     try:
         return _run_star(cfg, star, star_index)
     except Exception as exc:
-        return [], {"star_id": star.star_id, "error": repr(exc)}
+        return [], {"star_id": star.star_id, "error": repr(exc)}, []
 
 
-def _run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[dict], dict]:
+def _run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[dict], dict, list[dict]]:
     started = clock.perf_counter()
     lc = load_star(cfg, star, star_index)
-    noise_flat = flatten(lc.time, lc.flux, cfg.injection.noise_detrend)
-    t_noise, f_noise = clean(lc.time, noise_flat)
+    t_flat, f_flat = clean(lc.time, flatten(lc.time, lc.flux, cfg.injection.noise_detrend))
+    if cfg.injection.snr_noise == "white":
+        t_noise, f_noise = lc.time, lc.noise_only
+    else:
+        t_noise, f_noise = t_flat, f_flat
+    cell = cell_for(cfg, star_index)
 
     # Pre-injection search: a strong signal here means the star may host a real
     # (or instrumental) periodic signal and should be excluded from analysis.
-    pre = run_search(cfg, t_noise, f_noise)
+    pre = run_search(cfg, t_flat, f_flat)
     star_row = {"star_id": star.star_id, "n_points": lc.time.size,
                 "baseline_d": float(lc.time.max() - lc.time.min()),
-                "pre_sde": pre.sde, "pre_period": pre.period, "error": None}
+                "pre_sde": pre.sde, "pre_period": pre.period, "error": None, **cell}
 
     if cfg.kind == "false_alarm":
         rows = null_rows(cfg, lc, star, star_index)
         star_row["seconds"] = clock.perf_counter() - started
-        return rows, star_row
+        return rows, star_row, []
+
+    baselines = baseline_rows(cfg, lc, star, star_index) if cfg.baseline_searches else []
+    star_period = {b["detrend"]: b["found_period"] for b in baselines if b["baseline"] == "plain"}
 
     rows = []
     for j in range(cfg.injection.trials_per_star):
         seed = trial_seed(cfg.seed, star_index, j)
         rng = np.random.default_rng(seed)
         inj = sample_injection(rng, t_noise, f_noise, star, cfg.injection.expected_snr,
-                               cfg.injection.period_d, cfg.injection.b)
+                               cfg.injection.period_d, cfg.injection.b, cfg.injection.depth_basis)
         for spec in cfg.detrend:
-            status, cand, metrics = run_trial(cfg, lc, star, inj, spec)
+            status, cand, metrics = run_trial(cfg, lc, star, inj, spec, star_period.get(spec))
             rows.append({
                 "star_id": star.star_id, "star_index": star_index, "trial": j, "trial_seed": seed,
-                "detrend": spec, "search": cfg.search.method, "status": status,
+                "detrend": spec, "search": cfg.search.method, "status": status, **cell,
                 **inj.to_dict(), **(cand.to_dict() if cand else {}), **metrics,
             })
     star_row["seconds"] = clock.perf_counter() - started
-    return rows, star_row
+    return rows, star_row, baselines
 
 
 # ------------------------------------------------------------- experiment
@@ -217,12 +258,15 @@ def run_experiment(config_path: Path, *, allow_dirty: bool = False, out_root: Pa
     print(f"{cfg.id}{label}: {len(indexed)} stars x {cfg.injection.trials_per_star} trials "
           f"x {len(cfg.detrend)} detrend")
     results = Parallel(n_jobs=cfg.n_jobs, verbose=5)(delayed(run_star)(cfg, s, i) for i, s in indexed)
-    trials = pd.DataFrame([r for star_rows, _ in results for r in star_rows])
-    star_table = pd.DataFrame([s for _, s in results])
+    trials = pd.DataFrame([r for star_rows, _, _ in results for r in star_rows])
+    star_table = pd.DataFrame([s for _, s, _ in results])
+    baselines = pd.DataFrame([b for _, _, base in results for b in base])
     for s in star_table[star_table["error"].notna()].itertuples():
         print(f"  star {s.star_id} failed: {s.error}")
     trials.to_parquet(out / "trials.parquet")
     star_table.to_parquet(out / "stars.parquet")
+    if len(baselines):
+        baselines.to_parquet(out / "baselines.parquet")
 
     provenance = {
         "id": cfg.id,
@@ -243,7 +287,7 @@ def run_experiment(config_path: Path, *, allow_dirty: bool = False, out_root: Pa
         provenance["shard"] = list(shard)
         (out / "shard.json").write_text(json.dumps(provenance, indent=2))
     else:
-        write_record(exp, provenance, trials, star_table)
+        write_record(exp, provenance, trials, star_table, baselines)
     print(f"wrote {out}")
     return out
 
@@ -271,18 +315,25 @@ def merge_shards(exp: Path) -> Path:
     trials = pd.concat([pd.read_parquet(d / "trials.parquet") for d in dirs], ignore_index=True)
     stars = pd.concat([pd.read_parquet(d / "stars.parquet") for d in dirs], ignore_index=True)
     trials = trials.sort_values(["star_index", "trial", "detrend"], ignore_index=True)
+    base_files = [d / "baselines.parquet" for d in dirs if (d / "baselines.parquet").exists()]
+    baselines = pd.concat([pd.read_parquet(p) for p in base_files], ignore_index=True) if base_files else None
+    if baselines is not None:
+        baselines = baselines.sort_values(["star_index", "detrend", "baseline"], ignore_index=True)
     provenance = {k: v for k, v in metas[0].items() if k != "shard"}
     provenance["started"] = min(m["started"] for m in metas)
     provenance["finished"] = max(m["finished"] for m in metas)
     provenance["n_shards"] = n
-    write_record(exp, provenance, trials, stars)
+    write_record(exp, provenance, trials, stars, baselines)
     print(f"merged {n} shards into {exp}")
     return exp
 
 
-def write_record(exp: Path, provenance: dict, trials: pd.DataFrame, star_table: pd.DataFrame) -> None:
+def write_record(exp: Path, provenance: dict, trials: pd.DataFrame, star_table: pd.DataFrame,
+                 baselines: pd.DataFrame | None = None) -> None:
     trials.to_parquet(exp / "trials.parquet")
     star_table.to_parquet(exp / "stars.parquet")
+    if baselines is not None and len(baselines):
+        baselines.to_parquet(exp / "baselines.parquet")
     is_null = "null_kind" in trials.columns
     record = {
         **provenance,

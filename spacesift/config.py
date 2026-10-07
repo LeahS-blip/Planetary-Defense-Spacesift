@@ -27,6 +27,32 @@ class InjectionCfg(BaseModel):
     # SNR scale is the same whichever detrending is being tested.
     noise_detrend: str = "biweight-1.0"
     supersample: int = 7
+    # Which depth the SNR is defined on: mid-transit ("central", SS-0001) or the mean
+    # over the full transit ("mean", what a box search measures; see SS-0001-depth).
+    depth_basis: Literal["central", "mean"] = "central"
+    # Which noise the SNR is defined against: the detrended light curve ("detrended",
+    # SS-0001), or, for synthetic stars, the white noise alone ("white"), so that
+    # stellar variability does not inflate the injected planets.
+    snr_noise: Literal["detrended", "white"] = "detrended"
+
+
+class GridCfg(BaseModel):
+    """Synthetic variability grid: each cell is one kind of variability, shared by
+    stars_per_cell simulated stars. Cells: every pulsation period x amplitude, every
+    spot period x amplitude, plus one no-variability control."""
+    pulsation_periods_h: list[float] = Field(default_factory=lambda: [2, 4, 8, 16, 24, 48])
+    spot_periods_d: list[float] = Field(default_factory=lambda: [1, 3, 10, 30])
+    amplitudes_ppm: list[float] = Field(default_factory=lambda: [30, 100, 300, 1000])
+    control: bool = True
+    stars_per_cell: int = 20
+
+    def cells(self) -> list[dict]:
+        out = [{"var_kind": "none", "var_period_d": 0.0, "var_amp_ppm": 0.0}] if self.control else []
+        for p in self.pulsation_periods_h:
+            out += [{"var_kind": "pulsation", "var_period_d": p / 24, "var_amp_ppm": a} for a in self.amplitudes_ppm]
+        for p in self.spot_periods_d:
+            out += [{"var_kind": "spots", "var_period_d": float(p), "var_amp_ppm": a} for a in self.amplitudes_ppm]
+        return out
 
 
 class SearchCfg(BaseModel):
@@ -70,6 +96,10 @@ class ExperimentConfig(BaseModel):
     search: SearchCfg = Field(default_factory=SearchCfg)
     recovery: RecoveryCfg = Field(default_factory=RecoveryCfg)
     false_alarm: FalseAlarmCfg = Field(default_factory=FalseAlarmCfg)
+    grid: GridCfg | None = None
+    # Per star and detrending method: search the light curve with nothing injected
+    # (its own best signal, for 'star_signal') and inverted (a false-alarm sample).
+    baseline_searches: bool = False
     n_jobs: int = 1
     cache_dir: str = "cache"
 
@@ -77,6 +107,8 @@ class ExperimentConfig(BaseModel):
     def _check(self):
         if self.mission != "synthetic" and not self.stars_file:
             raise ValueError("stars_file is required for real-data missions")
+        if (self.grid or self.injection.snr_noise == "white") and self.mission != "synthetic":
+            raise ValueError("grid and snr_noise: white need mission: synthetic")
         return self
 
 

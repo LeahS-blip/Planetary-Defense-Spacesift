@@ -19,12 +19,17 @@ class LightCurve:
     time: np.ndarray  # days (BKJD for Kepler, BTJD for TESS)
     flux: np.ndarray  # normalised to median 1
     exptime: float  # days
+    # Synthetic only: the same light curve without its stellar variability (white noise
+    # around 1), so SNR can be defined against photon noise alone.
+    noise_only: np.ndarray | None = None
 
     def __post_init__(self):
         good = np.isfinite(self.time) & np.isfinite(self.flux)
         order = np.argsort(self.time[good])
         self.time = np.asarray(self.time[good][order], dtype=float)
         self.flux = np.asarray(self.flux[good][order], dtype=float)
+        if self.noise_only is not None:
+            self.noise_only = np.asarray(self.noise_only[good][order], dtype=float)
 
 
 def load_mission(star_id: str, mission: str, quarters: list[int] | None, cache_dir: Path) -> LightCurve:
@@ -84,6 +89,54 @@ def synthetic(
     )
     flux = 1 + var + rng.normal(0, noise_ppm * 1e-6, time.size)
     return LightCurve(time, flux, cadence)
+
+
+def _smooth_noise(rng: np.random.Generator, time: np.ndarray, timescale: float) -> np.ndarray:
+    """Unit-variance random curve that varies on `timescale` days (cubic spline through knots)."""
+    from scipy.interpolate import CubicSpline
+
+    knots = np.arange(time.min() - timescale, time.max() + 2 * timescale, timescale)
+    return CubicSpline(knots, rng.normal(0, 1, knots.size))(time)
+
+
+def stellar_variability(rng: np.random.Generator, time: np.ndarray, kind: str, period_d: float,
+                        amp_ppm: float) -> np.ndarray:
+    """Fractional flux variation. amp_ppm = semi-amplitude of the fundamental.
+
+    pulsation: coherent, strictly periodic; fundamental plus a first harmonic at 0.3x.
+    spots: quasi-periodic rotation; both harmonics' amplitudes (+-40%) and phases
+    (~1 rad) drift on a timescale of 3 rotations, as spots grow and decay.
+    """
+    if kind == "none" or amp_ppm == 0:
+        return np.zeros_like(time)
+    amp = amp_ppm * 1e-6
+    w = 2 * np.pi * time / period_d
+    if kind == "pulsation":
+        p1, p2 = rng.uniform(0, 2 * np.pi, 2)
+        return amp * (np.sin(w + p1) + 0.3 * np.sin(2 * w + p2))
+    if kind == "spots":
+        tau = 3 * period_d
+        a1 = np.clip(1 + 0.4 * _smooth_noise(rng, time, tau), 0, None)
+        a2 = np.clip(1 + 0.4 * _smooth_noise(rng, time, tau), 0, None)
+        ph1, ph2 = _smooth_noise(rng, time, tau), _smooth_noise(rng, time, tau)
+        return amp * (a1 * np.sin(w + ph1) + 0.5 * a2 * np.sin(2 * w + ph2))
+    raise ValueError(f"unknown variability kind {kind!r}")
+
+
+def synthetic_variable(rng: np.random.Generator, baseline: float, noise_ppm: float, kind: str, period_d: float,
+                       amp_ppm: float, gap_fraction: float = 0.05,
+                       cadence: float = KEPLER_LONG_CADENCE) -> LightCurve:
+    """White noise + one kind of stellar variability, with Kepler-like gaps; keeps the noise-only curve."""
+    time = np.arange(0.0, baseline, cadence)
+    n_gaps = max(1, int(baseline / 90))
+    keep = np.ones(time.size, bool)
+    for _ in range(n_gaps):
+        start = rng.uniform(0, baseline)
+        keep &= ~((time > start) & (time < start + gap_fraction * baseline / n_gaps))
+    time = time[keep]
+    noise = rng.normal(0, noise_ppm * 1e-6, time.size)
+    var = stellar_variability(rng, time, kind, period_d, amp_ppm)
+    return LightCurve(time, 1 + var + noise, cadence, noise_only=1 + noise)
 
 
 def read_stars(path: Path) -> list[Star]:

@@ -9,7 +9,8 @@ from scipy import optimize, stats
 from .inject import Injection
 from .search import Candidate
 
-STATUSES = ("recovered", "alias_half", "alias_double", "wrong_period", "below_threshold", "not_observable")
+STATUSES = ("recovered", "alias_half", "alias_double", "star_signal", "wrong_period", "below_threshold",
+            "not_observable")
 
 
 def _epoch_offset(t_found: float, t_inj: float, period: float) -> float:
@@ -17,8 +18,13 @@ def _epoch_offset(t_found: float, t_inj: float, period: float) -> float:
 
 
 def match(inj: Injection, cand: Candidate | None, *, sde_threshold: float, period_tol: float = 0.01,
-          min_transits: int = 2) -> str:
-    """Classify one trial. Aliases are tracked separately, never counted as recoveries."""
+          min_transits: int = 2, star_period: float | None = None) -> str:
+    """Classify one trial. Aliases are tracked separately, never counted as recoveries.
+
+    star_period: the period the same search finds on the star with nothing injected.
+    A detection at that period (or 2x / 0.5x) that is not the planet is 'star_signal':
+    the search was captured by the star's own variability.
+    """
     if inj.n_transits < min_transits:
         return "not_observable"
     if cand is None or cand.sde < sde_threshold:
@@ -30,6 +36,10 @@ def match(inj: Injection, cand: Candidate | None, *, sde_threshold: float, perio
             p = min(cand.period, inj.period)
             if _epoch_offset(cand.t0, inj.t0, p) < inj.duration:
                 return label
+    if star_period:
+        for m in (1.0, 2.0, 0.5):
+            if abs(cand.period / (star_period * m) - 1) < period_tol:
+                return "star_signal"
     return "wrong_period"
 
 
