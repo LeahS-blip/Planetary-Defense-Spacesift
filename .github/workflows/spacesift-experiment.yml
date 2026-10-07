@@ -1,7 +1,8 @@
 # SpaceSift: run an injection-recovery experiment on GitHub's runners.
-# 10 parallel shards, then one merge job that commits the final record to
+# 10 or 20 parallel shards, then one merge job that commits the final record to
 # spacesift/experiments/<id>/. Manual trigger only:
 #   Actions tab -> spacesift-experiment -> Run workflow.
+# Each shard must finish within 6 h: use 20 shards for SS-0002A (~2 h each).
 
 name: spacesift-experiment
 
@@ -12,6 +13,11 @@ on:
         description: Experiment config, relative to spacesift/
         default: configs/SS-0001.yaml
         required: true
+      shards:
+        description: Parallel shards (20 for SS-0002A)
+        type: choice
+        options: ["10", "20"]
+        default: "10"
 
 permissions:
   contents: write
@@ -27,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        shard: ${{ fromJSON(inputs.shards == '20' && '[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]' || '[0,1,2,3,4,5,6,7,8,9]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -43,7 +49,7 @@ jobs:
         id: exp
         run: echo "id=$(python -c "import yaml; print(yaml.safe_load(open('${{ inputs.config }}'))['id'])")" >> "$GITHUB_OUTPUT"
       - name: Run shard
-        run: spacesift run "${{ inputs.config }}" --shard ${{ matrix.shard }}/10 --jobs 4
+        run: spacesift run "${{ inputs.config }}" --shard ${{ matrix.shard }}/${{ inputs.shards }} --jobs 4
       # No wildcard in the path: the artifact root is then the shard folder itself.
       - uses: actions/upload-artifact@v4
         with:
@@ -71,6 +77,8 @@ jobs:
         run: |
           cp "${{ inputs.config }}" "experiments/${{ steps.exp.outputs.id }}/config.yaml"
           spacesift merge "experiments/${{ steps.exp.outputs.id }}"
+          # The merged tables hold every row; keep only each shard's provenance record.
+          find "experiments/${{ steps.exp.outputs.id }}/shards" -name '*.parquet' -delete
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.exp.outputs.id }}
