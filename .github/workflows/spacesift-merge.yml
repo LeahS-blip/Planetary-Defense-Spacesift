@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e .
+      - run: pip install -e . -c constraints-ci.txt
       - name: Find experiment id
         id: exp
         run: echo "id=$(python -c "import yaml; print(yaml.safe_load(open('${{ inputs.config }}'))['id'])")" >> "$GITHUB_OUTPUT"
@@ -47,6 +47,8 @@ jobs:
         run: |
           cp "${{ inputs.config }}" "experiments/${{ steps.exp.outputs.id }}/config.yaml"
           spacesift merge "experiments/${{ steps.exp.outputs.id }}"
+          # The merged tables hold every row; keep only each shard's provenance record.
+          find "experiments/${{ steps.exp.outputs.id }}/shards" -name '*.parquet' -delete
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.exp.outputs.id }}

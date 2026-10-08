@@ -39,7 +39,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e .
+      - run: pip install -e . -c constraints-ci.txt  # pinned: every shard computes with identical packages
       - name: Cache downloaded light curves
         uses: actions/cache@v4
         with:
@@ -65,7 +65,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e .
+      - run: pip install -e . -c constraints-ci.txt  # pinned: every shard computes with identical packages
       - name: Find experiment id
         id: exp
         run: echo "id=$(python -c "import yaml; print(yaml.safe_load(open('${{ inputs.config }}'))['id'])")" >> "$GITHUB_OUTPUT"
