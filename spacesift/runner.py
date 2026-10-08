@@ -26,6 +26,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Seed-stream index for generating synthetic light curves; trials use 0..trials_per_star-1.
 LIGHTCURVE_STREAM = 2**31 - 1
 PACKAGES = ["spacesift", "numpy", "scipy", "pandas", "astropy", "lightkurve", "wotan", "pydantic"]
+# The packages whose version can change a trial's numbers (injection, detrending, search).
+RESULT_PACKAGES = {"spacesift", "numpy", "scipy", "astropy", "wotan"}
 
 
 # ------------------------------------------------------------- provenance
@@ -306,9 +308,18 @@ def merge_shards(exp: Path) -> Path:
     found = sorted(by_index)
     if found != list(range(n)):
         raise SystemExit(f"expected shards 0..{n - 1}, found {found}")
-    for key in ("config_sha256", "git_commit", "git_dirty", "package_versions", "preprocessing_version"):
+    for key in ("config_sha256", "git_commit", "git_dirty", "preprocessing_version"):
         if len({json.dumps(m[key], sort_keys=True) for m in metas}) > 1:
             raise SystemExit(f"shards disagree on {key}; they were not run from the same code/config")
+    # Packages that compute results must match exactly; others (config parsing, plotting)
+    # may differ, e.g. when one shard is re-run after a release, but are recorded per shard.
+    for pkg in sorted({p for m in metas for p in m["package_versions"]}):
+        versions = {m["package_versions"].get(pkg) for m in metas}
+        if len(versions) > 1:
+            if pkg in RESULT_PACKAGES:
+                raise SystemExit(f"shards ran with different {pkg} versions {sorted(map(str, versions))}; "
+                                 "results are not comparable")
+            print(f"  note: shards differ in {pkg} {sorted(map(str, versions))} (does not affect results)")
 
     dirs = [by_index[i][0] for i in range(n)]
     metas = [by_index[i][1] for i in range(n)]
@@ -320,6 +331,8 @@ def merge_shards(exp: Path) -> Path:
     if baselines is not None:
         baselines = baselines.sort_values(["star_index", "detrend", "baseline"], ignore_index=True)
     provenance = {k: v for k, v in metas[0].items() if k != "shard"}
+    if len({json.dumps(m["package_versions"], sort_keys=True) for m in metas}) > 1:
+        provenance["package_versions_by_shard"] = {str(i): m["package_versions"] for i, m in enumerate(metas)}
     provenance["started"] = min(m["started"] for m in metas)
     provenance["finished"] = max(m["finished"] for m in metas)
     provenance["n_shards"] = n
