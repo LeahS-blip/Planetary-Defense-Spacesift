@@ -89,6 +89,23 @@ def test_runner_is_reproducible(tmp_path: Path):
     merged = merge_shards(tmp_path / "s" / "SS-TEST")
     pd.testing.assert_frame_equal(pd.read_parquet(merged / "trials.parquet"), ta)
 
+    # A shard re-run after a release: a config-only package may differ (recorded), numpy may not.
+    import json as _json
+    meta_path = tmp_path / "s" / "SS-TEST" / "shards" / "shard-1" / "shard.json"
+    meta = _json.loads(meta_path.read_text())
+    original_meta = dict(meta)
+    meta["package_versions"] = {**meta["package_versions"], "pydantic": "99.0"}
+    meta_path.write_text(_json.dumps(meta))
+    (tmp_path / "s" / "SS-TEST" / "record.json").unlink()
+    rec = _json.loads((merge_shards(tmp_path / "s" / "SS-TEST") / "record.json").read_text())
+    assert rec["package_versions_by_shard"]["1"]["pydantic"] == "99.0"
+    meta["package_versions"]["numpy"] = "0.0"
+    meta_path.write_text(_json.dumps(meta))
+    import pytest as _pytest
+    with _pytest.raises(SystemExit, match="numpy"):
+        merge_shards(tmp_path / "s" / "SS-TEST")
+    meta_path.write_text(_json.dumps(original_meta))
+
     # CI artifacts can arrive nested (shards/shard-1/SS-TEST/shards/shard-1/...); merge must still work.
     import shutil
     nested = tmp_path / "n" / "SS-TEST"
