@@ -1,0 +1,129 @@
+{
+  "id": "SS-0002A",
+  "question": "At fixed SNR, how does completeness depend on variability period and amplitude, per detrending method?",
+  "config_file": "configs/SS-0002A.yaml",
+  "config_sha256": "81f8f34506848bcfe90a111c96d5bb6e984c4410c603999e8ed1432b1e19a1a4",
+  "config": {
+    "id": "SS-0002A",
+    "question": "At fixed SNR, how does completeness depend on variability period and amplitude, per detrending method?",
+    "seed": 20020,
+    "kind": "injection",
+    "mission": "synthetic",
+    "stars_file": null,
+    "quarters": null,
+    "max_stars": null,
+    "synthetic": {
+      "n_stars": 20,
+      "baseline_d": 368.0,
+      "noise_ppm": [
+        150.0,
+        150.0
+      ],
+      "var_amp_ppm": [
+        0.0,
+        0.0
+      ],
+      "var_period_d": [
+        5.0,
+        30.0
+      ]
+    },
+    "injection": {
+      "trials_per_star": 10,
+      "expected_snr": [
+        8.0,
+        20.0
+      ],
+      "period_d": [
+        1.0,
+        30.0
+      ],
+      "b": [
+        0.0,
+        0.9
+      ],
+      "noise_detrend": "biweight-1.0",
+      "supersample": 7,
+      "depth_basis": "mean",
+      "snr_noise": "white"
+    },
+    "detrend": [
+      "none",
+      "biweight-0.25",
+      "biweight-0.5",
+      "biweight-1.0",
+      "biweight-2.0",
+      "prewhiten+biweight-1.0"
+    ],
+    "search": {
+      "method": "bls",
+      "durations_hr": [
+        1.5,
+        2.5,
+        4.0,
+        6.0,
+        9.0
+      ],
+      "oversample": 3.0,
+      "bin_min": 60.0
+    },
+    "recovery": {
+      "sde_threshold": 7.25,
+      "period_tol": 0.01,
+      "min_transits": 2
+    },
+    "false_alarm": {
+      "inverted": true,
+      "scrambles": 4,
+      "block_d": 10.0
+    },
+    "grid": {
+      "pulsation_periods_h": [
+        2.0,
+        4.0,
+        8.0,
+        16.0,
+        24.0,
+        48.0
+      ],
+      "spot_periods_d": [
+        1.0,
+        3.0,
+        10.0,
+        30.0
+      ],
+      "amplitudes_ppm": [
+        30.0,
+        100.0,
+        300.0,
+        1000.0
+      ],
+      "control": true,
+      "stars_per_cell": 20
+    },
+    "baseline_searches": true,
+    "n_jobs": 4,
+    "cache_dir": "cache"
+  },
+  "git_commit": "18bf1f9800556c873115c6da6700eeefb9854449",
+  "git_dirty": false,
+  "spacesift_version": "0.1.0",
+  "preprocessing_version": "0.1",
+  "package_versions": {
+    "spacesift": "0.1.0",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "pandas": "2.3.3",
+    "astropy": "8.0.1",
+    "lightkurve": "2.6.0",
+    "wotan": "1.10",
+    "pydantic": "2.13.5"
+  },
+  "seed": 20020,
+  "started": "2026-10-07T01:22:47.618215+00:00",
+  "finished": "2026-10-07T03:50:23.063006+00:00",
+  "shard": [
+    13,
+    20
+  ]
+}
