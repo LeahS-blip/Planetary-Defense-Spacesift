@@ -69,7 +69,8 @@ def cmd_analyze(args):
 def cmd_analyze_grid(args):
     from .analysis import analyze_grid
 
-    analyze_grid(Path(args.experiment), far=args.far, snr_band=(args.snr_lo, args.snr_hi), name=args.name)
+    analyze_grid(Path(args.experiment), far=args.far, snr_band=(args.snr_lo, args.snr_hi), name=args.name,
+                 null_exp=Path(args.null) if args.null else None, fixed_threshold=args.fixed_threshold)
 
 
 def cmd_inspect_star(args):
@@ -142,6 +143,8 @@ def main(argv=None):
     g.add_argument("--far", type=float, default=0.01)
     g.add_argument("--snr-lo", type=float, default=10.0)
     g.add_argument("--snr-hi", type=float, default=16.0)
+    g.add_argument("--null", help="false-alarm experiment on noise-only stars (recommended threshold source)")
+    g.add_argument("--fixed-threshold", type=float, help="one SDE threshold for every method (preview only)")
     g.set_defaults(func=cmd_analyze_grid)
 
     i = sub.add_parser("inspect-star", help="plot a star's own best signal before injection")
