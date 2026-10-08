@@ -39,13 +39,19 @@ def rematch(trials: pd.DataFrame, sde_threshold: float, period_tol: float, min_t
 
 
 def analyze_grid(exp: Path, far: float = 0.01, snr_band: tuple[float, float] = (10.0, 16.0),
-                 name: str = "grid") -> Path:
-    """SS-0002-style grid analysis: per-method thresholds from the inverted baseline
-    searches, statuses re-derived with 'star_signal', and per-cell completeness.
+                 name: str = "grid", null_exp: Path | None = None, fixed_threshold: float | None = None) -> Path:
+    """SS-0002-style grid analysis: one SDE threshold per method, statuses re-derived with
+    'star_signal', and per-cell completeness, capture rate and false-alarm rate.
 
-    Each method gets ONE threshold, pooled over every cell (a pipeline cannot know a
-    star's variability in advance), at the given false-alarm rate. Completeness is
-    measured in snr_band; capture rate ('star_signal') over all observable trials.
+    Thresholds (one per method, applied to every cell, as a pipeline cannot know a
+    star's variability in advance) come from, in order of preference:
+      null_exp        a false-alarm experiment on noise-only stars, at rate `far`
+                      (the calibration a pipeline would do on quiet stars);
+      fixed_threshold one SDE for every method (previews only);
+      the grid's own inverted searches pooled over all cells. Avoid: strongly
+      variable stars score high even inverted, so in a grid where half the cells
+      vary strongly this sets a threshold far above the noise (SS-0002A: SDE ~24).
+    The per-cell false-alarm rate then measures false alarms caused by variability.
     """
     from .evaluate import wilson
 
@@ -53,7 +59,19 @@ def analyze_grid(exp: Path, far: float = 0.01, snr_band: tuple[float, float] = (
     trials = pd.read_parquet(exp / "trials.parquet")
     base = pd.read_parquet(exp / "baselines.parquet")
     inverted = base[base.baseline == "inverted"]
-    thresholds = {spec: float(np.quantile(g.found_sde, 1 - far)) for spec, g in inverted.groupby("detrend")}
+    if null_exp is not None:
+        null = json.loads((null_exp / "record.json").read_text())["summary"]
+        missing = set(cfg.detrend) - set(null)
+        if missing:
+            raise SystemExit(f"{null_exp.name} has no false-alarm threshold for {sorted(missing)}")
+        thresholds = {spec: float(null[spec]["threshold_for_far"][str(far)]) for spec in cfg.detrend}
+        source = f"{null_exp.name} at false-alarm rate {far}"
+    elif fixed_threshold is not None:
+        thresholds = {spec: float(fixed_threshold) for spec in cfg.detrend}
+        source = "fixed (preview only)"
+    else:
+        thresholds = {spec: float(np.quantile(g.found_sde, 1 - far)) for spec, g in inverted.groupby("detrend")}
+        source = "pooled grid inverted searches (biased high by variable stars)"
     plain = base[base.baseline == "plain"].set_index(["star_id", "detrend"]).found_period
 
     r = cfg.recovery
@@ -93,6 +111,7 @@ def analyze_grid(exp: Path, far: float = 0.01, snr_band: tuple[float, float] = (
         "false_alarm_rate": far,
         "snr_band": list(snr_band),
         "thresholds": thresholds,
+        "threshold_source": source,
         "status_counts": {spec: d.status.value_counts().to_dict() for spec, d in trials.groupby("detrend")},
         "control_completeness": cells[cells.var_kind == "none"].set_index("detrend").completeness.round(3).to_dict(),
     }

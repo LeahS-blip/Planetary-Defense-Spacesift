@@ -1,0 +1,34 @@
+# False-alarm calibration for SS-0002A: noise-only synthetic stars, identical to the
+# grid's control cell (white noise 150 ppm, 368-day baseline, Kepler-like gaps),
+# searched inverted and block-scrambled with each of SS-0002A's six methods.
+# Gives each method the SDE threshold for a 1% false-alarm rate on quiet stars:
+#   spacesift analyze-grid experiments/SS-0002A --null experiments/SS-0002A-null
+id: SS-0002A-null
+question: What SDE threshold gives each SS-0002A method a 1% false-alarm rate on noise-only stars?
+seed: 20021
+kind: false_alarm
+mission: synthetic
+synthetic:
+  n_stars: 200
+  baseline_d: 368
+  noise_ppm: [150, 150]
+  var_amp_ppm: [0, 0]
+injection:
+  period_d: [1, 30]
+detrend:
+  - none
+  - biweight-0.25
+  - biweight-0.5
+  - biweight-1.0
+  - biweight-2.0
+  - prewhiten+biweight-1.0
+search:
+  method: bls
+  durations_hr: [1.5, 2.5, 4.0, 6.0, 9.0]
+  oversample: 3
+  bin_min: 60
+false_alarm:
+  inverted: true
+  scrambles: 4
+  block_d: 10.0
+n_jobs: 4
