@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 
 from .config import load_config
+from . import json_safe
 from .evaluate import STATUSES, match
 from .inject import Injection
 from .runner import summarize
@@ -115,7 +116,7 @@ def analyze_grid(exp: Path, far: float = 0.01, snr_band: tuple[float, float] = (
         "status_counts": {spec: d.status.value_counts().to_dict() for spec, d in trials.groupby("detrend")},
         "control_completeness": cells[cells.var_kind == "none"].set_index("detrend").completeness.round(3).to_dict(),
     }
-    (out / "analysis.json").write_text(json.dumps(summary, indent=2))
+    (out / "analysis.json").write_text(json.dumps(json_safe(summary), indent=2))
     from .plots import plot_grid
     plot_grid(cells, trials, out)
     print(f"thresholds: { {k: round(v, 2) for k, v in thresholds.items()} }; wrote {out}")
@@ -159,7 +160,7 @@ def analyze(exp: Path, name: str, sde_threshold: float | None = None, null_exp: 
         "n_trials": int(len(kept)),
         "summary": summarize(kept),
     }
-    (out / "analysis.json").write_text(json.dumps(summary, indent=2))
+    (out / "analysis.json").write_text(json.dumps(json_safe(summary), indent=2))
     from .plots import plot_experiment
     plot_experiment(kept, out / "plots")
     print(f"threshold {sde_threshold:.2f} ({source}); excluded {len(excluded)} stars; wrote {out}")

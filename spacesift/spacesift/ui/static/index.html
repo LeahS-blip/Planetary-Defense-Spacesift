@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpaceSift Lab</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #14171c; --quiet: #5c6470; --line: #dfe3e8;
+    --accent: #2f6fde; --good: #1f8a4c; --warn: #b7791f; --bad: #c0392b; --model: #d9480f;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1216; --panel: #171b21; --ink: #e8ebef; --quiet: #9aa3ad; --line: #2a3038;
+            --accent: #6ea0ff; --good: #4cc38a; --warn: #e0a94a; --bad: #ff7b6b; --model: #ff9b66; }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }  /* grid/flex rules below must not un-hide panels */
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; align-items: baseline; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line);
+           background: var(--panel); flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 17px; letter-spacing: .18em; font-weight: 700; }
+  header .tag { color: var(--quiet); }
+  nav { margin-left: auto; display: flex; gap: 4px; }
+  nav button { background: none; border: 1px solid transparent; color: var(--quiet); padding: 6px 12px;
+               border-radius: 6px; cursor: pointer; font: inherit; }
+  nav button.on { border-color: var(--line); color: var(--ink); background: var(--bg); }
+  main { padding: 16px 20px; max-width: 1400px; margin: 0 auto; }
+  .explore { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .explore { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  fieldset { border: none; padding: 0; margin: 0 0 14px; }
+  legend { font-size: 11px; letter-spacing: .12em; color: var(--quiet); font-weight: 700; margin-bottom: 6px; }
+  label { display: block; margin: 8px 0 3px; color: var(--quiet); font-size: 12.5px; }
+  input[type=number], input[type=text], select { width: 100%; padding: 6px 8px; border: 1px solid var(--line);
+         border-radius: 6px; background: var(--bg); color: var(--ink); font: inherit; }
+  input[type=range] { width: 100%; }
+  .row { display: flex; gap: 8px; } .row > * { flex: 1; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button { flex: 1; border: none; background: none; padding: 6px; color: var(--quiet); cursor: pointer; font: inherit; }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .presets button { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px;
+                    padding: 4px 10px; cursor: pointer; font-size: 12.5px; }
+  .run { width: 100%; padding: 10px; border: none; border-radius: 8px; background: var(--accent); color: #fff;
+         font: 600 15px system-ui; cursor: pointer; margin-top: 6px; }
+  .run:disabled { opacity: .55; cursor: wait; }
+  .hint { color: var(--quiet); font-size: 12px; margin-top: 4px; }
+  .status { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .badge { font-weight: 700; font-size: 18px; }
+  .badge.good { color: var(--good); } .badge.warn { color: var(--warn); } .badge.bad { color: var(--bad); }
+  .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 12px; }
+  .num { border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  .num b { display: block; font: 600 16px var(--mono); }
+  .num span { color: var(--quiet); font-size: 12px; }
+  .plots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .plots .wide { grid-column: 1 / -1; }
+  @media (max-width: 1100px) { .plots { grid-template-columns: 1fr; } }
+  .plot { height: 260px; }
+  .empty { color: var(--quiet); padding: 40px; text-align: center; }
+  .error { color: var(--bad); white-space: pre-wrap; font: 12px var(--mono); }
+  .explain { color: var(--quiet); margin-top: 8px; }
+  .exps { display: grid; grid-template-columns: 300px 1fr; gap: 16px; }
+  @media (max-width: 900px) { .exps { grid-template-columns: 1fr; } }
+  .exp-item { padding: 10px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; cursor: pointer; background: var(--panel); }
+  .exp-item.on { border-color: var(--accent); }
+  .exp-item b { font-family: var(--mono); }
+  .exp-item div { color: var(--quiet); font-size: 12.5px; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; margin-top: 10px; }
+  .gallery figure { margin: 0; border: 1px solid var(--line); border-radius: 8px; padding: 6px; background: #fff; }
+  .gallery img { width: 100%; display: block; }
+  .gallery figcaption { font: 11px var(--mono); color: #555; margin-top: 4px; word-break: break-all; }
+  pre.notes { white-space: pre-wrap; font: 12.5px/1.5 var(--mono); background: var(--bg); padding: 10px; border-radius: 8px;
+              border: 1px solid var(--line); max-height: 360px; overflow: auto; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent);
+             border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>SPACESIFT</h1><span class="tag">Investigating the limits of exoplanet detection</span>
+  <nav><button id="tab-explore" class="on">Explore</button><button id="tab-results">Results</button></nav>
+</header>
+
+<main>
+<section id="view-explore" class="explore">
+  <div class="card">
+    <div class="presets" id="presets"></div>
+
+    <fieldset>
+      <legend>STAR</legend>
+      <div class="seg" id="source"><button data-v="synthetic" class="on">Simulated</button><button data-v="kepler">Real Kepler star</button></div>
+      <div id="synthetic-opts">
+        <label>Variability</label>
+        <select id="var_kind"><option value="none">None (quiet star)</option><option value="pulsation">Pulsation (regular rhythm)</option><option value="spots">Starspots (drifting rotation)</option></select>
+        <div id="var-params">
+          <div class="row">
+            <div><label>Period (hours)</label><input type="number" id="var_period_h" value="4" min="1" step="0.5"></div>
+            <div><label>Amplitude (ppm)</label><input type="number" id="var_amp" value="300" min="0" step="10"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>Noise per 30 min (ppm)</label><input type="number" id="noise" value="150" min="10" step="10"></div>
+          <div><label>Days of data</label><select id="baseline"><option>90</option><option selected>120</option><option>368</option></select></div>
+        </div>
+        <div class="hint">More days = more transits, but slower (368 days ≈ 15 s).</div>
+      </div>
+      <div id="kepler-opts" hidden>
+        <label>Kepler star (KIC number)</label><input type="text" id="kic" value="6205852">
+        <div class="hint">Quarters 2–5 (about a year). The first look at a star downloads it from NASA (~30 s); later runs are cached. Try 6205852 (a pulsator SS-0001 flagged) or 1868918 (a quiet star).</div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>PLANET</legend>
+      <label><input type="checkbox" id="planet_on" checked> Plant a planet</label>
+      <div id="planet-opts">
+        <div class="seg" id="size_mode"><button data-v="snr" class="on">Size by signal strength</button><button data-v="radius">Size by radius</button></div>
+        <div id="snr-box"><label>Signal-to-noise (SNR): <b id="snr_val">12</b></label><input type="range" id="snr" min="4" max="30" step="0.5" value="12">
+          <div class="hint">Below ~8 is very hard; above ~16 is easy on a quiet star.</div></div>
+        <div id="radius-box" hidden><label>Radius (Earth radii)</label><input type="number" id="radius" value="1.0" min="0.1" step="0.1"></div>
+        <div class="row">
+          <div><label>Orbit (days)</label><input type="number" id="period" value="7.3" min="1" max="30" step="0.1"></div>
+          <div><label>Impact parameter b</label><input type="number" id="b" value="0.3" min="0" max="0.9" step="0.1"></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>SEARCH</legend>
+      <label>Cleaning method (detrending)</label>
+      <select id="detrend"></select>
+      <div class="hint" id="method-hint"></div>
+      <div class="row">
+        <div><label>Detection threshold (SDE)</label><input type="number" id="threshold" value="7.25" step="0.25"></div>
+        <div><label>Random seed</label><div class="row"><input type="number" id="seed" value="1"><button id="reseed" title="New random noise and transit timing" style="flex:0 0 auto;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);cursor:pointer">↻</button></div></div>
+      </div>
+    </fieldset>
+    <button class="run" id="run">Run search</button>
+  </div>
+
+  <div>
+    <div class="card" id="result"><div class="empty">Pick a preset or set up a star and a planet, then press <b>Run search</b>.</div></div>
+    <div class="plots" id="plots" hidden>
+      <div class="card wide"><div id="p-raw" class="plot"></div></div>
+      <div class="card wide"><div id="p-flat" class="plot"></div></div>
+      <div class="card"><div id="p-pgram" class="plot"></div></div>
+      <div class="card"><div id="p-fold" class="plot"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="view-results" hidden>
+  <div class="exps">
+    <div id="exp-list"><div class="empty"><span class="spinner"></span></div></div>
+    <div class="card" id="exp-detail"><div class="empty">Choose an experiment.</div></div>
+  </div>
+</section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const METHOD_HINTS = {
+  "none": "No cleaning: the star's variability stays in.",
+  "biweight-0.25": "Sliding 6-hour median-like filter: removes fast variability, but trims long transits.",
+  "biweight-0.5": "Sliding 12-hour filter.",
+  "biweight-1.0": "Sliding 1-day filter (SS-0001's default).",
+  "biweight-2.0": "Sliding 2-day filter: keeps transits whole, follows only slow variability.",
+  "prewhiten+biweight-1.0": "Finds the star's regular rhythms, subtracts them, then a 1-day filter.",
+};
+const STATUS = {
+  recovered: ["good", "Found it", "The search picked out the planet at the right period and timing."],
+  alias_half: ["warn", "Found, at half the period", "Right planet, but the search counted two orbits per real one."],
+  alias_double: ["warn", "Found, at double the period", "Right planet, but the search skipped every other transit."],
+  wrong_period: ["bad", "Missed: found something else", "The strongest signal was not the planet."],
+  below_threshold: ["bad", "Missed: too faint to stand out", "Nothing rose above the detection threshold."],
+  not_observable: ["warn", "Too few transits", "Fewer than 2 transits fall in the data, so nothing can be tested."],
+  false_alarm: ["bad", "False alarm", "No planet was planted, but the search 'found' one anyway."],
+  nothing_found: ["good", "Correctly found nothing", "No planet was planted and nothing beat the threshold."],
+};
+const PRESETS = [
+  ["Quiet star", {source: "synthetic", var_kind: "none", snr: 12, detrend: "biweight-1.0"}],
+  ["Pulsating star", {source: "synthetic", var_kind: "pulsation", var_period_h: 4, var_amp: 300, snr: 12, detrend: "biweight-1.0"}],
+  ["…same, prewhitened", {source: "synthetic", var_kind: "pulsation", var_period_h: 4, var_amp: 300, snr: 12, detrend: "prewhiten+biweight-1.0"}],
+  ["Fast spots", {source: "synthetic", var_kind: "spots", var_period_h: 72, var_amp: 300, snr: 12, detrend: "biweight-1.0"}],
+  ["Faint planet", {source: "synthetic", var_kind: "none", snr: 7, detrend: "biweight-1.0"}],
+  ["Real pulsator (KIC 6205852)", {source: "kepler", kic: "6205852", snr: 12, detrend: "biweight-1.0"}],
+];
+let state = {source: "synthetic", size_mode: "snr"};
+
+function seg(id, key, onChange) {
+  $(id).querySelectorAll("button").forEach(b => b.onclick = () => {
+    $(id).querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+    state[key] = b.dataset.v; onChange && onChange();
+  });
+}
+function setSeg(id, key, v) { $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); state[key] = v; }
+function syncVisibility() {
+  $("synthetic-opts").hidden = state.source !== "synthetic";
+  $("kepler-opts").hidden = state.source !== "kepler";
+  $("var-params").hidden = $("var_kind").value === "none";
+  $("planet-opts").hidden = !$("planet_on").checked;
+  $("snr-box").hidden = state.size_mode !== "snr";
+  $("radius-box").hidden = state.size_mode !== "radius";
+  $("method-hint").textContent = METHOD_HINTS[$("detrend").value] || "";
+}
+seg("source", "source", syncVisibility);
+seg("size_mode", "size_mode", syncVisibility);
+["var_kind", "planet_on", "detrend"].forEach(id => $(id).addEventListener("change", syncVisibility));
+$("snr").addEventListener("input", () => $("snr_val").textContent = $("snr").value);
+$("reseed").onclick = () => { $("seed").value = Math.floor(Math.random() * 100000); };
+
+fetch("/api/methods").then(r => r.json()).then(ms => {
+  $("detrend").innerHTML = ms.map(m => `<option value="${m}">${m}</option>`).join("");
+  $("detrend").value = "biweight-1.0"; syncVisibility();
+});
+$("presets").innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p[0]}</button>`).join("");
+$("presets").querySelectorAll("button").forEach(b => b.onclick = () => {
+  const p = PRESETS[+b.dataset.i][1];
+  setSeg("source", "source", p.source);
+  if (p.kic) $("kic").value = p.kic;
+  if (p.var_kind) $("var_kind").value = p.var_kind;
+  if (p.var_period_h) $("var_period_h").value = p.var_period_h;
+  if (p.var_amp !== undefined) $("var_amp").value = p.var_amp;
+  $("planet_on").checked = true; setSeg("size_mode", "size_mode", "snr");
+  $("snr").value = p.snr; $("snr_val").textContent = p.snr;
+  $("detrend").value = p.detrend; syncVisibility(); run();
+});
+
+function params() {
+  return {
+    source: state.source, kic: $("kic").value, quarters: [2, 3, 4, 5],
+    var_kind: $("var_kind").value, var_period_d: +$("var_period_h").value / 24, var_amp_ppm: +$("var_amp").value,
+    noise_ppm: +$("noise").value, baseline_d: +$("baseline").value, seed: +$("seed").value,
+    planet: {enabled: $("planet_on").checked, size_mode: state.size_mode, snr: +$("snr").value,
+             radius_earth: +$("radius").value, period_d: +$("period").value, b: +$("b").value},
+    detrend: $("detrend").value, sde_threshold: +$("threshold").value, period_min: 1, period_max: 30,
+  };
+}
+
+function layout(title, xt, yt, extra = {}) {
+  return Object.assign({
+    title: {text: title, font: {size: 13, color: css("--ink")}, x: 0.01, xanchor: "left"},
+    margin: {l: 58, r: 12, t: 34, b: 40}, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: {color: css("--quiet"), size: 11}, showlegend: false,
+    xaxis: {title: {text: xt}, gridcolor: css("--line"), zeroline: false},
+    yaxis: {title: {text: yt}, gridcolor: css("--line"), zeroline: false},
+  }, extra);
+}
+const CFG = {displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"]};
+
+async function run() {
+  const btn = $("run"); btn.disabled = true;
+  const p = params();
+  $("result").innerHTML = `<div class="empty"><span class="spinner"></span> Searching${p.source === "kepler" ? " (first look at a star downloads it from NASA)" : ""}…</div>`;
+  try {
+    const r = await fetch("/api/trial", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(p)});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error + "\n\n" + (d.trace || ""));
+    render(d, p);
+  } catch (e) {
+    $("result").innerHTML = `<div class="error">${String(e.message || e)}</div>`; $("plots").hidden = true;
+  } finally { btn.disabled = false; }
+}
+$("run").onclick = run;
+
+function render(d, p) {
+  const [tone, head, why] = STATUS[d.status] || ["warn", d.status, ""];
+  let extra = "";
+  if (d.status === "wrong_period" && (p.var_kind !== "none" || p.source === "kepler"))
+    extra = p.detrend.startsWith("prewhiten")
+      ? " It was probably variability that prewhitening could not fully remove (e.g. many pulsation modes, or spots that drift). Try a shorter filter."
+      : " It was probably the star's own variability. Try prewhitening, or a shorter filter.";
+  const inj = d.injection, c = d.candidate;
+  const num = (v, l) => `<div class="num"><b>${v}</b><span>${l}</span></div>`;
+  $("result").innerHTML = `
+    <div class="status"><span class="badge ${tone}">${head}</span><span style="color:var(--quiet)">${d.label} · ${p.detrend} · ${d.seconds} s</span></div>
+    <div class="explain">${why}${extra}</div>
+    <div class="nums">
+      ${inj ? num(inj.period_d + " d", "planted orbit") + num(inj.radius_earth + " R⊕", "planted radius") +
+              num(inj.depth_ppm + " ppm", "transit depth") + num(inj.snr, "signal-to-noise") + num(inj.n_transits, "transits in data") : ""}
+      ${num(c.period.toFixed(4) + " d", "search found period")}
+      ${num(c.sde.toFixed(2), `peak SDE (threshold ${d.threshold})`)}
+      ${num(d.white_noise_ppm + " ppm", "noise per cadence")}
+    </div>`;
+  $("plots").hidden = false;
+  const accent = css("--accent"), model = css("--model"), quiet = css("--quiet"), ink = css("--ink");
+  const pts = (x, y, color, size = 2) => ({x, y, type: "scattergl", mode: "markers", marker: {size, color, opacity: .55}, hoverinfo: "skip"});
+  Plotly.react("p-raw", [pts(d.lc.t, d.lc.raw, quiet),
+    ...(inj ? [{x: d.lc.t, y: d.lc.model, type: "scattergl", mode: "lines", line: {color: model, width: 1.2}, hoverinfo: "skip"}] : [])],
+    layout("1 · Raw brightness" + (inj ? " (orange = the planted planet's dips)" : ""), "days", "ppm"), CFG);
+  Plotly.react("p-flat", [pts(d.lc.flat_t, d.lc.flat, accent)],
+    layout("2 · After cleaning (" + p.detrend + ")", "days", "ppm"), CFG);
+  const shapes = [{type: "line", xref: "paper", x0: 0, x1: 1, y0: d.threshold, y1: d.threshold, line: {color: css("--bad"), dash: "dot", width: 1}}];
+  if (inj) shapes.push({type: "line", yref: "paper", y0: 0, y1: 1, x0: inj.period_d, x1: inj.period_d, line: {color: model, dash: "dash", width: 1}});
+  Plotly.react("p-pgram", [{x: d.periodogram.period, y: d.periodogram.sde, type: "scattergl", mode: "lines", line: {color: ink, width: 1}},
+    {x: [c.period], y: [c.sde], type: "scatter", mode: "markers", marker: {color: accent, size: 9}}],
+    layout("3 · Search: signal strength at each trial orbit", "orbit tried (days, log)", "SDE",
+           {xaxis: {type: "log", title: {text: "orbit tried (days, log)"}, gridcolor: css("--line")}, shapes,
+            annotations: [{xref: "paper", x: 1, y: d.threshold, text: "threshold", showarrow: false, font: {color: css("--bad"), size: 10}, xanchor: "right", yanchor: "bottom"}]}), CFG);
+  Plotly.react("p-fold", [pts(d.fold.phase_h, d.fold.flux, quiet, 3),
+    {x: d.fold.bin_h, y: d.fold.bin_flux, type: "scatter", mode: "lines", line: {color: accent, width: 2}}],
+    layout(`4 · Folded on the found orbit (${c.period.toFixed(3)} d)`, "hours from mid-dip", "ppm"), CFG);
+}
+
+// Results tab
+function showTab(name) {
+  $("view-explore").hidden = name !== "explore"; $("view-results").hidden = name !== "results";
+  $("tab-explore").classList.toggle("on", name === "explore"); $("tab-results").classList.toggle("on", name === "results");
+  if (name === "results" && !window._loaded) loadExperiments();
+}
+$("tab-explore").onclick = () => showTab("explore");
+$("tab-results").onclick = () => showTab("results");
+
+async function loadExperiments() {
+  window._loaded = true;
+  const list = await (await fetch("/api/experiments")).json();
+  if (!list.length) { $("exp-list").innerHTML = `<div class="empty">No experiments found. Start the UI with --experiments pointing at a folder of experiments.</div>`; return; }
+  $("exp-list").innerHTML = list.map(e => `<div class="exp-item" data-id="${e.id}"><b>${e.id}</b><div>${e.question}</div><div>${e.n_trials ?? "?"} trials · ${e.n_stars ?? "?"} stars</div></div>`).join("");
+  $("exp-list").querySelectorAll(".exp-item").forEach(el => el.onclick = () => openExperiment(el.dataset.id));
+}
+async function openExperiment(id) {
+  $("exp-list").querySelectorAll(".exp-item").forEach(el => el.classList.toggle("on", el.dataset.id === id));
+  $("exp-detail").innerHTML = `<div class="empty"><span class="spinner"></span></div>`;
+  const d = await (await fetch("/api/experiment/" + encodeURIComponent(id))).json();
+  const r = d.record;
+  const facts = [["Trials", r.n_trials], ["Stars", r.n_stars], ["Failed stars", r.n_stars_failed], ["Code commit", (r.git_commit || "").slice(0, 7)],
+                 ["Seed", r.seed], ["Finished", (r.finished || "").slice(0, 16).replace("T", " ")]];
+  const analyses = Object.entries(d.analyses).map(([k, a]) =>
+    `<div class="num"><b>${k}</b><span>${a.threshold_source || ""}${a.thresholds ? "<br>thresholds: " + Object.entries(a.thresholds).map(([m, v]) => m + " " + (+v).toFixed(2)).join(", ") : ""}${a.sde_threshold ? "<br>SDE " + (+a.sde_threshold).toFixed(2) : ""}</span></div>`).join("");
+  $("exp-detail").innerHTML = `
+    <h2 style="margin:0 0 4px;font:600 18px var(--mono)">${d.id}</h2>
+    <div style="color:var(--quiet)">${r.question || ""}</div>
+    <div class="nums">${facts.map(([l, v]) => `<div class="num"><b>${v ?? "–"}</b><span>${l}</span></div>`).join("")}</div>
+    ${analyses ? `<h3 style="font-size:13px;letter-spacing:.1em;color:var(--quiet);margin:16px 0 4px">ANALYSES</h3><div class="nums">${analyses}</div>` : ""}
+    ${d.notes ? `<h3 style="font-size:13px;letter-spacing:.1em;color:var(--quiet);margin:16px 0 4px">NOTES</h3><pre class="notes">${d.notes.replace(/</g, "&lt;")}</pre>` : ""}
+    <h3 style="font-size:13px;letter-spacing:.1em;color:var(--quiet);margin:16px 0 4px">PLOTS</h3>
+    <div class="gallery">${d.images.map(src => `<figure><a href="/files/${d.id}/${src}" target="_blank"><img loading="lazy" src="/files/${d.id}/${src}"></a><figcaption>${src}</figcaption></figure>`).join("") || "<div class='empty'>No plots.</div>"}</div>`;
+}
+</script>
+</body>
+</html>

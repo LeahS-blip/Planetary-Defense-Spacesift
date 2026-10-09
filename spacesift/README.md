@@ -19,6 +19,22 @@ Python 3.10+. `batman-package` and `transitleastsquares` are optional extras
 because they need a C compiler where no prebuilt wheel exists (e.g. Python
 3.14 on Windows). SpaceSift ships its own transit model (below), so neither is required.
 
+## The UI
+
+```
+python -m spacesift.cli ui
+```
+
+This opens <http://127.0.0.1:8765/> in your browser. Stop it with Ctrl+C.
+
+- **Explore:** choose a simulated star (quiet, pulsating, or spotted) or a real Kepler star by KIC
+  number. Plant a planet, sized by signal-to-noise or by radius, pick a cleaning method, and run
+  the search. The page shows whether the planet was found, plus four plots: raw brightness with
+  the planted dips, the cleaned light curve, the search periodogram with its threshold, and the
+  light curve folded on the period found. The presets reproduce the main SS-0002 results.
+- **Results:** browse every experiment in `experiments/`: its record, analyses, notes and plots.
+  Use `--experiments <folder> [<folder> ...]` to browse other folders.
+
 ## Running an experiment
 
 ```
