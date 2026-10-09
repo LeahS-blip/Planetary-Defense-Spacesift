@@ -1,0 +1,35 @@
+# SS-0002 Part B: does the synthetic map (SS-0002A) predict real stars?
+# 316 real Kepler stars: spotted stars from McQuillan et al. (2014) binned like
+# Part A's spot cells, plus 60 delta Scuti pulsators from Murphy et al. (2019).
+# Same methods and SNR definition as Part A, with white noise estimated from each
+# star's cadence-to-cadence scatter after removing its variability.
+# Predictions (configs/predictions/SS-0002B.csv) are committed before this runs.
+# Analyse: spacesift analyze-grid experiments/SS-0002B --null experiments/SS-0002B-null --name far1pct
+#          spacesift compare experiments/SS-0002B --cells-a <Part A cells.csv> --predictions configs/predictions/SS-0002B.csv
+id: SS-0002B
+question: Does the SS-0002A synthetic map predict completeness on real variable Kepler stars?
+seed: 20022
+mission: kepler
+stars_file: configs/stars/SS-0002B.csv
+quarters: [2, 3, 4, 5]
+baseline_searches: true
+injection:
+  trials_per_star: 25
+  expected_snr: [8, 20]
+  period_d: [1, 30]
+  b: [0, 0.9]
+  depth_basis: mean
+  snr_noise: cleaned_p2p
+detrend:
+  - biweight-0.25
+  - biweight-0.5
+  - biweight-1.0
+  - prewhiten+biweight-1.0
+search:
+  method: bls
+  durations_hr: [1.5, 2.5, 4.0, 6.0, 9.0]
+  oversample: 3
+  bin_min: 60
+recovery:
+  sde_threshold: 7.25  # run-time label only; analyze-grid sets per-method thresholds
+n_jobs: 4

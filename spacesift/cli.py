@@ -73,6 +73,27 @@ def cmd_analyze_grid(args):
                  null_exp=Path(args.null) if args.null else None, fixed_threshold=args.fixed_threshold)
 
 
+def cmd_select_variable(args):
+    from .data import select_variable_stars
+
+    df = select_variable_stars(Path(args.out))
+    print(f"wrote {len(df)} stars to {args.out}")
+    print(df.groupby("cell", sort=False).size().to_string())
+
+
+def cmd_predict(args):
+    from .partb import predict
+
+    pred = predict(Path(args.cells_a), Path(args.stars), Path(args.out))
+    print(f"wrote {len(pred)} predictions to {args.out}")
+
+
+def cmd_compare(args):
+    from .partb import compare
+
+    compare(Path(args.experiment), args.analysis, Path(args.cells_a), Path(args.predictions))
+
+
 def cmd_inspect_star(args):
     """Plot a star's own light curve and best pre-injection signal (downloads if not cached)."""
     from .config import load_config
@@ -146,6 +167,23 @@ def main(argv=None):
     g.add_argument("--null", help="false-alarm experiment on noise-only stars (recommended threshold source)")
     g.add_argument("--fixed-threshold", type=float, help="one SDE threshold for every method (preview only)")
     g.set_defaults(func=cmd_analyze_grid)
+
+    sv = sub.add_parser("select-variable-stars", help="freeze the SS-0002B real variable-star sample")
+    sv.add_argument("--out", default="configs/stars/SS-0002B.csv")
+    sv.set_defaults(func=cmd_select_variable)
+
+    pr = sub.add_parser("predict", help="Part B: write Part A's predictions for each real-star bin")
+    pr.add_argument("--cells-a", required=True, help="Part A cells.csv")
+    pr.add_argument("--stars", default="configs/stars/SS-0002B.csv")
+    pr.add_argument("--out", required=True)
+    pr.set_defaults(func=cmd_predict)
+
+    cp = sub.add_parser("compare", help="Part B: observed vs predicted completeness")
+    cp.add_argument("experiment")
+    cp.add_argument("--analysis", default="far1pct")
+    cp.add_argument("--cells-a", required=True)
+    cp.add_argument("--predictions", required=True)
+    cp.set_defaults(func=cmd_compare)
 
     i = sub.add_parser("inspect-star", help="plot a star's own best signal before injection")
     i.add_argument("config")

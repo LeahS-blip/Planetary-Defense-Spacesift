@@ -189,6 +189,30 @@ def plot_grid(cells: pd.DataFrame, trials: pd.DataFrame, out: Path) -> None:
         plt.close(fig)
 
 
+def plot_comparison(table: pd.DataFrame, path: Path) -> None:
+    """Part B: observed completeness on real stars vs the Part A prediction, per bin and method."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(6.2, 6))
+    ax.plot([0, 1], [0, 1], color="k", lw=0.8, alpha=0.5)
+    for spec, d in table.groupby("detrend"):
+        for judged, marker in ((True, "o"), (False, "x")):
+            e = d[d.judged == judged]
+            if len(e):
+                ax.errorbar(e.pred, e.completeness, yerr=[np.clip(e.completeness - e.lo68, 0, None),
+                                                          np.clip(e.hi68 - e.completeness, 0, None)],
+                            fmt=marker, capsize=2, ms=5, label=f"{spec}" + ("" if judged else " (<10 stars)"))
+    ax.set_xlim(-0.03, 1.03)
+    ax.set_ylim(-0.03, 1.03)
+    ax.set_xlabel("Predicted by Part A (simulation)")
+    ax.set_ylabel("Observed on real Kepler stars")
+    ax.set_title("Does the synthetic map predict real stars?")
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=7, loc="upper left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
 def plot_star(time, flux, flat, cand, inv_cand, star_id: str, path: Path) -> None:
     """Why does this star have a pre-injection signal? Raw, detrended, and folded on the best period."""
     fig, axes = plt.subplots(3, 1, figsize=(10, 8))

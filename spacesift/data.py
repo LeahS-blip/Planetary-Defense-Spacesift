@@ -139,8 +139,15 @@ def synthetic_variable(rng: np.random.Generator, baseline: float, noise_ppm: flo
     return LightCurve(time, 1 + var + noise, cadence, noise_only=1 + noise)
 
 
+CELL_COLUMNS = ("cell", "var_kind", "var_period_d", "var_amp_ppm")
+
+
 def read_stars(path: Path) -> list[Star]:
-    """Frozen star list. Required column: star_id. Optional: radius, mass, teff, u1, u2."""
+    """Frozen star list. Required column: star_id. Optional: radius, mass, teff, u1, u2.
+
+    Optional cell columns (cell, var_kind, var_period_d, var_amp_ppm) label each star's
+    variability bin, so real stars can be analysed like a synthetic grid (SS-0002B).
+    """
     df = pd.read_csv(path, dtype={"star_id": str})
     fields = {"radius", "mass", "teff", "u1", "u2"}
     stars = []
@@ -148,8 +155,71 @@ def read_stars(path: Path) -> list[Star]:
         kw = {k: float(v) for k, v in row.items() if k in fields and pd.notna(v)}
         if kw.get("radius", 1.0) <= 0 or kw.get("mass", 1.0) <= 0:
             raise ValueError(f"{path}: star {row['star_id']} has non-positive radius or mass")
-        stars.append(Star(star_id=str(row["star_id"]), **kw))
+        meta = {k: row[k] for k in CELL_COLUMNS if k in row and pd.notna(row[k])}
+        stars.append(Star(star_id=str(row["star_id"]), meta=meta, **kw))
     return stars
+
+
+# Part A's spot cells, as bins: rotation period (d) and semi-amplitude (ppm), edges halfway
+# between cell centres in log space.
+SPOT_PERIOD_BINS = {1.0: (0.5, 2.0), 3.0: (2.0, 5.0), 10.0: (5.0, 15.0), 30.0: (15.0, 45.0)}
+SPOT_AMP_BINS = {30.0: (17.0, 55.0), 100.0: (55.0, 170.0), 300.0: (170.0, 550.0), 1000.0: (550.0, 1700.0)}
+
+
+def _dr25_quiet_pool(kepmag: tuple[float, float]) -> pd.DataFrame:
+    """DR25 stellar parameters for stars with >700 d of data and no KOI."""
+    from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive as NEA
+
+    stellar = NEA.query_criteria(
+        table="q1_q17_dr25_stellar",
+        select="kepid,teff,logg,radius,mass,kepmag,dataspan",
+        where=f"kepmag between {kepmag[0]} and {kepmag[1]} and dataspan > 700",
+    ).to_pandas()
+    kois = NEA.query_criteria(table="q1_q17_dr25_koi", select="kepid").to_pandas()
+    stellar = stellar[~stellar.kepid.isin(kois.kepid)].dropna(subset=["radius", "mass"])
+    return stellar[(stellar.mass > 0) & (stellar.radius > 0)]
+
+
+def select_variable_stars(out: Path, per_bin: int = 30, n_pulsators: int = 60, seed: int = 2,
+                          kepmag: tuple[float, float] = (11.0, 14.0)) -> pd.DataFrame:
+    """SS-0002B sample: spotted stars binned like Part A's spot cells, plus delta Scuti pulsators.
+
+    Spots: McQuillan, Mazeh & Aigrain (2014) rotation periods; their Rper is the 5-95%
+    flux range, about twice a sinusoid's semi-amplitude, so semi-amplitude = Rper / 2.
+    Pulsators: stars flagged delta Scuti by Murphy et al. (2019). Their periods and
+    amplitudes are measured during the run. Every star: DR25 parameters, no KOI.
+    """
+    from astroquery.vizier import Vizier
+
+    pool = _dr25_quiet_pool(kepmag)
+    viz = Vizier(row_limit=-1, columns=["KIC", "Prot", "Rper"])
+    rot = viz.get_catalogs("J/ApJS/211/24/table1")[0].to_pandas()
+    rot = rot.merge(pool, left_on="KIC", right_on="kepid")
+    rot = rot[(rot.logg > 4.0) & rot.teff.between(4000, 6500)]
+    rot["amp"] = rot.Rper / 2
+    picks = []
+    for pc, (plo, phi) in SPOT_PERIOD_BINS.items():
+        for ac, (alo, ahi) in SPOT_AMP_BINS.items():
+            b = rot[rot.Prot.between(plo, phi, inclusive="left") & rot.amp.between(alo, ahi, inclusive="left")]
+            b = b.sample(n=min(per_bin, len(b)), random_state=seed)
+            picks.append(b.assign(var_kind="spots", var_period_d=pc, var_amp_ppm=ac,
+                                  cell=f"spots-P{pc:g}d-A{ac:g}", cat_period_d=b.Prot, cat_amp_ppm=b.amp))
+    dsct = Vizier(row_limit=-1, columns=["KIC", "dSct"]).get_catalogs("J/MNRAS/485/2380/table1")[0].to_pandas()
+    dsct = dsct[dsct.dSct.astype(str).str.strip().str.upper().isin(["Y", "1", "TRUE"])]
+    dsct = dsct.merge(pool, left_on="KIC", right_on="kepid")
+    dsct = dsct.sample(n=min(n_pulsators, len(dsct)), random_state=seed)
+    picks.append(dsct.assign(var_kind="dsct", var_period_d=0.0, var_amp_ppm=0.0, cell="dsct",
+                             cat_period_d=np.nan, cat_amp_ppm=np.nan))
+    sel = pd.concat(picks, ignore_index=True)
+    df = pd.DataFrame({
+        "star_id": sel.kepid.astype(int).astype(str), "radius": sel.radius, "mass": sel.mass,
+        "teff": sel.teff, "kepmag": sel.kepmag, "cell": sel.cell, "var_kind": sel.var_kind,
+        "var_period_d": sel.var_period_d, "var_amp_ppm": sel.var_amp_ppm,
+        "cat_period_d": sel.cat_period_d, "cat_amp_ppm": sel.cat_amp_ppm,
+    }).drop_duplicates("star_id")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(out, index=False)
+    return df
 
 
 def select_kepler_stars(n: int, seed: int, out: Path, kepmag=(11.0, 13.0), teff=(4500.0, 6500.0)) -> pd.DataFrame:
