@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transit Lab · SpaceSift</title>
+<meta name="description" content="Where does planet-hunting break? Plant a planet in a star's light curve and see whether the search finds it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
+<style>
+  :root { --bg:#0b1020; --card:#141a30; --card2:#10162a; --ink:#e8ecf8; --dim:#8b93ad; --line:#252d4a;
+          --acc:#7aa2ff; --hi:#4ade80; --mid:#fbbf24; --bad:#f87171; --model:#fb923c;
+          --mono:"Space Mono",ui-monospace,Consolas,monospace; --sans:ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 var(--sans); }
+  a { color:var(--acc); }
+  header { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  header .brand { font:700 17px var(--mono); letter-spacing:.2em; color:var(--ink); text-decoration:none; }
+  header .crumb { color:var(--dim); font-family:var(--mono); }
+  nav { margin-left:auto; display:flex; gap:4px; flex-wrap:wrap; }
+  nav button { background:none; border:1px solid transparent; color:var(--dim); padding:6px 12px; border-radius:6px;
+               cursor:pointer; font:13px var(--mono); }
+  nav button.on { border-color:var(--line); color:var(--ink); background:var(--card); }
+  main { padding:16px 20px 40px; max-width:1400px; margin:0 auto; }
+  .lead { color:var(--dim); max-width:820px; margin:4px 0 16px; }
+  .explore { display:grid; grid-template-columns:330px 1fr; gap:16px; align-items:start; }
+  @media (max-width:900px) { .explore { grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  fieldset { border:none; padding:0; margin:0 0 14px; }
+  legend { font:700 11px var(--mono); letter-spacing:.14em; color:var(--dim); margin-bottom:6px; }
+  label { display:block; margin:8px 0 3px; color:var(--dim); font-size:12.5px; }
+  input[type=number], input[type=text], select { width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
+         background:var(--card2); color:var(--ink); font:inherit; }
+  input[type=range] { width:100%; accent-color:var(--acc); }
+  .row { display:flex; gap:8px; } .row > * { flex:1; min-width:0; }
+  .seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .seg button { flex:1; border:none; background:none; padding:6px; color:var(--dim); cursor:pointer; font:inherit; }
+  .seg button.on { background:var(--acc); color:#0b1020; font-weight:600; }
+  .presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .presets button { border:1px solid var(--line); background:var(--card2); color:var(--ink); border-radius:999px;
+                    padding:4px 10px; cursor:pointer; font-size:12.5px; }
+  .presets button:hover { border-color:var(--acc); }
+  .run { width:100%; padding:10px; border:none; border-radius:8px; background:var(--acc); color:#0b1020;
+         font:700 14px var(--mono); letter-spacing:.06em; cursor:pointer; margin-top:6px; }
+  .run:disabled { opacity:.55; cursor:wait; }
+  .hint { color:var(--dim); font-size:12px; margin-top:4px; }
+  .status { display:flex; gap:14px; align-items:baseline; flex-wrap:wrap; }
+  .badge { font:700 18px var(--mono); }
+  .badge.good { color:var(--hi); } .badge.warn { color:var(--mid); } .badge.bad { color:var(--bad); }
+  .nums { display:grid; grid-template-columns:repeat(auto-fit, minmax(128px, 1fr)); gap:8px; margin-top:12px; }
+  .num { border:1px solid var(--line); border-radius:8px; padding:8px; background:var(--card2); }
+  .num b { display:block; font:700 15px var(--mono); }
+  .num span { color:var(--dim); font-size:12px; }
+  .plots { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+  .plots .wide { grid-column:1 / -1; }
+  @media (max-width:1100px) { .plots { grid-template-columns:1fr; } }
+  .plot { height:260px; }
+  .empty { color:var(--dim); padding:36px; text-align:center; }
+  .error { color:var(--bad); white-space:pre-wrap; font:12px var(--mono); }
+  .explain { color:var(--dim); margin-top:8px; }
+  .exps { display:grid; grid-template-columns:300px 1fr; gap:16px; }
+  @media (max-width:900px) { .exps { grid-template-columns:1fr; } }
+  .exp-item { padding:10px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; cursor:pointer; background:var(--card); }
+  .exp-item.on { border-color:var(--acc); }
+  .exp-item b { font-family:var(--mono); }
+  .exp-item div { color:var(--dim); font-size:12.5px; }
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:10px; margin-top:10px; }
+  .gallery figure { margin:0; border:1px solid var(--line); border-radius:8px; padding:6px; background:#fff; }
+  .gallery img { width:100%; display:block; }
+  .gallery figcaption { font:11px var(--mono); color:#555; margin-top:4px; word-break:break-all; }
+  pre.notes { white-space:pre-wrap; font:12.5px/1.55 var(--mono); background:var(--card2); padding:12px; border-radius:8px;
+              border:1px solid var(--line); max-height:420px; overflow:auto; color:var(--ink); }
+  h3.sec { font:700 12px var(--mono); letter-spacing:.14em; color:var(--dim); margin:18px 0 6px; }
+  .about { max-width:860px; }
+  .about h2 { font:700 16px var(--mono); margin:22px 0 6px; }
+  .about p, .about li { color:#cfd5e6; }
+  .finding { border-left:3px solid var(--acc); padding:4px 0 4px 12px; margin:10px 0; }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--acc);
+             border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">SPACESIFT</a><span class="crumb">/ Transit Lab</span>
+  <nav><button id="tab-explore" class="on">Explore</button><button id="tab-results">Results</button><button id="tab-about">About</button></nav>
+</header>
+
+<main>
+<section id="view-explore">
+  <p class="lead">Plant a planet in a star's brightness record, clean the data, and run the search. Does it find the planet? Everything runs in your browser.</p>
+  <div class="explore">
+    <div class="card">
+      <div class="presets" id="presets"></div>
+      <fieldset>
+        <legend>STAR</legend>
+        <div class="seg" id="source"><button data-v="synthetic" class="on">Simulated</button><button data-v="kepler">Real Kepler star</button></div>
+        <div id="synthetic-opts">
+          <label>Variability</label>
+          <select id="var_kind"><option value="none">None (quiet star)</option><option value="pulsation">Pulsation (regular rhythm)</option><option value="spots">Starspots (drifting rotation)</option></select>
+          <div id="var-params"><div class="row">
+            <div><label>Period (hours)</label><input type="number" id="var_period_h" value="4" min="1" step="0.5"></div>
+            <div><label>Amplitude (ppm)</label><input type="number" id="var_amp" value="300" min="0" step="10"></div>
+          </div></div>
+          <div class="row">
+            <div><label>Noise per 30 min (ppm)</label><input type="number" id="noise" value="150" min="10" step="10"></div>
+            <div><label>Days of data</label><select id="baseline"><option>90</option><option selected>120</option><option>368</option></select></div>
+          </div>
+          <div class="hint">368 days means more transits but a slower search (~20 s).</div>
+        </div>
+        <div id="kepler-opts" hidden>
+          <label>Star</label><select id="kic"></select>
+          <div class="hint" id="kic-why"></div>
+          <div class="hint">About a year of Kepler data (quarters 2–5); a search takes ~15–20 s.</div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>PLANET</legend>
+        <label><input type="checkbox" id="planet_on" checked> Plant a planet</label>
+        <div id="planet-opts">
+          <div class="seg" id="size_mode"><button data-v="snr" class="on">Size by signal</button><button data-v="radius">Size by radius</button></div>
+          <div id="snr-box"><label>Signal-to-noise (SNR): <b id="snr_val">12</b></label><input type="range" id="snr" min="4" max="30" step="0.5" value="12">
+            <div class="hint">Below ~8 is hard even on a quiet star; above ~16 is easy.</div></div>
+          <div id="radius-box" hidden><label>Radius (Earth radii)</label><input type="number" id="radius" value="1.0" min="0.1" step="0.1"></div>
+          <div class="row">
+            <div><label>Orbit (days)</label><input type="number" id="period" value="7.3" min="1" max="30" step="0.1"></div>
+            <div><label>Impact parameter</label><input type="number" id="b" value="0.3" min="0" max="0.9" step="0.1"></div>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>SEARCH</legend>
+        <label>Cleaning method</label>
+        <select id="detrend">
+          <option value="none">none</option><option value="biweight-0.25">biweight-0.25</option><option value="biweight-0.5">biweight-0.5</option>
+          <option value="biweight-1.0" selected>biweight-1.0</option><option value="biweight-2.0">biweight-2.0</option>
+          <option value="prewhiten+biweight-1.0">prewhiten+biweight-1.0</option></select>
+        <div class="hint" id="method-hint"></div>
+        <div class="row">
+          <div><label>Threshold (SDE)</label><input type="number" id="threshold" step="0.05"></div>
+          <div><label>Random seed</label><div class="row"><input type="number" id="seed" value="1"><button id="reseed" title="New random noise and transit timing" style="flex:0 0 auto;border:1px solid var(--line);border-radius:6px;background:var(--card2);color:var(--ink);cursor:pointer">↻</button></div></div>
+        </div>
+        <div class="hint" id="thr-hint"></div>
+      </fieldset>
+      <button class="run" id="run">RUN SEARCH</button>
+    </div>
+    <div>
+      <div class="card" id="result"><div class="empty">Pick a preset, or set up a star and a planet, then press <b>RUN SEARCH</b>.</div></div>
+      <div class="plots" id="plots" hidden>
+        <div class="card wide"><div id="p-raw" class="plot"></div></div>
+        <div class="card wide"><div id="p-flat" class="plot"></div></div>
+        <div class="card"><div id="p-pgram" class="plot"></div></div>
+        <div class="card"><div id="p-fold" class="plot"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="view-results" hidden>
+  <p class="lead">Every experiment run with the SpaceSift pipeline: what it asked, how it was run, and what it found. Each one can be reproduced from its recorded code version, configuration and seed.</p>
+  <div class="exps">
+    <div id="exp-list"><div class="empty"><span class="spinner"></span></div></div>
+    <div class="card" id="exp-detail"><div class="empty">Choose an experiment.</div></div>
+  </div>
+</section>
+
+<section id="view-about" class="about" hidden>
+  <h2>What is this?</h2>
+  <p>Astronomers find planets around other stars by watching for tiny, repeating dips in a star's brightness as a planet passes in front. Search programs hunt for those dips. The Transit Lab asks a different question from "can it find planets?": <b>when, and why, does the search miss them?</b></p>
+  <p>To answer that, SpaceSift plants fake planets of known size and orbit in real and simulated light curves, runs the search, and counts how often it succeeds, like hiding eggs and grading the searcher.</p>
+  <h2>What it has found so far</h2>
+  <div class="finding"><b>SS-0001.</b> On 200 quiet Kepler stars, the standard search (box least squares) recovers half of planted planets at a signal-to-noise of 10.9 and 97% at high signal. The pipeline behaves as expected.</div>
+  <div class="finding"><b>SS-0002A (simulation).</b> Stellar variability can hide planets entirely. On a star pulsating every 4 hours at 100 ppm, the standard cleaning step found 0 of 106 planted planets; removing the pulsation's rhythm first (prewhitening) found 105. For fast-spinning spotted stars it is the reverse: prewhitening fails and only a short cleaning window helps. No single method works on every star.</div>
+  <div class="finding"><b>SS-0002B (real stars, in progress).</b> Whether the simulated map predicts what happens on 316 real variable Kepler stars. Predictions were committed before the run.</div>
+  <h2>How the demo relates to the experiments</h2>
+  <p>The experiments run the Python pipeline on many thousands of planted planets. This page runs a JavaScript version of the same steps in your browser, checked against the Python one; its detection threshold is calibrated separately (1% false alarms on noise-only stars), so its numbers can differ slightly from the experiments'. One run is one example, not a result.</p>
+  <h2>Code and data</h2>
+  <p>Source, configurations and every experiment record: <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift/tree/main/spacesift">github.com/LeahS-blip/Planetary-Defense-Spacesift/spacesift</a>. Light curves: NASA Kepler mission via MAST. Star catalogs: McQuillan, Mazeh &amp; Aigrain (2014); Murphy et al. (2019).</p>
+</section>
+</main>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const METHOD_HINTS = {
+  "none": "No cleaning: the star's variability stays in.",
+  "biweight-0.25": "Sliding 6-hour filter: removes fast variability, but trims long transits.",
+  "biweight-0.5": "Sliding 12-hour filter.",
+  "biweight-1.0": "Sliding 1-day filter (the default used in SS-0001).",
+  "biweight-2.0": "Sliding 2-day filter: keeps transits whole, follows only slow variability.",
+  "prewhiten+biweight-1.0": "Finds the star's regular rhythms, subtracts them, then a 1-day filter.",
+};
+const STATUS = {
+  recovered: ["good", "Found it", "The search picked out the planet at the right period and timing."],
+  alias_half: ["warn", "Found, at half the period", "Right planet, but the search counted two orbits per real one."],
+  alias_double: ["warn", "Found, at double the period", "Right planet, but the search skipped every other transit."],
+  wrong_period: ["bad", "Missed: found something else", "The strongest signal was not the planet."],
+  below_threshold: ["bad", "Missed: too faint to stand out", "Nothing rose above the detection threshold."],
+  not_observable: ["warn", "Too few transits", "Fewer than 2 transits fall in the data, so nothing can be tested."],
+  false_alarm: ["bad", "False alarm", "No planet was planted, but the search 'found' one anyway."],
+  nothing_found: ["good", "Correctly found nothing", "No planet was planted and nothing beat the threshold."],
+};
+const PRESETS = [
+  ["Quiet star", { source: "synthetic", varKind: "none", snr: 12, detrend: "biweight-1.0" }],
+  ["Pulsating star", { source: "synthetic", varKind: "pulsation", varPeriodH: 4, varAmp: 300, snr: 12, detrend: "biweight-1.0" }],
+  ["…same, prewhitened", { source: "synthetic", varKind: "pulsation", varPeriodH: 4, varAmp: 300, snr: 12, detrend: "prewhiten+biweight-1.0" }],
+  ["Fast spots", { source: "synthetic", varKind: "spots", varPeriodH: 72, varAmp: 300, snr: 12, detrend: "biweight-1.0" }],
+  ["…same, short window", { source: "synthetic", varKind: "spots", varPeriodH: 72, varAmp: 300, snr: 12, detrend: "biweight-0.25" }],
+  ["Faint planet", { source: "synthetic", varKind: "none", snr: 7, detrend: "biweight-1.0" }],
+  ["Real pulsator", { source: "kepler", kic: "6205852", snr: 12, detrend: "biweight-1.0" }],
+];
+const state = { source: "synthetic", sizeMode: "snr", thresholds: {} };
+
+function seg(id, key, onChange) {
+  $(id).querySelectorAll("button").forEach((b) => b.onclick = () => {
+    $(id).querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    state[key] = b.dataset.v; onChange && onChange();
+  });
+}
+function setSeg(id, key, v) { $(id).querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === v)); state[key] = v; }
+function syncVisibility() {
+  $("synthetic-opts").hidden = state.source !== "synthetic";
+  $("kepler-opts").hidden = state.source !== "kepler";
+  $("var-params").hidden = $("var_kind").value === "none";
+  $("planet-opts").hidden = !$("planet_on").checked;
+  $("snr-box").hidden = state.sizeMode !== "snr";
+  $("radius-box").hidden = state.sizeMode !== "radius";
+  $("method-hint").textContent = METHOD_HINTS[$("detrend").value] || "";
+  const opt = $("kic").selectedOptions[0]; $("kic-why").textContent = opt ? opt.dataset.why : "";
+}
+function applyThreshold() {
+  // Thresholds are calibrated per data length (SDE grows with the number of trial orbits):
+  // the chosen length for simulated stars, ~368 days (Kepler quarters 2-5) for real ones.
+  const days = state.source === "kepler" ? "368" : $("baseline").value;
+  const t = (state.thresholds[days] || {})[$("detrend").value];
+  if (t) {
+    $("threshold").value = t.toFixed(2);
+    $("thr-hint").textContent = `Set so only 1% of searches on noise-only stars (${days} days of data) beat it, for this method.`;
+  }
+}
+seg("source", "source", () => { syncVisibility(); applyThreshold(); });
+$("baseline").addEventListener("change", applyThreshold);
+seg("size_mode", "sizeMode", syncVisibility);
+["var_kind", "planet_on", "kic"].forEach((id) => $(id).addEventListener("change", syncVisibility));
+$("detrend").addEventListener("change", () => { syncVisibility(); applyThreshold(); });
+$("snr").addEventListener("input", () => $("snr_val").textContent = $("snr").value);
+$("reseed").onclick = () => { $("seed").value = Math.floor(Math.random() * 100000); };
+
+fetch("data/thresholds.json").then((r) => r.json()).then((t) => { state.thresholds = t; applyThreshold(); }).catch(() => { $("threshold").value = "6.5"; });
+fetch("data/stars/index.json").then((r) => r.json()).then((stars) => {
+  $("kic").innerHTML = stars.map((s) => `<option value="${s.kic}" data-why="${s.why.replace(/"/g, "&quot;")}">${s.label} · KIC ${s.kic}</option>`).join("");
+  syncVisibility();
+});
+$("presets").innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p[0]}</button>`).join("");
+$("presets").querySelectorAll("button").forEach((b) => b.onclick = () => {
+  const p = PRESETS[+b.dataset.i][1];
+  setSeg("source", "source", p.source);
+  if (p.kic) $("kic").value = p.kic;
+  if (p.varKind) $("var_kind").value = p.varKind;
+  if (p.varPeriodH) $("var_period_h").value = p.varPeriodH;
+  if (p.varAmp !== undefined) $("var_amp").value = p.varAmp;
+  $("planet_on").checked = true; setSeg("size_mode", "sizeMode", "snr");
+  $("snr").value = p.snr; $("snr_val").textContent = p.snr;
+  $("detrend").value = p.detrend; syncVisibility(); applyThreshold(); run();
+});
+
+// A pool of workers: one prepares the trial, all of them share the search over the
+// period grid (handed out in small slices, so the slow long-period slices balance out).
+const POOL = Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 1));
+const workers = Array.from({ length: POOL }, () => new Worker("worker.js", { type: "module" }));
+let nextId = 0; const pending = new Map();
+for (const w of workers) w.onmessage = (ev) => {
+  const { id, ok, result, error } = ev.data; const p = pending.get(id); pending.delete(id);
+  ok ? p.resolve(result) : p.reject(new Error(error));
+};
+const send = (w, msg, transfer = []) => new Promise((resolve, reject) => {
+  const id = nextId++; pending.set(id, { resolve, reject }); w.postMessage({ ...msg, id }, transfer); msg._id = id;
+});
+
+async function call(req) {
+  const main = workers[0];
+  const prepMsg = { type: "prepare", req };
+  const setup = await send(main, prepMsg);
+  const prepId = prepMsg._id;
+  const n = setup.periods.length, sliceLen = Math.max(200, Math.ceil(n / (POOL * 6)));
+  const slices = [];
+  for (let s = 0; s < n; s += sliceLen) slices.push([s, Math.min(n, s + sliceLen)]);
+  const parts = new Array(slices.length);
+  let next = 0;
+  await Promise.all(workers.map(async (w) => {
+    while (next < slices.length) {
+      const k = next++, [a, b] = slices[k];
+      parts[k] = await send(w, { type: "power", t: setup.t, f: setup.f, periods: setup.periods.slice(a, b), durationsHr: setup.durationsHr });
+    }
+  }));
+  const keys = ["power", "bestDur", "bestStart", "bestNb", "bestDepth"], powers = {};
+  for (const key of keys) { powers[key] = new Float64Array(n); let o = 0; for (const q of parts) { powers[key].set(q[key], o); o += q[key].length; } }
+  return send(main, { type: "finish", prepId, req, powers });
+}
+
+function request() {
+  return {
+    source: state.source, kic: $("kic").value,
+    varKind: $("var_kind").value, varPeriodD: +$("var_period_h").value / 24, varAmpPpm: +$("var_amp").value,
+    noisePpm: +$("noise").value, baselineD: +$("baseline").value, seed: +$("seed").value,
+    planet: { enabled: $("planet_on").checked, sizeMode: state.sizeMode, snr: +$("snr").value,
+              radiusEarth: +$("radius").value, periodD: +$("period").value, b: +$("b").value },
+    detrend: $("detrend").value, threshold: +$("threshold").value, periodMin: 1, periodMax: 30,
+  };
+}
+
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function layout(title, xt, yt, extra = {}) {
+  return Object.assign({
+    title: { text: title, font: { size: 13, color: css("--ink"), family: "Space Mono, monospace" }, x: 0.01, xanchor: "left" },
+    margin: { l: 58, r: 12, t: 34, b: 40 }, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { color: css("--dim"), size: 11 }, showlegend: false,
+    xaxis: { title: { text: xt }, gridcolor: css("--line"), zeroline: false },
+    yaxis: { title: { text: yt }, gridcolor: css("--line"), zeroline: false },
+  }, extra);
+}
+const CFG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] };
+
+async function run() {
+  const req = request();
+  $("run").disabled = true;
+  $("result").innerHTML = `<div class="empty"><span class="spinner"></span> Searching ${req.source === "kepler" || req.baselineD > 200 ? "(about 15–20 s)" : "(a few seconds)"}…</div>`;
+  try { render(await call(req), req); }
+  catch (e) { $("result").innerHTML = `<div class="error">${String(e.message || e)}</div>`; $("plots").hidden = true; }
+  finally { $("run").disabled = false; }
+}
+$("run").onclick = run;
+
+function render(d, req) {
+  const [tone, head, why] = STATUS[d.status] || ["warn", d.status, ""];
+  let extra = "";
+  if (d.status === "wrong_period" && (req.varKind !== "none" || req.source === "kepler"))
+    extra = req.detrend.startsWith("prewhiten")
+      ? " It was probably variability that prewhitening could not fully remove (many pulsation modes, or drifting spots). Try a shorter filter."
+      : " It was probably the star's own variability. Try prewhitening, or a shorter filter.";
+  const inj = d.injection, c = d.candidate;
+  const num = (v, l) => `<div class="num"><b>${v}</b><span>${l}</span></div>`;
+  $("result").innerHTML = `
+    <div class="status"><span class="badge ${tone}">${head}</span><span style="color:var(--dim)">${d.label} · ${req.detrend} · ${d.seconds.toFixed(1)} s</span></div>
+    <div class="explain">${why}${extra}</div>
+    <div class="nums">
+      ${inj ? num(inj.period.toFixed(2) + " d", "planted orbit") + num(inj.radiusEarth.toFixed(2) + " R⊕", "planted radius") +
+              num((inj.depth * 1e6).toFixed(0) + " ppm", "transit depth") + num(inj.snr.toFixed(1), "signal-to-noise") + num(inj.nTransits, "transits in data") : ""}
+      ${num(c.period.toFixed(4) + " d", "search found")}
+      ${num(c.sde.toFixed(2), `peak SDE (threshold ${req.threshold})`)}
+      ${num(d.sigmaPpm + " ppm", "noise per cadence")}
+    </div>`;
+  $("plots").hidden = false;
+  const acc = css("--acc"), model = css("--model"), dim = css("--dim"), ink = css("--ink");
+  const pts = (x, y, color, size = 2) => ({ x, y, type: "scattergl", mode: "markers", marker: { size, color, opacity: 0.55 }, hoverinfo: "skip" });
+  Plotly.react("p-raw", [pts(d.lc.t, d.lc.raw, dim),
+    ...(inj ? [{ x: d.lc.t, y: d.lc.model, type: "scattergl", mode: "lines", line: { color: model, width: 1.3 }, hoverinfo: "skip" }] : [])],
+    layout("1 · Raw brightness" + (inj ? " (orange: the planted planet)" : ""), "days", "ppm"), CFG);
+  Plotly.react("p-flat", [pts(d.lc.flatT, d.lc.flat, acc)], layout("2 · After cleaning (" + req.detrend + ")", "days", "ppm"), CFG);
+  const shapes = [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: req.threshold, y1: req.threshold, line: { color: css("--bad"), dash: "dot", width: 1 } }];
+  if (inj) shapes.push({ type: "line", yref: "paper", y0: 0, y1: 1, x0: inj.period, x1: inj.period, line: { color: model, dash: "dash", width: 1 } });
+  Plotly.react("p-pgram", [{ x: d.periodogram.period, y: d.periodogram.sde, type: "scattergl", mode: "lines", line: { color: ink, width: 1 } },
+    { x: [c.period], y: [c.sde], type: "scatter", mode: "markers", marker: { color: acc, size: 9 } }],
+    layout("3 · Search: strength at each trial orbit", "orbit (days)", "SDE",
+      { xaxis: { type: "log", title: { text: "orbit tried (days)" }, gridcolor: css("--line") }, shapes,
+        annotations: [{ xref: "paper", x: 1, y: req.threshold, text: "threshold", showarrow: false, font: { color: css("--bad"), size: 10 }, xanchor: "right", yanchor: "bottom" }] }), CFG);
+  Plotly.react("p-fold", [pts(d.fold.phaseH, d.fold.flux, dim, 3),
+    { x: d.fold.binH, y: d.fold.binFlux, type: "scatter", mode: "lines", line: { color: acc, width: 2 } }],
+    layout(`4 · Folded on the found orbit (${c.period.toFixed(3)} d)`, "hours from mid-dip", "ppm"), CFG);
+}
+
+// Results and About
+function showTab(name) {
+  for (const t of ["explore", "results", "about"]) { $("view-" + t).hidden = t !== name; $("tab-" + t).classList.toggle("on", t === name); }
+  if (name === "results" && !state.loaded) loadExperiments();
+  history.replaceState(null, "", "#" + name);
+}
+for (const t of ["explore", "results", "about"]) $("tab-" + t).onclick = () => showTab(t);
+if (["#results", "#about"].includes(location.hash)) showTab(location.hash.slice(1));
+
+let experiments = [];
+async function loadExperiments() {
+  state.loaded = true;
+  experiments = await (await fetch("data/experiments.json")).json();
+  $("exp-list").innerHTML = experiments.map((e) => `<div class="exp-item" data-id="${e.id}"><b>${e.id}</b><div>${e.question || ""}</div><div>${(e.n_trials ?? "?").toLocaleString()} trials · ${e.n_stars ?? "?"} stars</div></div>`).join("");
+  $("exp-list").querySelectorAll(".exp-item").forEach((el) => el.onclick = () => openExperiment(el.dataset.id));
+  if (experiments.length) openExperiment(experiments.find((e) => e.id === "SS-0002A")?.id || experiments[0].id);
+}
+function openExperiment(id) {
+  $("exp-list").querySelectorAll(".exp-item").forEach((el) => el.classList.toggle("on", el.dataset.id === id));
+  const e = experiments.find((x) => x.id === id);
+  const facts = [["Trials", e.n_trials?.toLocaleString()], ["Stars", e.n_stars], ["Failed stars", e.n_stars_failed],
+                 ["Code version", (e.git_commit || "").slice(0, 7)], ["Seed", e.seed], ["Finished", (e.finished || "").slice(0, 10)]];
+  const analyses = Object.entries(e.analyses || {}).map(([k, a]) =>
+    `<div class="num"><b>${k}</b><span>${a.threshold_source || ""}${a.thresholds ? "<br>" + Object.entries(a.thresholds).map(([m, v]) => `${m}: ${(+v).toFixed(2)}`).join("<br>") : ""}${a.sde_threshold ? "<br>SDE " + (+a.sde_threshold).toFixed(2) : ""}</span></div>`).join("");
+  $("exp-detail").innerHTML = `
+    <h2 style="margin:0 0 4px;font:700 18px var(--mono)">${e.id}</h2>
+    <div style="color:var(--dim)">${e.question || ""}</div>
+    <div class="nums">${facts.map(([l, v]) => `<div class="num"><b>${v ?? "–"}</b><span>${l}</span></div>`).join("")}</div>
+    ${analyses ? `<h3 class="sec">ANALYSES</h3><div class="nums">${analyses}</div>` : ""}
+    ${e.notes ? `<h3 class="sec">NOTES</h3><pre class="notes">${e.notes.replace(/</g, "&lt;")}</pre>` : ""}
+    <h3 class="sec">PLOTS</h3>
+    <div class="gallery">${(e.images || []).map((src) => `<figure><a href="${src}" target="_blank" rel="noopener"><img loading="lazy" src="${src}" alt=""></a><figcaption>${src.split("/").slice(-2).join("/")}</figcaption></figure>`).join("") || "<div class='empty'>No plots.</div>"}</div>`;
+}
+syncVisibility();
+</script>
+</body>
+</html>

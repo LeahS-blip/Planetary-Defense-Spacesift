@@ -1,0 +1,26 @@
+{
+ "90": {
+  "none": 5.467,
+  "biweight-0.25": 6.355,
+  "biweight-0.5": 5.845,
+  "biweight-1.0": 5.623,
+  "biweight-2.0": 5.625,
+  "prewhiten+biweight-1.0": 5.623
+ },
+ "120": {
+  "none": 5.406,
+  "biweight-0.25": 6.403,
+  "biweight-0.5": 5.901,
+  "biweight-1.0": 5.466,
+  "biweight-2.0": 5.614,
+  "prewhiten+biweight-1.0": 5.466
+ },
+ "368": {
+  "none": 6.095,
+  "biweight-0.25": 6.394,
+  "biweight-0.5": 6.209,
+  "biweight-1.0": 6.147,
+  "biweight-2.0": 6.361,
+  "prewhiten+biweight-1.0": 6.147
+ }
+}

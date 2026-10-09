@@ -2,16 +2,64 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=/outputs/dashboard.html">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SpaceSift</title>
+<meta name="description" content="SpaceSift: computational experiments on what telescopes can and cannot find, from new near-Earth asteroids to planets around other stars.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-body { background:#0b1020; color:#8b93ad; font:14px "Space Mono",ui-monospace,monospace;
-       display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
-a { color:#7aa2ff; }
+  :root { --bg:#0b1020; --card:#141a30; --ink:#e8ecf8; --dim:#8b93ad; --line:#252d4a; --acc:#7aa2ff; --hi:#4ade80;
+          --mono:"Space Mono",ui-monospace,Consolas,monospace; --sans:ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 var(--sans); }
+  a { color:var(--acc); }
+  .wrap { max-width:1000px; margin:0 auto; padding:56px 20px 40px; }
+  .mark { display:flex; align-items:center; gap:16px; }
+  .mark svg { flex:0 0 auto; }
+  h1 { margin:0; font:700 34px var(--mono); letter-spacing:.24em; }
+  .tag { color:var(--dim); font:15px var(--mono); margin:6px 0 0; }
+  .intro { color:#cfd5e6; max-width:720px; margin:28px 0 36px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:760px) { .grid { grid-template-columns:1fr; } h1 { font-size:26px; } }
+  .inst { display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px; color:inherit;
+          text-decoration:none; transition:border-color .15s, transform .15s; }
+  .inst:hover { border-color:var(--acc); transform:translateY(-2px); }
+  .kicker { font:700 11px var(--mono); letter-spacing:.16em; color:var(--dim); }
+  .inst h2 { font:700 20px var(--mono); margin:6px 0 8px; }
+  .inst p { color:#cfd5e6; margin:0 0 12px; }
+  .inst ul { margin:0 0 14px; padding-left:18px; color:var(--dim); font-size:14px; }
+  .go { font:700 13px var(--mono); color:var(--acc); letter-spacing:.06em; }
+  .live { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--hi); margin-right:6px; box-shadow:0 0 8px var(--hi); }
+  footer { color:var(--dim); font-size:13px; margin-top:44px; border-top:1px solid var(--line); padding-top:16px; }
 </style>
 </head>
 <body>
-<p>Loading SpaceSift&hellip; <a href="/outputs/dashboard.html">continue</a></p>
+<div class="wrap">
+  <div class="mark">
+    <svg width="54" height="54" viewBox="0 0 100 100" aria-hidden="true"><g stroke-linecap="round"><line x1="10" y1="82" x2="44" y2="66" stroke="#3d4a75" stroke-width="7"/><line x1="18" y1="66" x2="52" y2="50" stroke="#5b6b9e" stroke-width="7"/><line x1="30" y1="52" x2="58" y2="39" stroke="#8b9cc7" stroke-width="7"/><circle cx="70" cy="38" r="20" fill="#eef2fc"/></g></svg>
+    <div><h1>SPACESIFT</h1><p class="tag">What can telescopes find, and what do they miss?</p></div>
+  </div>
+  <p class="intro">SpaceSift is a set of open computational experiments on the limits of discovery: separating real signals from false ones, and measuring when searches fail. Every result here comes from code and data you can rerun.</p>
+
+  <div class="grid">
+    <a class="inst" href="/outputs/dashboard.html">
+      <div class="kicker"><span class="live"></span>LIVE · UPDATED TWICE A DAY</div>
+      <h2>NEOCP vetting</h2>
+      <p>Which newly spotted asteroid candidates are real near-Earth objects? A machine-learned ranking of every object awaiting confirmation, so follow-up telescopes chase the ones that matter.</p>
+      <ul><li>Live sky map of current candidates</li><li>Real-NEO probability for each object</li><li>Model trained on every past candidate with a known outcome</li></ul>
+      <span class="go">OPEN THE DASHBOARD →</span>
+    </a>
+    <a class="inst" href="/lab/">
+      <div class="kicker">INTERACTIVE · EXPERIMENTS</div>
+      <h2>Transit Lab</h2>
+      <p>Where does planet-hunting break? Plant a planet in a star's brightness record and see whether the search finds it, then explore experiments on tens of thousands of planted planets.</p>
+      <ul><li>Try it in your browser: simulated or real Kepler stars</li><li>Finding: stellar pulsations can hide planets completely</li><li>Every experiment reproducible from its recorded code and seed</li></ul>
+      <span class="go">OPEN THE LAB →</span>
+    </a>
+  </div>
+
+  <footer>Code and data: <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">github.com/LeahS-blip/Planetary-Defense-Spacesift</a> · Data: Minor Planet Center; NASA Kepler mission (MAST).</footer>
+</div>
 </body>
 </html>

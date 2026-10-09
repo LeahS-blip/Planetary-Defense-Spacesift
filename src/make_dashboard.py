@@ -503,6 +503,7 @@ footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
 <div>
 <h1>{brand}</h1>
 <div class="subtitle">NEOCP vetting — real-NEO probability for objects awaiting confirmation · generated {now}</div>
+<div class="subtitle"><a href="/" style="color:var(--acc)">← SpaceSift home</a> · <a href="/lab/" style="color:var(--acc)">Transit Lab (exoplanet detectability)</a></div>
 </div>
 </div>
 <div class="intro">

@@ -1,0 +1,92 @@
+[
+ {
+  "kic": "1868918",
+  "label": "Quiet star",
+  "why": "A quiet Sun-like star from SS-0001: planets are easy to find here.",
+  "quarters": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "radius": 1.0,
+  "mass": 1.0,
+  "sigma_ppm": 60.53,
+  "n": 16797
+ },
+ {
+  "kic": "6205852",
+  "label": "Pulsator, 4.6 h",
+  "why": "SS-0001 found a 4.6-hour oscillation that hides injected planets from biweight cleaning.",
+  "quarters": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "radius": 0.995,
+  "mass": 1.048,
+  "sigma_ppm": 69.91,
+  "n": 16798
+ },
+ {
+  "kic": "4280576",
+  "label": "Pulsator, 3.7 h",
+  "why": "A 3.7-hour oscillation whose amplitude changes from quarter to quarter.",
+  "quarters": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "radius": 1.533,
+  "mass": 1.12,
+  "sigma_ppm": 64.86,
+  "n": 16798
+ },
+ {
+  "kic": "8245192",
+  "label": "Spotted star, 3-day rotation",
+  "why": "Fast rotation with large spots: the hardest case for every method in SS-0002A.",
+  "quarters": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "radius": 0.958,
+  "mass": 1.03,
+  "sigma_ppm": 99.68,
+  "n": 16798
+ },
+ {
+  "kic": "9579191",
+  "label": "Spotted star, 10-day rotation",
+  "why": "Slow rotation: biweight cleaning should cope.",
+  "quarters": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "radius": 0.824,
+  "mass": 0.733,
+  "sigma_ppm": 68.11,
+  "n": 16798
+ },
+ {
+  "kic": "9775385",
+  "label": "Delta Scuti pulsator",
+  "why": "A real multi-mode pulsator (Murphy et al. 2019): messier than SS-0002A's simulated ones.",
+  "quarters": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "radius": 2.015,
+  "mass": 1.665,
+  "sigma_ppm": 111.14,
+  "n": 16798
+ }
+]

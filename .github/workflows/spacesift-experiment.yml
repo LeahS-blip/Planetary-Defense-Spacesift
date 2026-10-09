@@ -79,6 +79,8 @@ jobs:
           spacesift merge "experiments/${{ steps.exp.outputs.id }}"
           # The merged tables hold every row; keep only each shard's provenance record.
           find "experiments/${{ steps.exp.outputs.id }}/shards" -name '*.parquet' -delete
+          # Refresh the public Transit Lab's Results archive (spacesift.vercel.app/lab/).
+          spacesift export-site --lab ../lab
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.exp.outputs.id }}
@@ -87,7 +89,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "experiments/${{ steps.exp.outputs.id }}"
+          git add "experiments/${{ steps.exp.outputs.id }}" ../lab/data/experiments.json
           git commit -m "spacesift results: ${{ steps.exp.outputs.id }} (run ${{ github.run_id }})"
           # capture-and-deploy may have pushed meanwhile; rebase onto it and retry.
           for i in 1 2 3; do git pull --rebase -q && git push && break; sleep 10; done

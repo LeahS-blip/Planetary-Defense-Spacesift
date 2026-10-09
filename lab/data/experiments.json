@@ -1,0 +1,475 @@
+[
+ {
+  "id": "SS-0001",
+  "question": "Does our BLS injection-recovery reproduce the published completeness-vs-SNR curve?",
+  "n_trials": 10000,
+  "n_stars": 200,
+  "n_stars_failed": 0,
+  "git_commit": "a03c831be28776638ec1be204c713f91a101ba7a",
+  "git_dirty": false,
+  "seed": 29481,
+  "started": "2026-10-05T01:14:38.672709+00:00",
+  "finished": "2026-10-05T02:20:01.316306+00:00",
+  "preprocessing_version": "0.1",
+  "n_shards": 10,
+  "summary": {
+   "biweight-1.0": {
+    "status_counts": {
+     "recovered": 4318,
+     "alias_half": 1,
+     "alias_double": 5,
+     "wrong_period": 259,
+     "below_threshold": 5417,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.9624115230669605,
+     "k": 20.84720573364418,
+     "theta": 0.5143445776927188,
+     "snr_50pct": 10.666032407389384
+    }
+   }
+  },
+  "notes": "# SS-0001 notes\n\n## Stars with a pre-injection signal (SDE > 7 before anything was injected)\n\nPlots: `stars/KIC<id>.png` (made with `spacesift inspect-star configs/SS-0001.yaml --star <id>`).\n\"Inverted SDE\" is the same search on flux flipped about 1. A real transit or eclipse\nhas no counterpart in inverted flux, while symmetric variability scores about the same.\n\n| KIC | SDE | Inverted SDE | Best period | What it is |\n| --- | --- | --- | --- | --- |\n| 6205852 | 17.4 | 16.0 | 1.144 d | Coherent ~4.6 h oscillation, ~80 ppm. Too fast for the 1-day biweight to remove; BLS locks onto 6 cycles. Not a transit. |\n| 4280576 | 15.7 | 15.2 | 1.240 d | Coherent ~3.7 h oscillation, ~200 ppm, amplitude changes by quarter (likely light from a nearby pulsator in the aperture). Not a transit. |\n| 11233898 | 8.3 | 4.8 | 28.08 d | Dip-only but no visible event in the fold; ~13 possible transits. Consistent with a noise peak at long period. |\n| 11606040 | 7.3 | 4.4 | 25.74 d | Dip-only, depth 37 ppm at 9 h duration; marginal. |\n| 10714051 | 7.3 | 8.2 | 1.925 d | Symmetric (inverted scores higher): residual variability. |\n| 7817711 | 7.2 | 6.5 | 2.752 d | Symmetric: residual variability. |\n| 9911639 | 7.2 | 6.9 | 1.150 d | Symmetric: residual variability. |\n\n**Finding:** the two strongest pre-injection signals are short-period stellar oscillations\nthat survive biweight detrending with a 1-day window. Fast coherent variability is\ntherefore a concrete false-alarm source for this pipeline, and probably also a source of\nmissed injections on those stars. That makes it a candidate failure mode for SS-0002.\n\n## Detection threshold (from SS-0001-null, 1,800 noise-only searches)\n\n| False-alarm rate | SDE threshold | Stars excluded | 50% completeness at SNR | Plateau |\n| --- | --- | --- | --- | --- |\n| 1.3% (old fixed SDE 7) | 7.00 | none | 10.67 | 0.962 |\n| 1% | 7.25 | 5 | 10.85 | 0.973 |\n| 0.1% (unreliable, see below) | 9.88 | 2 | 13.50 | 0.960 |\n\nResults: `analysis/far0.01/` and `analysis/far0.001/` (`spacesift analyze ... --null experiments/SS-0001-null --far <rate>`).\n\n- **The SS-0001 curve holds up.** Moving from SDE 7 to a calibrated 1% false-alarm threshold shifts the 50% point by 0.2 in SNR.\n- **The pulsating stars hide every planet.** On KIC 6205852 and 4280576, all 50 trials each returned the stellar oscillation period instead of the injected planet, whatever its SNR. Together they produced 100 of the 259 \"wrong period\" results. This is variability *masking* detection, not just causing false alarms.\n- **The 0.1% threshold is driven by those two stars.** Their inverted searches (SDE 15\u201316) are the only null samples above ~8.5. Scrambling breaks their coherent oscillation, so the scrambled tails end near 8.5. With 1,800 samples, 0.1% rests on ~2 points. Re-derive it with the pulsators removed from the null set, and with more scrambles, before using it.\n\n## Open items\n\n- ~~Recovered transits come out ~21% shallower than injected.~~ Resolved by\n  `experiments/SS-0001-depth`. About 15% is definition: BLS measures the box-average\n  depth, and a limb-darkened transit averages 0.85 of its central depth. About 10% is\n  real loss: the 1-day biweight removes 8% of transits under 3 h and 17% at 5-7 h.\n  Expected SNR should be defined from the mean in-transit depth, not the central depth.\n- 4% of injections above SNR 16 are missed (103 trials): inspect with `spacesift replay`.\n",
+  "analyses": {
+   "far0.001": {
+    "threshold_source": "SS-0001-null at false-alarm rate 0.001",
+    "thresholds": null,
+    "sde_threshold": 9.882956289738429,
+    "excluded_stars": [
+     "4280576",
+     "6205852"
+    ],
+    "control_completeness": null,
+    "snr_band": null
+   },
+   "far0.01": {
+    "threshold_source": "SS-0001-null at false-alarm rate 0.01",
+    "thresholds": null,
+    "sde_threshold": 7.247134996602355,
+    "excluded_stars": [
+     "10714051",
+     "11233898",
+     "11606040",
+     "4280576",
+     "6205852"
+    ],
+    "control_completeness": null,
+    "snr_band": null
+   }
+  },
+  "images": [
+   "/spacesift/experiments/SS-0001/analysis/far0.001/plots/completeness_radius_period.png",
+   "/spacesift/experiments/SS-0001/analysis/far0.001/plots/completeness_vs_snr.png",
+   "/spacesift/experiments/SS-0001/analysis/far0.01/plots/completeness_radius_period.png",
+   "/spacesift/experiments/SS-0001/analysis/far0.01/plots/completeness_vs_snr.png",
+   "/spacesift/experiments/SS-0001/plots/completeness_radius_period.png",
+   "/spacesift/experiments/SS-0001/plots/completeness_vs_snr.png",
+   "/spacesift/experiments/SS-0001/stars/KIC10714051.png",
+   "/spacesift/experiments/SS-0001/stars/KIC11233898.png",
+   "/spacesift/experiments/SS-0001/stars/KIC11606040.png",
+   "/spacesift/experiments/SS-0001/stars/KIC4280576.png",
+   "/spacesift/experiments/SS-0001/stars/KIC6205852.png",
+   "/spacesift/experiments/SS-0001/stars/KIC7817711.png",
+   "/spacesift/experiments/SS-0001/stars/KIC9911639.png"
+  ]
+ },
+ {
+  "id": "SS-0001-depth",
+  "question": "Is the depth shortfall in SS-0001 caused by detrending or by the BLS box shape?",
+  "n_trials": 640,
+  "n_stars": 8,
+  "n_stars_failed": 0,
+  "git_commit": "54fedba39aa748230a5b72312ac7b58ac6878bf4",
+  "git_dirty": false,
+  "seed": 4242,
+  "started": "2026-10-06T03:33:44.715825+00:00",
+  "finished": "2026-10-06T04:02:34.871932+00:00",
+  "preprocessing_version": "0.1",
+  "n_shards": null,
+  "summary": {
+   "biweight-0.5": {
+    "status_counts": {
+     "recovered": 160,
+     "alias_half": 0,
+     "alias_double": 0,
+     "wrong_period": 0,
+     "below_threshold": 0,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.999999999639456,
+     "k": 10.47823762219226,
+     "theta": 0.3308713463942846,
+     "snr_50pct": 3.3573037698081443
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.7855590442889657,
+     "median_found_over_injected_central_depth": 0.7004750971065609,
+     "median_found_over_model_mean_depth": 0.8257730793182245,
+     "median_model_mean_over_central_depth": 0.8511562985891223
+    }
+   },
+   "biweight-1.0": {
+    "status_counts": {
+     "recovered": 160,
+     "alias_half": 0,
+     "alias_double": 0,
+     "wrong_period": 0,
+     "below_threshold": 0,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.999999999639456,
+     "k": 10.47823762219226,
+     "theta": 0.3308713463942846,
+     "snr_50pct": 3.3573037698081443
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.8948308410975302,
+     "median_found_over_injected_central_depth": 0.7748077070692017,
+     "median_found_over_model_mean_depth": 0.911727741420702,
+     "median_model_mean_over_central_depth": 0.8511562985891223
+    }
+   },
+   "biweight-2.0": {
+    "status_counts": {
+     "recovered": 160,
+     "alias_half": 0,
+     "alias_double": 0,
+     "wrong_period": 0,
+     "below_threshold": 0,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.999999999639456,
+     "k": 10.47823762219226,
+     "theta": 0.3308713463942846,
+     "snr_50pct": 3.3573037698081443
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.9456522468452444,
+     "median_found_over_injected_central_depth": 0.8139895247578064,
+     "median_found_over_model_mean_depth": 0.9614018843320419,
+     "median_model_mean_over_central_depth": 0.8511562985891223
+    }
+   },
+   "none": {
+    "status_counts": {
+     "recovered": 160,
+     "alias_half": 0,
+     "alias_double": 0,
+     "wrong_period": 0,
+     "below_threshold": 0,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.999999999639456,
+     "k": 10.47823762219226,
+     "theta": 0.3308713463942846,
+     "snr_50pct": 3.3573037698081443
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.9732383013085011,
+     "median_found_over_injected_central_depth": 0.836849176722152,
+     "median_found_over_model_mean_depth": 0.9877977030839409,
+     "median_model_mean_over_central_depth": 0.8511562985891223
+    }
+   }
+  },
+  "notes": "",
+  "analyses": {},
+  "images": [
+   "/spacesift/experiments/SS-0001-depth/plots/completeness_radius_period.png",
+   "/spacesift/experiments/SS-0001-depth/plots/completeness_vs_snr.png"
+  ]
+ },
+ {
+  "id": "SS-0001-null",
+  "question": "What SDE threshold gives a 1% false-alarm rate for the SS-0001 pipeline?",
+  "n_trials": 1800,
+  "n_stars": 200,
+  "n_stars_failed": 0,
+  "git_commit": "932b588e8521565c80f69673f95d1eab9dbf789a",
+  "git_dirty": false,
+  "seed": 29481,
+  "started": "2026-10-06T03:13:06.816404+00:00",
+  "finished": "2026-10-06T03:22:54.726891+00:00",
+  "preprocessing_version": "0.1",
+  "n_shards": 10,
+  "summary": {
+   "biweight-1.0": {
+    "n_null_searches": 1800,
+    "threshold_for_far": {
+     "0.01": 7.247134996602355,
+     "0.005": 7.623460708500343,
+     "0.001": 9.882956289738429
+    }
+   }
+  },
+  "notes": "",
+  "analyses": {},
+  "images": [
+   "/spacesift/experiments/SS-0001-null/plots/false_alarm_rate.png"
+  ]
+ },
+ {
+  "id": "SS-0002A",
+  "question": "At fixed SNR, how does completeness depend on variability period and amplitude, per detrending method?",
+  "n_trials": 49200,
+  "n_stars": 820,
+  "n_stars_failed": 0,
+  "git_commit": "18bf1f9800556c873115c6da6700eeefb9854449",
+  "git_dirty": false,
+  "seed": 20020,
+  "started": "2026-10-07T01:22:28.139775+00:00",
+  "finished": "2026-10-08T16:38:24.617009+00:00",
+  "preprocessing_version": "0.1",
+  "n_shards": 20,
+  "summary": {
+   "biweight-0.25": {
+    "status_counts": {
+     "recovered": 2844,
+     "alias_half": 8,
+     "alias_double": 3,
+     "star_signal": 3878,
+     "wrong_period": 31,
+     "below_threshold": 1436,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.5366678898099182,
+     "k": 13.874622450797926,
+     "theta": 0.8108117704462192,
+     "snr_50pct": 16.029315773817334
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.5353395400421442,
+     "median_found_over_injected_central_depth": 0.5983819415148228,
+     "median_found_over_model_mean_depth": 0.7143345905371663,
+     "median_model_mean_over_central_depth": 0.8531000654694982
+    }
+   },
+   "biweight-0.5": {
+    "status_counts": {
+     "recovered": 3426,
+     "alias_half": 5,
+     "alias_double": 0,
+     "star_signal": 4428,
+     "wrong_period": 11,
+     "below_threshold": 330,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.525947900956411,
+     "k": 12.026444597019037,
+     "theta": 0.7815695212580318,
+     "snr_50pct": 14.279194002472213
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.7615199997013562,
+     "median_found_over_injected_central_depth": 0.7155124197584112,
+     "median_found_over_model_mean_depth": 0.8426149233916737,
+     "median_model_mean_over_central_depth": 0.8530895773098708
+    }
+   },
+   "biweight-1.0": {
+    "status_counts": {
+     "recovered": 3072,
+     "alias_half": 4,
+     "alias_double": 1,
+     "star_signal": 4982,
+     "wrong_period": 12,
+     "below_threshold": 129,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.4897864997606013,
+     "k": 4.184377418843276,
+     "theta": 2.2210754204252003,
+     "snr_50pct": null
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.8807649543626536,
+     "median_found_over_injected_central_depth": 0.7892337387308292,
+     "median_found_over_model_mean_depth": 0.9267460225105772,
+     "median_model_mean_over_central_depth": 0.8530870187375788
+    }
+   },
+   "biweight-2.0": {
+    "status_counts": {
+     "recovered": 2728,
+     "alias_half": 4,
+     "alias_double": 0,
+     "star_signal": 5196,
+     "wrong_period": 14,
+     "below_threshold": 258,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.5304089241289942,
+     "k": 2.3385021267971258,
+     "theta": 5.020475328112326,
+     "snr_50pct": 25.651565701525108
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.9405652538021487,
+     "median_found_over_injected_central_depth": 0.8305058469557269,
+     "median_found_over_model_mean_depth": 0.9750376416673249,
+     "median_model_mean_over_central_depth": 0.8530870187375788
+    }
+   },
+   "none": {
+    "status_counts": {
+     "recovered": 1896,
+     "alias_half": 4,
+     "alias_double": 0,
+     "star_signal": 5727,
+     "wrong_period": 14,
+     "below_threshold": 559,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.38083356272369306,
+     "k": 5.132927788422691,
+     "theta": 2.3072404084995055,
+     "snr_50pct": null
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.9783358774522468,
+     "median_found_over_injected_central_depth": 0.8573714777759891,
+     "median_found_over_model_mean_depth": 1.0069677710302805,
+     "median_model_mean_over_central_depth": 0.8530895773098708
+    }
+   },
+   "prewhiten+biweight-1.0": {
+    "status_counts": {
+     "recovered": 7016,
+     "alias_half": 3,
+     "alias_double": 5,
+     "star_signal": 45,
+     "wrong_period": 3,
+     "below_threshold": 1128,
+     "not_observable": 0
+    },
+    "gamma_cdf_fit": {
+     "a": 0.9112709090330275,
+     "k": 21.874333555129304,
+     "theta": 0.34924179160629454,
+     "snr_50pct": 7.72312835627818
+    },
+    "depth": {
+     "median_detrended_depth_ratio": 0.8658605953235969,
+     "median_found_over_injected_central_depth": 0.7787732744723042,
+     "median_found_over_model_mean_depth": 0.9142190784811839,
+     "median_model_mean_over_central_depth": 0.8530895773098708
+    }
+   }
+  },
+  "notes": "# SS-0002A notes\n\nWrite-up: SpaceSift Roadmap doc, Research archive, \"SS-0002A results\".\n\n## Analysis\n\n```\nspacesift analyze-grid experiments/SS-0002A --null experiments/SS-0002A-null --name far1pct\n```\n\nUse `analysis/far1pct/`. Thresholds (1% false-alarm rate on noise-only stars, from SS-0002A-null):\nnone 6.02, biweight 0.25 d 6.75, 0.5 d 6.42, 1 d 6.33, 2 d 6.39, prewhitening + biweight 1 d 6.33.\n\n**Do not use the pooled default** (`analyze-grid` without `--null`). Strongly variable stars score\nhigh even with their flux inverted. In this grid, where half the cells vary strongly, pooling\nput every biweight threshold near SDE 24 and wiped out detections even on quiet stars.\n\n## Results (completeness at SNR 10-16)\n\n- Biweight at any window fails on pulsations at 100 ppm or more, for periods from 2 h to 2 d.\n  Prewhitening recovers 99% or more in all 24 pulsation cells.\n- Prewhitening fails on fast spots: rotation of 1 d at 300 ppm or more, and 3 d at 1,000 ppm.\n  There the 0.25-day window is best, but it recovers only 64% on quiet stars.\n- 30 ppm pulsations at 16 h to 1 d drop the 1-day biweight to 1-10%, while the same amplitude\n  at 2-8 h leaves 88-100%. Variability on transit-like timescales does the most damage.\n- In failing biweight cells the search returns the star's own signal in 88-100% of trials, and\n  60-100% of planet-free inverted searches beat the threshold.\n\n## Caveats\n\nThe simulated pulsators are two constant sinusoids, the ideal case for prewhitening. The noise\nis white only. Part B (real Kepler variable stars) is the test.\n\n## Provenance\n\n- 49,200 trials, commit 18bf1f9, run 37556705026 (20 shards).\n- Shard 11 failed at `pip install` and was re-run 36 h later. pydantic 2.14.0 was released in\n  between, so it differs across shards. This is recorded in `record.json`\n  (`package_versions_by_shard`) and does not affect any results.\n- Merged by spacesift-merge on commit 5becf13.\n",
+  "analyses": {
+   "far1pct": {
+    "threshold_source": "SS-0002A-null at false-alarm rate 0.01",
+    "thresholds": {
+     "none": 6.019324452556122,
+     "biweight-0.25": 6.750710589833134,
+     "biweight-0.5": 6.4191860134464935,
+     "biweight-1.0": 6.325503302270498,
+     "biweight-2.0": 6.391736803758509,
+     "prewhiten+biweight-1.0": 6.325503302270276
+    },
+    "sde_threshold": null,
+    "excluded_stars": null,
+    "control_completeness": {
+     "biweight-0.25": 0.642,
+     "biweight-0.5": 0.979,
+     "biweight-1.0": 1.0,
+     "biweight-2.0": 1.0,
+     "none": 1.0,
+     "prewhiten+biweight-1.0": 1.0
+    },
+    "snr_band": [
+     10.0,
+     16.0
+    ]
+   }
+  },
+  "images": [
+   "/spacesift/experiments/SS-0002A/analysis/far1pct/best_method.png",
+   "/spacesift/experiments/SS-0002A/analysis/far1pct/capture_maps.png",
+   "/spacesift/experiments/SS-0002A/analysis/far1pct/completeness_maps.png",
+   "/spacesift/experiments/SS-0002A/analysis/far1pct/depth_kept.png",
+   "/spacesift/experiments/SS-0002A/plots/completeness_radius_period.png",
+   "/spacesift/experiments/SS-0002A/plots/completeness_vs_snr.png"
+  ]
+ },
+ {
+  "id": "SS-0002A-null",
+  "question": "What SDE threshold gives each SS-0002A method a 1% false-alarm rate on noise-only stars?",
+  "n_trials": 10800,
+  "n_stars": 200,
+  "n_stars_failed": 0,
+  "git_commit": "32e62b7e8d0d42c03a220317c86be1c1b634feee",
+  "git_dirty": false,
+  "seed": 20021,
+  "started": "2026-10-09T15:49:36.537449+00:00",
+  "finished": "2026-10-09T16:16:33.463635+00:00",
+  "preprocessing_version": "0.1",
+  "n_shards": 20,
+  "summary": {
+   "biweight-0.25": {
+    "n_null_searches": 1800,
+    "threshold_for_far": {
+     "0.01": 6.750710589833134,
+     "0.005": 6.923199518544717,
+     "0.001": 7.554843286108178
+    }
+   },
+   "biweight-0.5": {
+    "n_null_searches": 1800,
+    "threshold_for_far": {
+     "0.01": 6.4191860134464935,
+     "0.005": 6.652580148424002,
+     "0.001": 6.809267677118045
+    }
+   },
+   "biweight-1.0": {
+    "n_null_searches": 1800,
+    "threshold_for_far": {
+     "0.01": 6.325503302270498,
+     "0.005": 6.612080859612078,
+     "0.001": 6.847415990821673
+    }
+   },
+   "biweight-2.0": {
+    "n_null_searches": 1800,
+    "threshold_for_far": {
+     "0.01": 6.391736803758509,
+     "0.005": 6.537701799631,
+     "0.001": 6.9307965453266105
+    }
+   },
+   "none": {
+    "n_null_searches": 1800,
+    "threshold_for_far": {
+     "0.01": 6.019324452556122,
+     "0.005": 6.342840790440587,
+     "0.001": 6.707650003337683
+    }
+   },
+   "prewhiten+biweight-1.0": {
+    "n_null_searches": 1800,
+    "threshold_for_far": {
+     "0.01": 6.325503302270276,
+     "0.005": 6.6120808596103045,
+     "0.001": 6.84741599082073
+    }
+   }
+  },
+  "notes": "",
+  "analyses": {},
+  "images": [
+   "/spacesift/experiments/SS-0002A-null/plots/false_alarm_rate.png"
+  ]
+ }
+]
