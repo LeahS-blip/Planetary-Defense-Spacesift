@@ -1,0 +1,30 @@
+# SS-0001 Harness validation (see the SpaceSift Roadmap doc).
+# Question: does BLS injection-recovery on Kepler reproduce the published
+# completeness-vs-SNR curve (gamma-CDF fit, Christiansen et al. 2016)?
+#
+# quarters: starts with 4 quarters (~1 year) for a timing run. Extend once the
+# per-trial cost is known; the period grid grows with the baseline.
+id: SS-0001
+question: Does our BLS injection-recovery reproduce the published completeness-vs-SNR curve?
+seed: 29481
+mission: kepler
+stars_file: configs/stars/SS-0001.csv
+quarters: [2, 3, 4, 5]
+injection:
+  trials_per_star: 50
+  expected_snr: [3, 30]
+  period_d: [1, 30]
+  b: [0, 0.9]
+  noise_detrend: biweight-1.0
+  supersample: 7
+detrend: [biweight-1.0]
+search:
+  method: bls
+  durations_hr: [1.5, 2.5, 4.0, 6.0, 9.0]
+  oversample: 3
+  bin_min: 60
+recovery:
+  sde_threshold: 7
+  period_tol: 0.01
+  min_transits: 2
+n_jobs: 4

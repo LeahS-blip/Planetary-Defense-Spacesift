@@ -1,0 +1,75 @@
+{
+  "experiment": "SS-0002A",
+  "false_alarm_rate": 0.01,
+  "snr_band": [
+    10.0,
+    16.0
+  ],
+  "thresholds": {
+    "none": 6.019324452556122,
+    "biweight-0.25": 6.750710589833134,
+    "biweight-0.5": 6.4191860134464935,
+    "biweight-1.0": 6.325503302270498,
+    "biweight-2.0": 6.391736803758509,
+    "prewhiten+biweight-1.0": 6.325503302270276
+  },
+  "threshold_source": "SS-0002A-null at false-alarm rate 0.01",
+  "status_counts": {
+    "biweight-0.25": {
+      "star_signal": 3935,
+      "recovered": 2987,
+      "below_threshold": 1228,
+      "wrong_period": 34,
+      "alias_half": 9,
+      "alias_double": 7
+    },
+    "biweight-0.5": {
+      "star_signal": 4447,
+      "recovered": 3545,
+      "below_threshold": 188,
+      "wrong_period": 12,
+      "alias_half": 6,
+      "alias_double": 2
+    },
+    "biweight-1.0": {
+      "star_signal": 4992,
+      "recovered": 3130,
+      "below_threshold": 61,
+      "wrong_period": 12,
+      "alias_half": 4,
+      "alias_double": 1
+    },
+    "biweight-2.0": {
+      "star_signal": 5280,
+      "recovered": 2770,
+      "below_threshold": 130,
+      "wrong_period": 15,
+      "alias_half": 4,
+      "alias_double": 1
+    },
+    "none": {
+      "star_signal": 6080,
+      "recovered": 1937,
+      "below_threshold": 161,
+      "wrong_period": 16,
+      "alias_half": 5,
+      "alias_double": 1
+    },
+    "prewhiten+biweight-1.0": {
+      "recovered": 7231,
+      "below_threshold": 785,
+      "star_signal": 154,
+      "wrong_period": 20,
+      "alias_double": 7,
+      "alias_half": 3
+    }
+  },
+  "control_completeness": {
+    "biweight-0.25": 0.642,
+    "biweight-0.5": 0.979,
+    "biweight-1.0": 1.0,
+    "biweight-2.0": 1.0,
+    "none": 1.0,
+    "prewhiten+biweight-1.0": 1.0
+  }
+}

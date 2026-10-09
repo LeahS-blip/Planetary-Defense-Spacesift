@@ -1,0 +1,264 @@
+{
+  "id": "SS-0002A-null",
+  "question": "What SDE threshold gives each SS-0002A method a 1% false-alarm rate on noise-only stars?",
+  "config_file": "configs/SS-0002A-null.yaml",
+  "config_sha256": "513f6ab846ac3f63de3b4ac949592dda36cd6000fdb71b28e606ba0f36026681",
+  "config": {
+    "id": "SS-0002A-null",
+    "question": "What SDE threshold gives each SS-0002A method a 1% false-alarm rate on noise-only stars?",
+    "seed": 20021,
+    "kind": "false_alarm",
+    "mission": "synthetic",
+    "stars_file": null,
+    "quarters": null,
+    "max_stars": null,
+    "synthetic": {
+      "n_stars": 200,
+      "baseline_d": 368.0,
+      "noise_ppm": [
+        150.0,
+        150.0
+      ],
+      "var_amp_ppm": [
+        0.0,
+        0.0
+      ],
+      "var_period_d": [
+        5.0,
+        30.0
+      ]
+    },
+    "injection": {
+      "trials_per_star": 50,
+      "expected_snr": [
+        3.0,
+        30.0
+      ],
+      "period_d": [
+        1.0,
+        30.0
+      ],
+      "b": [
+        0.0,
+        0.9
+      ],
+      "noise_detrend": "biweight-1.0",
+      "supersample": 7,
+      "depth_basis": "central",
+      "snr_noise": "detrended"
+    },
+    "detrend": [
+      "none",
+      "biweight-0.25",
+      "biweight-0.5",
+      "biweight-1.0",
+      "biweight-2.0",
+      "prewhiten+biweight-1.0"
+    ],
+    "search": {
+      "method": "bls",
+      "durations_hr": [
+        1.5,
+        2.5,
+        4.0,
+        6.0,
+        9.0
+      ],
+      "oversample": 3.0,
+      "bin_min": 60.0
+    },
+    "recovery": {
+      "sde_threshold": 7.0,
+      "period_tol": 0.01,
+      "min_transits": 2
+    },
+    "false_alarm": {
+      "inverted": true,
+      "scrambles": 4,
+      "block_d": 10.0
+    },
+    "grid": null,
+    "baseline_searches": false,
+    "n_jobs": 4,
+    "cache_dir": "cache"
+  },
+  "git_commit": "32e62b7e8d0d42c03a220317c86be1c1b634feee",
+  "git_dirty": false,
+  "spacesift_version": "0.1.0",
+  "preprocessing_version": "0.1",
+  "package_versions": {
+    "spacesift": "0.1.0",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "pandas": "2.3.3",
+    "astropy": "8.0.1",
+    "lightkurve": "2.6.0",
+    "wotan": "1.10",
+    "pydantic": "2.14.0"
+  },
+  "seed": 20021,
+  "started": "2026-10-09T15:49:36.537449+00:00",
+  "finished": "2026-10-09T16:16:33.463635+00:00",
+  "n_shards": 20,
+  "n_stars": 200,
+  "n_stars_failed": 0,
+  "n_trials": 10800,
+  "summary": {
+    "biweight-0.25": {
+      "n_null_searches": 1800,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          5.112,
+          5.798,
+          6.759
+        ],
+        "scrambled": [
+          5.066,
+          5.734,
+          6.744
+        ],
+        "scrambled_inverted": [
+          5.099,
+          5.772,
+          6.748
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 6.750710589833134,
+        "0.005": 6.923199518544717,
+        "0.001": 7.554843286108178
+      },
+      "far_at_sde_7": 0.0044444444444444444
+    },
+    "biweight-0.5": {
+      "n_null_searches": 1800,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          4.991,
+          5.593,
+          6.163
+        ],
+        "scrambled": [
+          4.921,
+          5.599,
+          6.582
+        ],
+        "scrambled_inverted": [
+          4.935,
+          5.587,
+          6.399
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 6.4191860134464935,
+        "0.005": 6.652580148424002,
+        "0.001": 6.809267677118045
+      },
+      "far_at_sde_7": 0.0005555555555555556
+    },
+    "biweight-1.0": {
+      "n_null_searches": 1800,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          4.88,
+          5.541,
+          6.129
+        ],
+        "scrambled": [
+          4.843,
+          5.539,
+          6.569
+        ],
+        "scrambled_inverted": [
+          4.873,
+          5.567,
+          6.251
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 6.325503302270498,
+        "0.005": 6.612080859612078,
+        "0.001": 6.847415990821673
+      },
+      "far_at_sde_7": 0.0005555555555555556
+    },
+    "biweight-2.0": {
+      "n_null_searches": 1800,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          4.751,
+          5.5,
+          6.329
+        ],
+        "scrambled": [
+          4.832,
+          5.484,
+          6.47
+        ],
+        "scrambled_inverted": [
+          4.804,
+          5.471,
+          6.202
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 6.391736803758509,
+        "0.005": 6.537701799631,
+        "0.001": 6.9307965453266105
+      },
+      "far_at_sde_7": 0.0005555555555555556
+    },
+    "none": {
+      "n_null_searches": 1800,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          4.633,
+          5.253,
+          6.062
+        ],
+        "scrambled": [
+          4.695,
+          5.344,
+          6.069
+        ],
+        "scrambled_inverted": [
+          4.679,
+          5.275,
+          5.937
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 6.019324452556122,
+        "0.005": 6.342840790440587,
+        "0.001": 6.707650003337683
+      },
+      "far_at_sde_7": 0.0
+    },
+    "prewhiten+biweight-1.0": {
+      "n_null_searches": 1800,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          4.88,
+          5.541,
+          6.129
+        ],
+        "scrambled": [
+          4.843,
+          5.539,
+          6.569
+        ],
+        "scrambled_inverted": [
+          4.873,
+          5.567,
+          6.251
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 6.325503302270276,
+        "0.005": 6.6120808596103045,
+        "0.001": 6.84741599082073
+      },
+      "far_at_sde_7": 0.0005555555555555556
+    }
+  }
+}

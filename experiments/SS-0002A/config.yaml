@@ -1,0 +1,43 @@
+# SS-0002 Part A: when does stellar variability hide planets? (design: SpaceSift Roadmap doc)
+# 41 synthetic variability cells (6 pulsation periods x 4 amplitudes, 4 spot
+# periods x 4 amplitudes, 1 no-variability control), 20 stars per cell, 10
+# injections per star, every injection searched with 6 detrending methods.
+# SNR is defined on the mean in-transit depth against white noise only, so
+# variability cannot inflate the injected planets.
+# Analyse with: spacesift analyze-grid experiments/SS-0002A
+id: SS-0002A
+question: At fixed SNR, how does completeness depend on variability period and amplitude, per detrending method?
+seed: 20020
+mission: synthetic
+synthetic:
+  baseline_d: 368
+  noise_ppm: [150, 150]
+grid:
+  pulsation_periods_h: [2, 4, 8, 16, 24, 48]
+  spot_periods_d: [1, 3, 10, 30]
+  amplitudes_ppm: [30, 100, 300, 1000]
+  control: true
+  stars_per_cell: 20
+baseline_searches: true
+injection:
+  trials_per_star: 10
+  expected_snr: [8, 20]
+  period_d: [1, 30]
+  b: [0, 0.9]
+  depth_basis: mean
+  snr_noise: white
+detrend:
+  - none
+  - biweight-0.25
+  - biweight-0.5
+  - biweight-1.0
+  - biweight-2.0
+  - prewhiten+biweight-1.0
+search:
+  method: bls
+  durations_hr: [1.5, 2.5, 4.0, 6.0, 9.0]
+  oversample: 3
+  bin_min: 60
+recovery:
+  sde_threshold: 7.25  # run-time label only; analyze-grid sets per-method thresholds
+n_jobs: 4
