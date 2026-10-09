@@ -8,7 +8,7 @@ uniform-disk case in tests/test_inject.py.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 import numpy as np
 
@@ -27,6 +27,7 @@ class Star:
     teff: float = 5772.0
     u1: float = 0.40  # quadratic limb darkening, Kepler band
     u2: float = 0.25
+    meta: dict = field(default_factory=dict)  # e.g. a real star's variability bin (SS-0002B)
 
 
 @dataclass
@@ -122,6 +123,12 @@ def transit_model(
 def robust_std(x: np.ndarray) -> float:
     x = x[np.isfinite(x)]
     return 1.4826 * np.median(np.abs(x - np.median(x)))
+
+
+def p2p_noise(flux: np.ndarray) -> float:
+    """White noise per cadence from point-to-point differences (robust). Slow trends
+    cancel in the differences; fast variability does not, so clean it out first."""
+    return robust_std(np.diff(flux)) / np.sqrt(2)
 
 
 def cdpp(time: np.ndarray, flux_flat: np.ndarray, duration: float) -> float:

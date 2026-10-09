@@ -33,7 +33,9 @@ class InjectionCfg(BaseModel):
     # Which noise the SNR is defined against: the detrended light curve ("detrended",
     # SS-0001), or, for synthetic stars, the white noise alone ("white"), so that
     # stellar variability does not inflate the injected planets.
-    snr_noise: Literal["detrended", "white"] = "detrended"
+    # "cleaned_p2p" (any star): white noise estimated from cadence-to-cadence scatter
+    # after prewhitening and a 0.5-day biweight, so variability does not inflate it.
+    snr_noise: Literal["detrended", "white", "cleaned_p2p"] = "detrended"
 
 
 class GridCfg(BaseModel):

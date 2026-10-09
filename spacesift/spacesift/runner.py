@@ -16,15 +16,16 @@ from joblib import Parallel, delayed
 
 from . import PREPROCESSING_VERSION, __version__
 from .config import ExperimentConfig, load_config
-from .data import LightCurve, load_mission, read_stars, synthetic, synthetic_variable
+from .data import CELL_COLUMNS, LightCurve, load_mission, read_stars, synthetic, synthetic_variable
 from .detrend import clean, flatten
 from .evaluate import STATUSES, completeness, fit_gamma_cdf, match
-from .inject import Injection, Star, sample_injection, transit_model
+from .inject import Injection, Star, p2p_noise, sample_injection, transit_model
 from .search import SEARCHES, Candidate
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Seed-stream index for generating synthetic light curves; trials use 0..trials_per_star-1.
 LIGHTCURVE_STREAM = 2**31 - 1
+NOISE_STREAM = 2**31 - 2  # white-noise stand-in for cleaned_p2p SNR
 PACKAGES = ["spacesift", "numpy", "scipy", "pandas", "astropy", "lightkurve", "wotan", "pydantic"]
 # The packages whose version can change a trial's numbers (injection, detrending, search).
 RESULT_PACKAGES = {"spacesift", "numpy", "scipy", "astropy", "wotan"}
@@ -71,12 +72,26 @@ def build_stars(cfg: ExperimentConfig) -> list[Star]:
     return stars[: cfg.max_stars] if cfg.max_stars else stars
 
 
-def cell_for(cfg: ExperimentConfig, star_index: int) -> dict:
-    """The variability cell a grid star belongs to ({} outside a grid)."""
-    if not cfg.grid:
-        return {}
-    ci = star_index // cfg.grid.stars_per_cell
-    return {"cell": ci, **cfg.grid.cells()[ci]}
+def cell_for(cfg: ExperimentConfig, star_index: int, star: Star | None = None) -> dict:
+    """The variability cell a star belongs to: from the grid for synthetic grid stars,
+    from the star list's cell columns for real stars, else {}."""
+    if cfg.grid:
+        ci = star_index // cfg.grid.stars_per_cell
+        return {"cell": ci, **cfg.grid.cells()[ci]}
+    return {k: v for k, v in (star.meta if star else {}).items() if k in CELL_COLUMNS}
+
+
+def measured_variability(time: np.ndarray, flux: np.ndarray) -> dict:
+    """Dominant variability of the raw light curve: Lomb-Scargle peak between 1 h and 45 d,
+    as period (days) and sinusoid semi-amplitude (ppm)."""
+    from astropy.timeseries import LombScargle
+
+    y = flux / np.median(flux) - 1
+    span = time.max() - time.min()
+    freq = np.arange(1 / 45, 24, 1 / (5 * span))
+    power = LombScargle(time, y, normalization="psd").power(freq, method="fast")
+    i = int(np.argmax(power))
+    return {"meas_var_period_d": float(1 / freq[i]), "meas_var_amp_ppm": float(np.sqrt(4 * power[i] / y.size) * 1e6)}
 
 
 def load_star(cfg: ExperimentConfig, star: Star, star_index: int) -> LightCurve:
@@ -154,7 +169,7 @@ def baseline_rows(cfg: ExperimentConfig, lc: LightCurve, star: Star, star_index:
         for kind, flux in (("plain", f), ("inverted", invert(f))):
             cand = run_search(cfg, t, flux)
             rows.append({"star_id": star.star_id, "star_index": star_index, "detrend": spec,
-                         "baseline": kind, **cell_for(cfg, star_index), **cand.to_dict()})
+                         "baseline": kind, **cell_for(cfg, star_index, star), **cand.to_dict()})
     return rows
 
 
@@ -187,18 +202,28 @@ def _run_star(cfg: ExperimentConfig, star: Star, star_index: int) -> tuple[list[
     started = clock.perf_counter()
     lc = load_star(cfg, star, star_index)
     t_flat, f_flat = clean(lc.time, flatten(lc.time, lc.flux, cfg.injection.noise_detrend))
+    noise_info = {}
     if cfg.injection.snr_noise == "white":
         t_noise, f_noise = lc.time, lc.noise_only
+    elif cfg.injection.snr_noise == "cleaned_p2p":
+        # A white-noise stand-in at the measured level, on the real timestamps, so the
+        # duration-scale noise (and hence each planet's size) ignores the variability.
+        sigma = p2p_noise(flatten(lc.time, lc.flux, "prewhiten+biweight-0.5"))
+        rng = np.random.default_rng(trial_seed(cfg.seed, star_index, NOISE_STREAM))
+        t_noise, f_noise = lc.time, 1 + rng.normal(0, sigma, lc.time.size)
+        noise_info = {"white_noise_ppm": sigma * 1e6}
     else:
         t_noise, f_noise = t_flat, f_flat
-    cell = cell_for(cfg, star_index)
+    cell = cell_for(cfg, star_index, star)
 
     # Pre-injection search: a strong signal here means the star may host a real
     # (or instrumental) periodic signal and should be excluded from analysis.
     pre = run_search(cfg, t_flat, f_flat)
     star_row = {"star_id": star.star_id, "n_points": lc.time.size,
                 "baseline_d": float(lc.time.max() - lc.time.min()),
-                "pre_sde": pre.sde, "pre_period": pre.period, "error": None, **cell}
+                "pre_sde": pre.sde, "pre_period": pre.period, "error": None, **cell, **noise_info}
+    if cfg.mission != "synthetic" or cfg.grid:
+        star_row.update(measured_variability(lc.time, lc.flux))
 
     if cfg.kind == "false_alarm":
         rows = null_rows(cfg, lc, star, star_index)
