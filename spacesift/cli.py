@@ -117,6 +117,13 @@ def cmd_inspect_star(args):
           f"dur={cand.duration * 24:.1f}h | inverted SDE={inv.sde:.2f} -> {out}")
 
 
+def cmd_ui(args):
+    from .ui.server import serve
+
+    roots = [Path(p) for p in (args.experiments or ["experiments"])]
+    serve(port=args.port, roots=roots, open_browser=not args.no_browser)
+
+
 def cmd_select(args):
     from .data import select_kepler_stars
 
@@ -167,6 +174,12 @@ def main(argv=None):
     g.add_argument("--null", help="false-alarm experiment on noise-only stars (recommended threshold source)")
     g.add_argument("--fixed-threshold", type=float, help="one SDE threshold for every method (preview only)")
     g.set_defaults(func=cmd_analyze_grid)
+
+    u = sub.add_parser("ui", help="open the SpaceSift web UI (Explore + Results)")
+    u.add_argument("--port", type=int, default=8765)
+    u.add_argument("--experiments", nargs="*", help="folders of experiments to browse (default: experiments/)")
+    u.add_argument("--no-browser", action="store_true")
+    u.set_defaults(func=cmd_ui)
 
     sv = sub.add_parser("select-variable-stars", help="freeze the SS-0002B real variable-star sample")
     sv.add_argument("--out", default="configs/stars/SS-0002B.csv")

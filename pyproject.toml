@@ -35,5 +35,8 @@ spacesift = "spacesift.cli:main"
 [tool.setuptools.packages.find]
 include = ["spacesift*"]
 
+[tool.setuptools.package-data]
+"spacesift.ui" = ["static/*.html"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

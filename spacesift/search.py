@@ -56,8 +56,9 @@ def period_grid(baseline: float, pmin: float, pmax: float, min_duration: float, 
     return np.sort(1 / np.asarray(freqs))
 
 
-def bls(time: np.ndarray, flux: np.ndarray, *, period_range, durations, oversample: float = 3.0,
-        bin_width: float = 0.0) -> Candidate:
+def bls_periodogram(time: np.ndarray, flux: np.ndarray, *, period_range, durations, oversample: float = 3.0,
+                    bin_width: float = 0.0) -> tuple[Candidate, np.ndarray, np.ndarray]:
+    """BLS search returning the best candidate and the full periodogram (periods, SDE)."""
     from astropy.timeseries import BoxLeastSquares
 
     t, f = bin_lightcurve(time, flux, bin_width)
@@ -67,15 +68,22 @@ def bls(time: np.ndarray, flux: np.ndarray, *, period_range, durations, oversamp
     res = model.power(periods, durations, objective="snr")
     power = np.asarray(res.power)
     i = int(np.nanargmax(power))
-    sde = (power[i] - np.nanmean(power)) / np.nanstd(power)
-    return Candidate(
+    sde_curve = (power - np.nanmean(power)) / np.nanstd(power)
+    cand = Candidate(
         period=float(res.period[i]),
         t0=float(res.transit_time[i]),
         duration=float(res.duration[i]),
         depth=float(res.depth[i]),
         power=float(power[i]),
-        sde=float(sde),
+        sde=float(sde_curve[i]),
     )
+    return cand, np.asarray(res.period), sde_curve
+
+
+def bls(time: np.ndarray, flux: np.ndarray, *, period_range, durations, oversample: float = 3.0,
+        bin_width: float = 0.0) -> Candidate:
+    return bls_periodogram(time, flux, period_range=period_range, durations=durations, oversample=oversample,
+                           bin_width=bin_width)[0]
 
 
 SEARCHES = {"bls": bls}

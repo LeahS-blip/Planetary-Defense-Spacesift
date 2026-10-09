@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+from . import json_safe
 import pandas as pd
 
 MIN_STARS = 10  # bins with fewer stars are reported but not judged
@@ -101,7 +102,7 @@ def compare(exp_b: Path, analysis: str, cells_a: Path, predictions: Path) -> Pat
     j = table[table.judged]
     summary = {"bins_judged": int(len(j)), "agree_2sigma": int(j.agrees_2sigma.sum()),
                "median_abs_diff": float(j["diff"].abs().median()) if len(j) else None}
-    (out / "comparison.json").write_text(json.dumps(summary, indent=2))
+    (out / "comparison.json").write_text(json.dumps(json_safe(summary), indent=2))
     from .plots import plot_comparison
     plot_comparison(table, out / "plots" / "observed_vs_predicted.png")
     print(f"{summary['agree_2sigma']} of {summary['bins_judged']} judged bin-methods agree within 2 sigma; "

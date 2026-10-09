@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
-from . import PREPROCESSING_VERSION, __version__
+from . import PREPROCESSING_VERSION, __version__, json_safe
 from .config import ExperimentConfig, load_config
 from .data import CELL_COLUMNS, LightCurve, load_mission, read_stars, synthetic, synthetic_variable
 from .detrend import clean, flatten
@@ -380,7 +380,7 @@ def write_record(exp: Path, provenance: dict, trials: pd.DataFrame, star_table: 
         "n_trials": int(len(trials)),
         "summary": (summarize_null(trials) if is_null else summarize(trials)) if len(trials) else {},
     }
-    (exp / "record.json").write_text(json.dumps(record, indent=2))
+    (exp / "record.json").write_text(json.dumps(json_safe(record), indent=2))
     if len(trials):
         from .plots import plot_experiment, plot_null
         (plot_null if is_null else plot_experiment)(trials, exp / "plots")
