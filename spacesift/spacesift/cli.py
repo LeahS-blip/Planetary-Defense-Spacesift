@@ -124,6 +124,17 @@ def cmd_ui(args):
     serve(port=args.port, roots=roots, open_browser=not args.no_browser)
 
 
+def cmd_export_site(args):
+    from .runner import PROJECT_ROOT
+    from .site import export_demo_stars, export_experiments
+
+    lab = Path(args.lab)
+    entries = export_experiments(Path(args.experiments), lab / "data" / "experiments.json", args.url_prefix)
+    print(f"wrote {len(entries)} experiments to {lab / 'data' / 'experiments.json'}")
+    if args.stars:
+        export_demo_stars(PROJECT_ROOT, lab / "data" / "stars")
+
+
 def cmd_select(args):
     from .data import select_kepler_stars
 
@@ -180,6 +191,13 @@ def main(argv=None):
     u.add_argument("--experiments", nargs="*", help="folders of experiments to browse (default: experiments/)")
     u.add_argument("--no-browser", action="store_true")
     u.set_defaults(func=cmd_ui)
+
+    es = sub.add_parser("export-site", help="write the public Transit Lab's data files")
+    es.add_argument("--lab", default="../lab", help="the site's lab/ folder")
+    es.add_argument("--experiments", default="experiments")
+    es.add_argument("--url-prefix", default="/spacesift/experiments", help="URL of the experiments folder on the site")
+    es.add_argument("--stars", action="store_true", help="also export the demo's Kepler light curves (downloads)")
+    es.set_defaults(func=cmd_export_site)
 
     sv = sub.add_parser("select-variable-stars", help="freeze the SS-0002B real variable-star sample")
     sv.add_argument("--out", default="configs/stars/SS-0002B.csv")
