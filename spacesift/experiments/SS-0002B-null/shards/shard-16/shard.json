@@ -1,0 +1,109 @@
+{
+  "id": "SS-0002B-null",
+  "question": "What SDE threshold gives each SS-0002B method a 1% false-alarm rate on quiet Kepler stars?",
+  "config_file": "configs/SS-0002B-null.yaml",
+  "config_sha256": "82ef6d462f307b51b4783df963f1fcd4a145250e4b81d3347f20ce346ee920df",
+  "config": {
+    "id": "SS-0002B-null",
+    "question": "What SDE threshold gives each SS-0002B method a 1% false-alarm rate on quiet Kepler stars?",
+    "seed": 20023,
+    "kind": "false_alarm",
+    "mission": "kepler",
+    "stars_file": "configs/stars/SS-0001.csv",
+    "quarters": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "max_stars": null,
+    "synthetic": {
+      "n_stars": 20,
+      "baseline_d": 360.0,
+      "noise_ppm": [
+        100.0,
+        400.0
+      ],
+      "var_amp_ppm": [
+        0.0,
+        0.0
+      ],
+      "var_period_d": [
+        5.0,
+        30.0
+      ]
+    },
+    "injection": {
+      "trials_per_star": 50,
+      "expected_snr": [
+        3.0,
+        30.0
+      ],
+      "period_d": [
+        1.0,
+        30.0
+      ],
+      "b": [
+        0.0,
+        0.9
+      ],
+      "noise_detrend": "biweight-1.0",
+      "supersample": 7,
+      "depth_basis": "central",
+      "snr_noise": "detrended"
+    },
+    "detrend": [
+      "biweight-0.25",
+      "biweight-0.5",
+      "biweight-1.0",
+      "prewhiten+biweight-1.0"
+    ],
+    "search": {
+      "method": "bls",
+      "durations_hr": [
+        1.5,
+        2.5,
+        4.0,
+        6.0,
+        9.0
+      ],
+      "oversample": 3.0,
+      "bin_min": 60.0
+    },
+    "recovery": {
+      "sde_threshold": 7.0,
+      "period_tol": 0.01,
+      "min_transits": 2
+    },
+    "false_alarm": {
+      "inverted": true,
+      "scrambles": 4,
+      "block_d": 10.0
+    },
+    "grid": null,
+    "baseline_searches": false,
+    "n_jobs": 4,
+    "cache_dir": "cache"
+  },
+  "git_commit": "7b075b7f0082a4929d02563971440d810ac2582d",
+  "git_dirty": false,
+  "spacesift_version": "0.1.0",
+  "preprocessing_version": "0.1",
+  "package_versions": {
+    "spacesift": "0.1.0",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "pandas": "2.3.3",
+    "astropy": "8.0.1",
+    "lightkurve": "2.6.0",
+    "wotan": "1.10",
+    "pydantic": "2.14.0"
+  },
+  "seed": 20023,
+  "started": "2026-10-09T18:24:09.935024+00:00",
+  "finished": "2026-10-09T18:39:41.108921+00:00",
+  "shard": [
+    16,
+    20
+  ]
+}

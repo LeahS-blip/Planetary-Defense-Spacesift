@@ -1,0 +1,215 @@
+{
+  "id": "SS-0002B-null",
+  "question": "What SDE threshold gives each SS-0002B method a 1% false-alarm rate on quiet Kepler stars?",
+  "config_file": "configs/SS-0002B-null.yaml",
+  "config_sha256": "82ef6d462f307b51b4783df963f1fcd4a145250e4b81d3347f20ce346ee920df",
+  "config": {
+    "id": "SS-0002B-null",
+    "question": "What SDE threshold gives each SS-0002B method a 1% false-alarm rate on quiet Kepler stars?",
+    "seed": 20023,
+    "kind": "false_alarm",
+    "mission": "kepler",
+    "stars_file": "configs/stars/SS-0001.csv",
+    "quarters": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "max_stars": null,
+    "synthetic": {
+      "n_stars": 20,
+      "baseline_d": 360.0,
+      "noise_ppm": [
+        100.0,
+        400.0
+      ],
+      "var_amp_ppm": [
+        0.0,
+        0.0
+      ],
+      "var_period_d": [
+        5.0,
+        30.0
+      ]
+    },
+    "injection": {
+      "trials_per_star": 50,
+      "expected_snr": [
+        3.0,
+        30.0
+      ],
+      "period_d": [
+        1.0,
+        30.0
+      ],
+      "b": [
+        0.0,
+        0.9
+      ],
+      "noise_detrend": "biweight-1.0",
+      "supersample": 7,
+      "depth_basis": "central",
+      "snr_noise": "detrended"
+    },
+    "detrend": [
+      "biweight-0.25",
+      "biweight-0.5",
+      "biweight-1.0",
+      "prewhiten+biweight-1.0"
+    ],
+    "search": {
+      "method": "bls",
+      "durations_hr": [
+        1.5,
+        2.5,
+        4.0,
+        6.0,
+        9.0
+      ],
+      "oversample": 3.0,
+      "bin_min": 60.0
+    },
+    "recovery": {
+      "sde_threshold": 7.0,
+      "period_tol": 0.01,
+      "min_transits": 2
+    },
+    "false_alarm": {
+      "inverted": true,
+      "scrambles": 4,
+      "block_d": 10.0
+    },
+    "grid": null,
+    "baseline_searches": false,
+    "n_jobs": 4,
+    "cache_dir": "cache"
+  },
+  "git_commit": "7b075b7f0082a4929d02563971440d810ac2582d",
+  "git_dirty": false,
+  "spacesift_version": "0.1.0",
+  "preprocessing_version": "0.1",
+  "package_versions": {
+    "spacesift": "0.1.0",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "pandas": "2.3.3",
+    "astropy": "8.0.1",
+    "lightkurve": "2.6.0",
+    "wotan": "1.10",
+    "pydantic": "2.14.0"
+  },
+  "seed": 20023,
+  "started": "2026-10-09T18:23:57.009847+00:00",
+  "finished": "2026-10-09T18:46:05.345915+00:00",
+  "n_shards": 20,
+  "n_stars": 200,
+  "n_stars_failed": 1,
+  "n_trials": 7164,
+  "summary": {
+    "biweight-0.25": {
+      "n_null_searches": 1791,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          5.129,
+          5.91,
+          7.305
+        ],
+        "scrambled": [
+          5.454,
+          6.474,
+          7.658
+        ],
+        "scrambled_inverted": [
+          5.105,
+          5.866,
+          6.883
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 7.3665401534103445,
+        "0.005": 7.982932561604798,
+        "0.001": 10.239614010871295
+      },
+      "far_at_sde_7": 0.024567280848687884
+    },
+    "biweight-0.5": {
+      "n_null_searches": 1791,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          4.923,
+          5.7,
+          6.968
+        ],
+        "scrambled": [
+          5.253,
+          6.167,
+          7.542
+        ],
+        "scrambled_inverted": [
+          4.983,
+          5.707,
+          6.934
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 7.251596733179984,
+        "0.005": 8.016283221508113,
+        "0.001": 10.254136251627125
+      },
+      "far_at_sde_7": 0.013958682300390842
+    },
+    "biweight-1.0": {
+      "n_null_searches": 1791,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          4.807,
+          5.655,
+          8.321
+        ],
+        "scrambled": [
+          5.005,
+          5.974,
+          7.055
+        ],
+        "scrambled_inverted": [
+          4.805,
+          5.609,
+          6.606
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 6.966901241935647,
+        "0.005": 7.82212449331111,
+        "0.001": 10.13269639411866
+      },
+      "far_at_sde_7": 0.009491903964265773
+    },
+    "prewhiten+biweight-1.0": {
+      "n_null_searches": 1791,
+      "sde_quantiles_by_kind": {
+        "inverted": [
+          4.763,
+          5.558,
+          8.271
+        ],
+        "scrambled": [
+          5.012,
+          5.952,
+          6.952
+        ],
+        "scrambled_inverted": [
+          4.798,
+          5.56,
+          6.382
+        ]
+      },
+      "threshold_for_far": {
+        "0.01": 6.790337811611636,
+        "0.005": 7.146216049176899,
+        "0.001": 8.291615246640095
+      },
+      "far_at_sde_7": 0.0072585147962032385
+    }
+  }
+}
