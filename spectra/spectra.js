@@ -368,3 +368,46 @@ export const REAL_ASTEROIDS = [
   { name: "Vesta", cls: "V", note: "Second-largest asteroid; source of the HED meteorites." },
   { name: "Psyche", cls: "X", note: "Classed M (metal-rich X-type); NASA's Psyche spacecraft arrives in 2029." },
 ];
+
+// ---------------------------------------------------------------- plain-language helpers
+
+/** Everyday names and one-line meanings for each absorber, plus the line used to label it. */
+export const PLAIN = {
+  HeII: { name: "Helium (super-hot)", labelNm: 468.6, why: "Only appears above about 30,000 K, in the hottest stars." },
+  HeI: { name: "Helium", labelNm: 587.6, why: "Visible only in hot blue stars; cooler stars have helium but it hides." },
+  H: { name: "Hydrogen", labelNm: 656.3, why: "The most common element. Its lines are darkest in white stars near 10,000 K." },
+  CaII: { name: "Calcium", labelNm: 393.4, why: "Makes the darkest lines in Sun-like stars, at the violet end." },
+  CH: { name: "Carbon (CH)", labelNm: 430.5, why: "Carbon bonded to hydrogen; these molecules survive only in cooler stars." },
+  Fe: { name: "Iron", labelNm: 527.0, why: "Astronomers measure a star's metal content from its iron lines." },
+  Mg: { name: "Magnesium", labelNm: 517.3, why: "A close trio of green lines, strong in cooler stars." },
+  Na: { name: "Sodium", labelNm: 589.3, why: "The yellow streetlight color. Strong in orange and red stars." },
+  TiO: { name: "Titanium oxide", labelNm: 705.4, why: "Molecules that carve broad bands into the coolest, reddest stars." },
+};
+
+export const ASTEROID_PLAIN = {
+  S: "stony rock", Q: "fresh stony rock", C: "dark carbon-rich rock", B: "dark carbon-rich rock",
+  X: "metal or dark rock (needs more data)", D: "very dark, organic-rich material", V: "volcanic basalt", A: "olivine crystal rock",
+};
+
+/**
+ * The three clues astronomers read off a reflectance spectrum: overall color (slope from 0.55 to 1.6 um)
+ * and the depth of the 1 um and 2 um absorption dips relative to a straight line across each dip.
+ */
+export function clues(R, wl = AST_WL) {
+  const at = (l) => interp(l, wl, R);
+  const dip = (a, b, l0, l1) => {
+    const lo = at(l0), hi = at(l1);
+    let d = 0;
+    for (let i = 0; i < wl.length; i++) {
+      if (wl[i] < a || wl[i] > b) continue;
+      const line = lo + ((hi - lo) * (wl[i] - l0)) / (l1 - l0);
+      d = Math.max(d, 1 - R[i] / line);
+    }
+    return d;
+  };
+  return {
+    slope: (at(1.6) - 1) / 1.05,
+    dip1: dip(0.8, 1.2, 0.72, 1.5),
+    dip2: dip(1.7, 2.2, 1.5, 2.4),
+  };
+}

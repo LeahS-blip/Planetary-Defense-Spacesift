@@ -78,3 +78,11 @@ test("noisy mystery asteroids are usually identified", () => {
   }
   assert.ok(hits / 200 > 0.75, `hit rate ${hits / 200}`);
 });
+
+test("clues read color and dips back off a spectrum", () => {
+  const k = (cls) => S.clues(S.reflectance(S.ASTEROID_CLASSES[cls]));
+  assert.ok(k("D").slope > 0.6 && k("B").slope < 0);
+  assert.ok(k("V").dip1 > 0.35 && k("V").dip2 > 0.2);
+  assert.ok(k("C").dip1 < 0.02 && k("S").dip1 > 0.1);
+  for (const id of Object.keys(S.PLAIN)) assert.ok(S.SPECIES.some((s) => s.id === id));
+});
