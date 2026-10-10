@@ -2,15 +2,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as S from "../spectra.js";
+import fs from "node:fs";
 import * as U from "../upload.js";
-
-// Simulated observation: model star, instrument tilt, noise, optional wavelength unit.
-function observe(T, feh, { v = 0, noise = 0.01, seed = 1, lo = 380, hi = 900, step = 0.15 } = {}) {
-  const rng = S.makeRng(seed), wl = S.grid(lo, hi, step);
-  const sp = S.starSpectrum(T, feh, wl, v);
-  const flux = sp.flux.map((f, i) => { const x = (wl[i] - 640) / 260; return f * (1 + 0.4 * x - 0.3 * x * x) * (1 + noise * rng.normal()) * 1e-15; });
-  return { wl, flux };
-}
 
 test("text parser: headers, comments, separators and units", () => {
   const rows = (f) => S.grid(400, 800, 1).map((l) => f(l)).join("\n");
@@ -68,30 +61,47 @@ test("FITS binary table with loglam and flux columns (SDSS style)", () => {
   assert.equal(s.flux[5], 15);
 });
 
-test("fit recovers the spectral class of simulated stars", () => {
-  for (const [T, seed] of [[3300, 1], [4400, 2], [5800, 3], [7000, 4], [9000, 5], [15000, 6], [35000, 7]]) {
-    const fit = U.fitStar(U.toNm(...Object.values(observe(T, 0, { v: 30, seed }))));
-    const order = "OBAFGKM", off = Math.abs(order.indexOf(fit.cls.letter) - order.indexOf(S.spectralClass(T).letter));
-    assert.ok(off === 0, `${T} K fitted as ${fit.cls.name} (${fit.T} K)`);
-    assert.ok(Math.abs(fit.T - T) / T < 0.15, `${T} K fitted at ${fit.T} K`);
-    assert.ok(fit.Trange[0] <= fit.T && fit.T <= fit.Trange[1]);
+const D = new URL("../data/", import.meta.url);
+const bin = fs.readFileSync(new URL("templates.bin", D));
+const LIB = U.loadTemplates(JSON.parse(fs.readFileSync(new URL("templates.json", D), "utf8")), bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.length));
+
+test("template library decodes", () => {
+  assert.equal(LIB.list.length, 123);
+  assert.equal(LIB.wl.length, 521);
+  assert.ok(LIB.list.every((t) => t.flux.length === 521 && Math.max(...t.flux) === 1));
+  assert.deepEqual([...new Set(LIB.list.filter((t) => t.kind === "star").map((t) => t.letter))].sort(), [..."ABFGKMO"]);
+});
+
+test("templates are recovered from tilted, noisy, finely sampled copies of themselves", () => {
+  const rng = S.makeRng(3);
+  for (const type of ["O8", "B5V", "A1V", "F6V", "G4V", "K3V", "M2III", "Carbon", "WDhotter"]) {
+    const t = LIB.list.find((x) => x.type === type);
+    const wl = S.grid(380, 900, 0.2);
+    const flux = wl.map((l) => {
+      const i = Math.min(520, Math.max(0, Math.round(l - 380)));
+      return t.flux[i] * Math.exp(0.5 * (l - 640) / 260) * (1 + 0.02 * rng.normal());
+    });
+    const fit = U.fitTemplates({ wl, flux }, LIB);
+    assert.equal(fit.best.letter ?? fit.best.kind, t.letter ?? t.kind, `${type} matched as ${fit.best.type}`);
   }
 });
 
-test("fit works on partial coverage and reports detected lines", () => {
-  const fit = U.fitStar(observe(5800, 0, { lo: 380, hi: 600, seed: 9 }));
-  assert.equal(fit.cls.letter, "G");
-  const ca = fit.lines.find((l) => l.id === "CaII");
-  assert.ok(ca.depth > 3 * ca.err && ca.depth > 0.1, JSON.stringify(ca));
+test("real SDSS K5 star: classified as K, with the right lines found", () => {
+  const obs = U.parseSpectrumText(fs.readFileSync(new URL("example-sdss-k5.csv", D), "utf8"));
+  assert.equal(obs.unit, "ångströms");
+  const fit = U.fitTemplates(obs, LIB);
+  assert.equal(fit.best.letter, "K");
   assert.equal(fit.quality, "good");
+  const found = fit.lines.filter((l) => l.found).map((l) => l.id);
+  for (const id of ["Na", "Mg", "CaII"]) assert.ok(found.includes(id), `missing ${id}: ${found}`);
+  for (const id of ["HeII", "HeI", "TiO"]) assert.ok(!found.includes(id), `spurious ${id}`);
+  // Same star seen at 3 nm resolution, over only part of the range.
+  const lowres = { wl: [], flux: [] };
+  for (let i = 0; i < obs.wl.length; i += 20) if (obs.wl[i] < 700) { lowres.wl.push(obs.wl[i]); lowres.flux.push(obs.flux[i]); }
+  assert.equal(U.fitTemplates(lowres, LIB).best.letter, "K");
 });
 
-test("fit rejects spectra outside the visible range", () => {
-  assert.throws(() => U.fitStar({ wl: S.grid(1000, 2000, 1), flux: S.grid(1000, 2000, 1).map(() => 1) }), /80 nm/);
-});
-
-test("example CSV parses and fits as a K star", () => {
-  const fit = U.fitStar(U.parseSpectrumText(U.exampleCSV()));
-  assert.equal(fit.cls.letter, "K");
-  assert.ok(Math.abs(fit.v - 40) <= 50, `v = ${fit.v}`);
+test("fit rejects spectra outside the visible range or without signal", () => {
+  assert.throws(() => U.fitTemplates({ wl: S.grid(1000, 2000, 1), flux: S.grid(1000, 2000, 1).map(() => 1) }, LIB), /80 nm/);
+  assert.throws(() => U.fitTemplates({ wl: S.grid(400, 800, 1), flux: S.grid(400, 800, 1).map(() => -1) }, LIB), /zero or negative/);
 });

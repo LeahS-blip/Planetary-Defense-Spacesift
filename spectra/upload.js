@@ -6,12 +6,11 @@
 // unknown shape of the instrument's response (and dust reddening) is absorbed and the absorption lines
 // decide the match. Everything runs in the browser; files never leave the device.
 
-import { SPECIES, starSpectrum, spectralClass, makeRng, grid } from "./spectra.js";
+import { SPECIES, lineDepth as modelDepth } from "./spectra.js";
 
 export const FIT_RANGE = [380, 900];
 // Bands where Earth's atmosphere absorbs (oxygen and water), masked from the fit.
 export const TELLURIC = [[686, 695], [715, 735], [758, 772], [810, 835]];
-const FINE = grid(370, 910, 0.25);
 
 function median(a) {
   const s = Float64Array.from(a).sort(), n = s.length;
@@ -164,7 +163,27 @@ export async function readSpectrumFile(file) {
   return parseSpectrumText(new TextDecoder().decode(u8));
 }
 
-// ---------------------------------------------------------------- fitting
+// ---------------------------------------------------------------- template library
+
+/** Decode the template library from templates.json (parsed) and templates.bin (ArrayBuffer). */
+export function loadTemplates(meta, bin) {
+  const u16 = new Uint16Array(bin), n = meta.n;
+  const wl = Float64Array.from({ length: n }, (_, i) => meta.wl0 + i * meta.step);
+  const list = meta.templates.map((t, k) => ({ ...t, flux: Float64Array.from(u16.subarray(k * n, (k + 1) * n), (v) => v / 65535) }));
+  return { wl, list, source: meta.source };
+}
+
+let libPromise = null;
+/** Fetch and decode the template library once (browser and worker). */
+export function getLibrary() {
+  libPromise ??= Promise.all([
+    fetch(new URL("./data/templates.json", import.meta.url)).then((r) => r.json()),
+    fetch(new URL("./data/templates.bin", import.meta.url)).then((r) => r.arrayBuffer()),
+  ]).then(([m, b]) => loadTemplates(m, b));
+  return libPromise;
+}
+
+// ---------------------------------------------------------------- fitting helpers
 
 function smooth(y, sigmaSamples) {
   if (sigmaSamples < 0.3) return Float64Array.from(y);
@@ -186,7 +205,7 @@ function binTo(x, y, g, half) {
   for (let k = 0; k < g.length; k++) {
     while (j < x.length && x[j] < g[k] - half) j++;
     let s = 0, n = 0;
-    for (let i = j; i < x.length && x[i] < g[k] + half; i++) { s += y[i]; n++; }
+    for (let i = j; i < x.length && x[i] < g[k] + half; i++) { if (Number.isFinite(y[i])) { s += y[i]; n++; } }
     if (n) out[k] = s / n;
   }
   return out;
@@ -205,134 +224,170 @@ function solve(A, b) {
 }
 
 /** Least-squares fit of data d ≈ m · P(x), P a polynomial of degree deg. Returns {chi2, fit, poly}. */
-function fitPoly(d, m, x, mask, deg) {
+function fitPoly(d, m, x, mask, deg, w = null) {
   const p = deg + 1, A = Array.from({ length: p }, () => new Array(p).fill(0)), b = new Array(p).fill(0);
   const pw = new Array(p);
   for (let i = 0; i < d.length; i++) {
     if (!mask[i]) continue;
+    const wi = w ? w[i] : 1;
     pw[0] = m[i];
     for (let k = 1; k < p; k++) pw[k] = pw[k - 1] * x[i];
-    for (let r = 0; r < p; r++) { b[r] += pw[r] * d[i]; for (let c = 0; c < p; c++) A[r][c] += pw[r] * pw[c]; }
+    for (let r = 0; r < p; r++) { b[r] += wi * pw[r] * d[i]; for (let c = 0; c < p; c++) A[r][c] += wi * pw[r] * pw[c]; }
   }
   const beta = solve(A, b);
   if (!beta) return { chi2: Infinity };
   const poly = x.map((xi) => beta.reduce((s, c, k) => s + c * xi ** k, 0));
   let chi2 = 0;
-  for (let i = 0; i < d.length; i++) if (mask[i]) chi2 += (d[i] - m[i] * poly[i]) ** 2;
+  for (let i = 0; i < d.length; i++) if (mask[i]) chi2 += (w ? w[i] : 1) * (d[i] - m[i] * poly[i]) ** 2;
   return { chi2, poly, fit: m.map((v, i) => v * poly[i]) };
 }
 
-export const FIT_TEMPS = Array.from({ length: 64 }, (_, i) => Math.round(10 ** (Math.log10(2500) + (i / 63) * (Math.log10(45000) - Math.log10(2500)))));
-export const FIT_FEH = [-2, -1.5, -1, -0.5, -0.25, 0, 0.25, 0.5];
+/** Running upper envelope (85th percentile over ±half samples, then smoothed): a pseudo-continuum. */
+function envelope(y, half) {
+  const out = new Float64Array(y.length);
+  for (let i = 0; i < y.length; i++) {
+    const w = [];
+    for (let j = Math.max(0, i - half); j <= Math.min(y.length - 1, i + half); j++) if (Number.isFinite(y[j])) w.push(y[j]);
+    w.sort((a, b) => a - b);
+    out[i] = w.length ? w[Math.floor(0.85 * (w.length - 1))] : NaN;
+  }
+  return smooth(out, half / 2);
+}
 
 /**
- * Fit the star model to an observed spectrum {wl (nm), flux}. Returns the best temperature, metallicity and
- * velocity, a likely temperature range, fit quality, the data and model on the fit grid (both divided by the
- * fitted continuum), and the depth of each element's lines as measured in the data.
+ * Line strength as astronomers measure it: mean brightness inside the line versus a straight line drawn
+ * between side bands on either side (1 = no line). Model-independent.
  */
-export function fitStar(obs) {
-  const lo = Math.max(FIT_RANGE[0], obs.wl[0]), hi = Math.min(FIT_RANGE[1], obs.wl[obs.wl.length - 1]);
-  if (!(hi - lo >= 80)) {
-    throw new Error(`This spectrum covers ${Math.round(obs.wl[0])}–${Math.round(obs.wl[obs.wl.length - 1])} nm. The lab needs at least 80 nm of visible light between 380 and 900 nm.`);
+function lineDepth(g, y, ok, c, halfWidth, band) {
+  const mean = (a, b) => {
+    let s = 0, n = 0;
+    for (let i = 0; i < g.length; i++) if (g[i] >= a && g[i] <= b && ok[i]) { s += y[i]; n++; }
+    return n ? { v: s / n, n } : null;
+  };
+  let inL, left, right, xl, xr, xc;
+  if (band) { // molecular band head: absorbed redward of c, compared with the bright side just blueward
+    inL = mean(c + 1, c + 10); left = mean(c - 9, c - 2); right = null; xc = c + 5.5; xl = c - 5.5;
+  } else {
+    const w = Math.max(halfWidth, 1);
+    inL = mean(c - w, c + w); left = mean(c - w - 5, c - w - 1); right = mean(c + w + 1, c + w + 5);
+    xl = c - w - 3; xr = c + w + 3; xc = c;
   }
-  const inRange = [];
-  for (let i = 1; i < obs.wl.length; i++) if (obs.wl[i] >= lo && obs.wl[i] <= hi) inRange.push(obs.wl[i] - obs.wl[i - 1]);
-  const step = median(inRange);
-  const gstep = Math.max(0.5, step);
-  const g = grid(lo + gstep / 2, hi - gstep / 2, gstep);
-  const d = binTo(obs.wl, obs.flux, g, gstep / 2);
-  const mid = (lo + hi) / 2, half = (hi - lo) / 2;
-  const x = g.map((l) => (l - mid) / half);
+  if (!inL || !left) return null;
+  const cont = right ? left.v + ((right.v - left.v) * (xc - xl)) / (xr - xl) : left.v;
+  return cont > 0 ? { depth: 1 - inL.v / cont, n: inL.n } : null;
+}
+
+// ---------------------------------------------------------------- fitting
+
+// Classification features [center nm, half-width nm]: Ca II K/H + H epsilon, H delta, He I 402.6, G band,
+// H gamma, He I 438.8 and 447.1 + Mg II 448.1, He II 468.6, H beta, Mg b, Na D, H alpha, TiO 705, Ca II triplet.
+// Lines measured for each element: the cleanest ones at about 1 nm resolution (blended ones left out).
+const MEASURE = { HeII: [468.6, 541.2], TiO: [544.8, 615.9, 705.4], Fe: [438.4, 527.0, 532.8], CaII: [393.4, 396.8, 854.2, 866.2] };
+
+export const DIAGNOSTIC = [[395, 5], [410.2, 4], [402.6, 1.5], [430.5, 2.5], [434.0, 4], [438.8, 1.5], [447.6, 2], [468.6, 1.5],
+  [486.1, 5], [517.3, 3], [589.3, 2], [656.3, 5], [707, 5], [854, 6]];
+
+const LUM_NAMES = { V: "dwarf", IV: "subgiant", III: "giant", II: "bright giant", Ib: "supergiant", Iab: "supergiant", Ia: "bright supergiant", sd: "metal-poor subdwarf" };
+export const lumName = (lum) => LUM_NAMES[lum] || "";
+
+/**
+ * Match an observed spectrum {wl (nm), flux} against the template library. Each template is multiplied
+ * by a low-order polynomial fitted to the data, which absorbs differences in flux calibration and dust
+ * reddening while keeping the absorption lines and the broad shape of molecular bands.
+ */
+export function fitTemplates(obs, lib, opts = {}) {
+  const wl0 = lib.wl[0], wl1 = lib.wl[lib.wl.length - 1];
+  const lo = Math.max(wl0, obs.wl[0]), hi = Math.min(wl1, obs.wl[obs.wl.length - 1]);
+  if (!(hi - lo >= 80)) {
+    throw new Error(`This spectrum covers ${Math.round(obs.wl[0])}–${Math.round(obs.wl[obs.wl.length - 1])} nm. The lab needs at least 80 nm of visible light between ${wl0} and ${wl1} nm.`);
+  }
+  const gaps = [];
+  for (let i = 1; i < obs.wl.length; i++) if (obs.wl[i] >= lo && obs.wl[i] <= hi) gaps.push(obs.wl[i] - obs.wl[i - 1]);
+  const step = median(gaps);
+  const idx = [];
+  for (let i = 0; i < lib.wl.length; i++) if (lib.wl[i] >= lo + 0.5 && lib.wl[i] <= hi - 0.5) idx.push(i);
+  const g = idx.map((i) => lib.wl[i]);
+  const half = Math.max(0.5, step / 2);
+  const d = binTo(obs.wl, obs.flux, g, half);
+  // Coarser data than the 1 nm grid: blur the templates to match.
+  const sig = step > 1.2 ? step / 2.3548 : 0;
+  const temps = lib.list.map((t) => {
+    const f = sig ? smooth(t.flux, sig) : t.flux;
+    return idx.map((i) => f[i]);
+  });
+
   const telluric = (l) => TELLURIC.some(([a, b]) => l >= a && l <= b);
   let mask = g.map((l, i) => Number.isFinite(d[i]) && !telluric(l));
   const n0 = mask.filter(Boolean).length;
-  if (n0 < 40) throw new Error("Too few usable points in 380–900 nm to classify this spectrum.");
-  const scale = median(d.filter((v, i) => mask[i]).map(Math.abs)) || 1;
+  if (n0 < 40) throw new Error("Too few usable points between 380 and 900 nm to classify this spectrum.");
+  const scale = median(d.filter((_, i) => mask[i]).map(Math.abs)) || 1;
   const dn = Array.from(d, (v) => v / scale);
-  const deg = hi - lo > 300 ? 3 : 2;
-  // Instrument resolution: assume about two pixels per resolution element.
-  const sigFine = Math.max(2 * step, 0.25) / 2.3548 / 0.25;
+  if (median(dn.filter((_, i) => mask[i])) <= 0) throw new Error("The brightness column is mostly zero or negative, so there is nothing to match.");
+  const mid = (lo + hi) / 2, hw = (hi - lo) / 2;
+  const x = g.map((l) => (l - mid) / hw);
+  const deg = opts.deg ?? 2;
+  // Extra weight on the features astronomers classify by (hydrogen, helium, calcium, magnesium, molecules).
+  const wt = opts.weight ?? 3;
+  const w = g.map((l) => (DIAGNOSTIC.some(([c, h]) => Math.abs(l - c) <= h) ? wt : 1));
 
-  const cache = new Map();
-  const model = (T, feh, v) => {
-    const key = `${T}|${feh}|${v}`;
-    if (!cache.has(key)) {
-      const sp = starSpectrum(T, feh, FINE, v);
-      cache.set(key, { m: binTo(FINE, smooth(sp.flux, sigFine), g, gstep / 2), c: binTo(FINE, sp.continuum, g, gstep / 2) });
-    }
-    return cache.get(key);
-  };
-  const scan = (v) => {
-    const out = [];
-    for (const T of FIT_TEMPS) for (const feh of FIT_FEH) out.push({ T, feh, chi2: fitPoly(dn, model(T, feh, v).m, x, mask, deg).chi2 });
-    return out.sort((a, b) => a.chi2 - b.chi2);
-  };
+  const scan = () => temps.map((t, k) => ({ k, chi2: fitPoly(dn, t, x, mask, deg, w).chi2 })).sort((a, b) => a.chi2 - b.chi2);
+  let res = scan();
+  // Clip outliers (emission lines, cosmic rays, sky residuals) against the best match, then rescan.
+  const f0 = fitPoly(dn, temps[res[0].k], x, mask, deg, w);
+  const absr = dn.map((v, i) => (mask[i] ? Math.abs(v - f0.fit[i]) : NaN)).filter(Number.isFinite);
+  const sigR = 1.4826 * median(absr) || 1e-9;
+  mask = mask.map((ok, i) => ok && Math.abs(dn[i] - f0.fit[i]) < 5 * sigR);
+  res = scan();
 
-  let v = 0, res = scan(v);
-  // Radial velocity: only resolvable when the bins are fine enough.
-  if (gstep <= 1) {
-    let best = { v: 0, chi2: res[0].chi2 };
-    for (let vv = -500; vv <= 500; vv += 25) {
-      const c = fitPoly(dn, model(res[0].T, res[0].feh, vv).m, x, mask, deg).chi2;
-      if (c < best.chi2) best = { v: vv, chi2: c };
-    }
-    v = best.v;
-  }
-  // Clip outliers (emission lines, cosmic rays, sky residuals), then rescan.
-  const f0 = fitPoly(dn, model(res[0].T, res[0].feh, v).m, x, mask, deg);
-  const r = dn.map((di, i) => (mask[i] ? di - f0.fit[i] : NaN)).filter(Number.isFinite);
-  const sig = 1.4826 * median(r.map(Math.abs)) || 1e-9;
-  mask = mask.map((ok, i) => ok && Math.abs(dn[i] - f0.fit[i]) < 4 * sig);
-  res = scan(v);
+  const N = mask.filter(Boolean).length;
+  const best = res[0], bt = lib.list[best.k], bf = fitPoly(dn, temps[best.k], x, mask, deg, w);
+  const wsum = w.reduce((s, v, i) => s + (mask[i] ? v : 0), 0);
+  // Templates never match real stars perfectly, so formal error bars are meaningless; instead count as
+  // "close" every template whose misfit is within 25% of the best one (tuned on SDSS stars of known type).
+  const close = res.filter((r) => Math.sqrt(r.chi2 / best.chi2) <= 1.25).map((r) => lib.list[r.k]);
+  const stars = close.filter((t) => t.kind === "star");
+  const teffs = stars.map((t) => t.teff);
+  const level = median(bf.fit.filter((_, i) => mask[i]).map(Math.abs));
+  const relRms = Math.sqrt(best.chi2 / wsum) / level;
+  // Pixel-to-pixel noise from second differences (insensitive to real spectral features), so the quality
+  // rating reflects how well the template matches, not how noisy the file is.
+  const dd = [];
+  for (let i = 1; i < dn.length - 1; i++) if (mask[i - 1] && mask[i] && mask[i + 1]) dd.push(Math.abs(dn[i] - 0.5 * (dn[i - 1] + dn[i + 1])));
+  const relNoise = (1.4826 * median(dd)) / Math.sqrt(1.5) / level;
+  const misfit = Math.sqrt(Math.max(0, relRms ** 2 - relNoise ** 2));
 
-  const best = res[0], N = mask.filter(Boolean).length;
-  const bm = model(best.T, best.feh, v), bf = fitPoly(dn, bm.m, x, mask, deg);
-  const s2 = best.chi2 / Math.max(1, N - deg - 1);
-  // Model mismatch makes neighboring residuals correlated, so count at most ~150 independent points.
-  const thresh = 9 * s2 * Math.max(1, N / 150);
-  const ok = res.filter((m) => m.chi2 - best.chi2 <= thresh);
-  const Ts = ok.map((m) => m.T);
-  const cont = bm.c.map((c, i) => c * bf.poly[i]);
-  const normData = dn.map((v2, i) => v2 / cont[i]);
-  const normModel = bm.m.map((m2, i) => m2 / bm.c[i]);
-  const relRms = Math.sqrt(best.chi2 / N) / median(bf.fit.filter((_, i) => mask[i]).map(Math.abs));
-  const noise = 1.4826 * median(normData.map((nd, i) => (mask[i] ? Math.abs(nd - normModel[i]) : NaN)).filter(Number.isFinite));
-
-  // Line depths measured in the data, next to what the best model expects.
-  const z = 1 + v / 299792.458;
+  // Pseudo-continuum for the rainbow strip and line measurements.
+  const env = envelope(Array.from(dn, (v, i) => (mask[i] || telluric(g[i]) ? v : NaN)), 12);
+  const norm = dn.map((v, i) => v / env[i]);
+  const okAll = dn.map((v) => Number.isFinite(v));
+  const noise = sigR / median(Array.from(env).filter(Number.isFinite));
+  const tPrior = bt.teff ?? (bt.kind === "wd" ? 15000 : 3000);
   const lines = SPECIES.map((sp) => {
-    let sd = 0, sm = 0, n = 0;
-    for (const c0 of sp.nm) {
-      const c = c0 * z;
-      const a = sp.band ? c : c - Math.max(sp.fwhm / 2, gstep), b = sp.band ? c + 15 : c + Math.max(sp.fwhm / 2, gstep);
-      for (let i = 0; i < g.length; i++) if (g[i] >= a && g[i] <= b && mask[i]) { sd += 1 - normData[i]; sm += 1 - normModel[i]; n++; }
+    let sd = 0, sm = 0, n = 0, k = 0;
+    for (const c of MEASURE[sp.id] || sp.nm) {
+      if (c < lo + 6 || c > hi - 6 || telluric(c)) continue;
+      const a = lineDepth(g, dn, okAll, c, sp.fwhm / 2 || 1, sp.band);
+      const b = lineDepth(g, bf.fit, okAll, c, sp.fwhm / 2 || 1, sp.band);
+      if (!a || !b) continue;
+      sd += a.depth; sm += b.depth; n += a.n; k++;
     }
-    return n ? { id: sp.id, depth: sd / n, expected: sm / n, n, err: noise / Math.sqrt(n) } : { id: sp.id, depth: NaN, expected: NaN, n: 0, err: NaN };
+    // Only credit an element when the matched temperature allows its lines (at this resolution,
+    // neighboring lines blend, e.g. iron lines near the helium II line in a cool star).
+    const plausible = sp.id === "H" ? tPrior > 3500 : modelDepth(sp, tPrior) > 0.05; // hydrogen shows in all but the coolest stars
+    return k ? { id: sp.id, depth: sd / k, expected: sm / k, n, err: noise / Math.sqrt(n / k), plausible }
+             : { id: sp.id, depth: NaN, expected: NaN, n: 0, err: NaN, plausible };
   });
+  for (const l of lines) l.found = l.n > 0 && l.plausible && l.depth > Math.max(0.03, 3 * l.err);
 
   return {
-    T: best.T, feh: best.feh, v, cls: spectralClass(best.T),
-    Trange: [Math.min(...Ts), Math.max(...Ts)], classes: [...new Set(Ts.map((t) => spectralClass(t).letter))],
-    fehRange: [Math.min(...ok.map((m) => m.feh)), Math.max(...ok.map((m) => m.feh))],
-    quality: relRms < 0.03 ? "good" : relRms < 0.07 ? "fair" : "poor", relRms,
-    atEdge: best.T <= FIT_TEMPS[1] || best.T >= FIT_TEMPS[FIT_TEMPS.length - 2],
-    coverage: [lo, hi], step, gstep, N, clipped: n0 - N,
-    grid: { wl: g, data: normData, model: normModel, mask },
+    best: { ...bt, flux: undefined },
+    matches: res.slice(0, 5).map((r) => ({ ...lib.list[r.k], flux: undefined, score: Math.sqrt(r.chi2 / best.chi2) })),
+    T: bt.teff, Trange: teffs.length ? [Math.min(...teffs), Math.max(...teffs)] : null,
+    classes: [...new Set(stars.map((t) => t.letter))],
+    lums: [...new Set(stars.map((t) => t.lum).filter(Boolean))],
+    quality: misfit < 0.04 ? "good" : misfit < 0.08 ? "fair" : "poor", relRms, relNoise, misfit, noisy: relNoise > 0.05,
+    coverage: [lo, hi], step, N, clipped: n0 - N, deg,
+    grid: { wl: g, data: dn, model: bf.fit, norm, mask },
     lines,
   };
-}
-
-/** A simulated observed spectrum as CSV, for trying the uploader: instrument tilt, noise, a cosmic ray. */
-export function exampleCSV(T = 4400, feh = -0.3, vKms = 40, seed = 11) {
-  const rng = makeRng(seed);
-  const wl = grid(380, 900, 0.12);
-  const sp = starSpectrum(T, feh, wl, vKms);
-  const rows = ["# Simulated spectrum for the SpaceSift Spectrum Lab", `# (made from the lab's model: ${T} K, [Fe/H] = ${feh}, ${vKms} km/s)`, "wavelength_angstrom,flux"];
-  sp.flux.forEach((f, i) => {
-    const xx = (wl[i] - 640) / 260;
-    let y = f * (1 + 0.5 * xx - 0.35 * xx * xx) * (1 + 0.02 * rng.normal()) * 3.2e-15;
-    if (i === 1500 || i === 2900) y *= 2.5;
-    rows.push(`${(wl[i] * 10).toFixed(2)},${y.toExponential(5)}`);
-  });
-  return rows.join("\n");
 }

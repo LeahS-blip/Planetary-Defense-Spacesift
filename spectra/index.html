@@ -138,7 +138,7 @@
   input[type=number], select { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font:inherit; }
   .row { display:flex; gap:12px; } .row > * { flex:1; min-width:0; }
   .ranks { display:grid; gap:6px; margin-top:6px; }
-  .rank { display:grid; grid-template-columns:minmax(0,160px) 1fr 64px; gap:8px; align-items:center; font-size:13px; }
+  .rank { display:grid; grid-template-columns:minmax(0,210px) 1fr 74px; gap:8px; align-items:center; font-size:13px; }
   .rank .bar { height:8px; border-radius:4px; background:var(--line); overflow:hidden; }
   .rank .bar i { display:block; height:100%; }
 
@@ -205,7 +205,7 @@
         <b>Drop a star's spectrum here, or <u>choose a file</u></b>
         <span>A text file with two columns (wavelength, brightness), or a FITS file from a survey such as SDSS or LAMOST. Your file stays on your device.</span>
       </label>
-      <div class="up-links"><button class="btn ghost" id="try-example">Try an example</button><a id="dl-example" download="example-star-spectrum.csv">Download the example file</a> to see the format.</div>
+      <div class="up-links"><button class="btn ghost" id="try-example">Try an example</button><a id="dl-example" href="data/example-sdss-k5.csv" download>Download the example file</a> (a real star observed by SDSS) to see the format.</div>
       <div id="up-status"></div>
     </div>
 
@@ -241,9 +241,11 @@
     </div>
 
     <div id="up-result" hidden>
+      <div class="step">CLOSEST REAL STARS</div>
+      <div class="ranks" id="up-matches"></div>
       <div class="step">HOW WELL IT MATCHES</div>
       <div class="card"><div class="plot" id="up-plot"></div></div>
-      <div class="caption">Grey: your spectrum, with the instrument's overall tilt removed. Color: the best-matching model star. Shaded bands are where Earth's own atmosphere absorbs light, so they are left out of the match.</div>
+      <div class="caption">Grey: your spectrum. Color: the best-matching real star, gently reshaped to allow for differences in calibration and dust. Shaded bands are where Earth's own atmosphere absorbs light, so they are left out of the match.</div>
     </div>
 
     <details class="adv" id="star-adv">
@@ -339,9 +341,10 @@
     <li>Spectral class comes from temperature alone; real classification also uses a luminosity class (dwarf, giant, supergiant).</li>
     <li>Asteroid curves are smooth templates that capture each class's shape, not averaged survey spectra. Colors from them use filter centers only.</li>
     <li>The color rule (Ivezić et al. 2001) gives a rough group, not a class. Many asteroids sit near the boundaries.</li>
-    <li>Uploaded spectra are matched against the same simplified model: good for the spectral type, rough for temperature, and very rough for metal content. The overall slope of your file is divided out (instruments and dust change it), so the answer comes from the absorption lines. It isn't built for white dwarfs, galaxies, quasars or stars with emission lines.</li>
+    <li>Uploaded spectra are matched against 123 real stars, not this model. The library is thin on cool red dwarfs and has no old blue horizontal-branch stars, so those match less closely. Temperatures come from the matched star's type, so they are approximate (a few hundred kelvin), and metal content isn't measured.</li>
   </ul>
   <h2>Uploading a spectrum</h2>
+  <p>Your spectrum is compared with 123 real stellar spectra, mostly from the Indo-US library of stars observed at Kitt Peak, as packaged by the Sloan Digital Sky Survey for its own classifications. Each library star is gently reshaped by a smooth curve to allow for differences in flux calibration and dust, and the features astronomers classify by (hydrogen, helium, calcium, magnesium, sodium and molecular bands) count extra. Element lines are measured directly in your file against their surroundings. Tested on 11 SDSS stars from O to M: 7 matched SDSS's own type within one subclass, a K7 came out K5, a G2 came out F8, and two faint “A0” and “B9” stars (probably blue horizontal-branch stars) came out as B stars.</p>
   <p>Text files need two columns: wavelength, then brightness. Wavelengths can be in ångströms, nanometers, microns or log₁₀ ångströms; the lab works out which from their size. FITS files can be 1D images with a wavelength solution, LAMOST-style stacked images, or tables with wavelength and flux columns, such as SDSS spectra; .gz files are unzipped in the browser. Nothing is uploaded to a server.</p>
   <h2>References</h2>
   <ul>
@@ -350,6 +353,8 @@
     <li>DeMeo, F. E. et al. 2009, <i>Icarus</i> 202, 160: the Bus-DeMeo asteroid taxonomy.</li>
     <li>Ivezić, Ž. et al. 2001, <i>AJ</i> 122, 2749: asteroid colors in the Sloan Digital Sky Survey.</li>
     <li>Fischer, D. A. &amp; Valenti, J. 2005, <i>ApJ</i> 622, 1102: the planet–metallicity correlation.</li>
+    <li>Valdes, F. et al. 2004, <i>ApJS</i> 152, 251: the Indo-US library of coudé feed stellar spectra.</li>
+    <li>Star templates: SDSS <i>spEigenStar-55734</i> from the SDSS idlspec2d pipeline. Example star: SDSS DR17, plate 2904, MJD 54574, fiber 109. Funding for SDSS has been provided by the Alfred P. Sloan Foundation, the participating institutions, the National Science Foundation and the U.S. Department of Energy; see sdss.org.</li>
   </ul>
   <p>Code: <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift/tree/main/spectra">spectra/</a> in the SpaceSift repository. Everything runs in your browser.</p>
 </section>
@@ -600,57 +605,88 @@ function drawUpload() {
   if (!fit) {
     setStyle($("orb"), MYSTERY); $("orb").textContent = "↑";
     $("star-h").textContent = "Upload a star's spectrum";
-    $("star-p").innerHTML = "The lab compares it with model stars at 64 temperatures and 8 metal levels, then tells you the star's <b>type</b>, <b>temperature</b> and which <b>elements</b> show up in its light. Works with visible-light spectra between 380 and 900 nm.";
+    $("star-p").innerHTML = "The lab compares it with <b>123 real stars</b> of every type, from hot blue O stars to cool red M giants, plus white dwarfs and carbon stars. It tells you which kind your star matches, its rough <b>temperature</b>, and which <b>elements</b> show up in its light. Works with visible-light spectra between 380 and 900 nm.";
     $("star-facts").innerHTML = "";
     return;
   }
-  const cls = fit.cls, hex = vivid(S.starHex(fit.T));
+  const b = fit.best, name = u.object || "Your star";
+  const hex = vivid(S.starHex(b.kind === "wd" ? 15000 : b.teff ?? 3000));
   setStyle($("orb"), glow(hex)); $("orb").textContent = "";
-  $("star-h").textContent = `${u.object || "Your star"} looks like ${aColor(cls.letter)} ${cls.letter}-type star`;
-  const [tlo, thi] = fit.Trange;
-  const range = tlo === thi ? "" : ` (likely ${fmt(tlo)}–${fmt(thi)} K${fit.classes.length > 1 ? `, so type ${fit.classes.join(" or ")}` : ""})`;
+
   const warns = [];
-  if (fit.quality === "poor") warns.push("The match is poor, so treat this with caution. The object may not be a normal star (a galaxy, quasar, white dwarf or emission-line star, for example), or the file may be noisy.");
-  if (fit.atEdge) warns.push("The best match sits at the edge of the lab's range (2,500 to 45,000 K), so the real star may be hotter or cooler.");
-  if (fit.coverage[1] - fit.coverage[0] < 250) warns.push(`Your file covers only ${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm of the visible range; a wider range gives a surer answer.`);
-  $("star-p").innerHTML = `Best match: about <b>${fmt(fit.T)} K</b>${range}, ${compareSun(fit.T)}. ${S.CLASS_INFO[cls.letter].text} Match quality: <b>${fit.quality}</b>.`
-    + warns.map((w) => `<span class="warn">⚠ ${w}</span>`).join("");
-  const facts = [["Type", cls.name], ["Temperature", fmt(fit.T) + " K"], ["Metals (rough)", metalText(fit.feh)]];
-  if (fit.gstep <= 1 && fit.v) facts.push(["Moving", `${fit.v > 0 ? "away from" : "toward"} us at about ${Math.abs(fit.v)} km/s`]);
+  let head, body;
+  if (b.kind === "star") {
+    const lum = U.lumName(b.lum);
+    head = `${name} looks like ${aColor(b.letter)} ${b.letter}-type ${lum ? lum + " star" : "star"}`;
+    const [tlo, thi] = fit.Trange || [b.teff, b.teff];
+    const range = tlo === thi ? "" : ` (likely ${fmt(tlo)}–${fmt(thi)} K${fit.classes.length > 1 ? `, so type ${fit.classes.join(" or ")}` : ""})`;
+    const what = { dwarf: "a dwarf, burning hydrogen in its core like the Sun", giant: "a giant, an older star that has swelled up", supergiant: "a supergiant, a rare, hugely luminous star" }[lum] || lum;
+    body = `Closest match: a <b>${esc(b.type)}</b> star${what ? `, ${what}` : ""}. Its surface is about <b>${fmt(b.teff)} K</b>${range}, ${compareSun(b.teff)}. ${S.CLASS_INFO[b.letter].text}`;
+    const h = fit.lines.find((l) => l.id === "H");
+    if ((b.letter === "B" || b.letter === "A") && h && h.found && h.depth > 1.15 * h.expected) {
+      warns.push("Its hydrogen lines are deeper than in the matched star. Old, metal-poor “blue horizontal-branch” stars look like this and are missing from the library, so it may really be a cooler A-type star.");
+    }
+    if (b.letter === "M" && fit.quality !== "good") warns.push("The library has few cool red dwarfs (most of its M stars are giants), so M dwarfs match less closely. The type is still usually right.");
+  } else {
+    const KIND = {
+      wd: ["a white dwarf", "White dwarfs are the leftover cores of dead Sun-like stars: as heavy as the Sun but only the size of Earth. Their extreme gravity makes very broad hydrogen lines, or wipes out lines altogether."],
+      carbon: ["a carbon star", "A cool giant whose atmosphere has more carbon than oxygen, so carbon molecules (C₂ and CN) dominate its light and make it deep red."],
+      ldwarf: ["an L dwarf", "An object at the border between the smallest stars and brown dwarfs, around 2,000 K, so cool that its light is mostly infrared."],
+    }[b.kind];
+    head = `${name} looks like ${KIND[0]}`;
+    body = `Closest match: <b>${esc(b.label)}</b>. ${KIND[1]}`;
+  }
+  if (fit.quality === "poor" && !warns.length) warns.push("The match is poor, so treat this with caution. The object may not be a normal star (a galaxy, quasar or emission-line star, for example), or the file may have calibration problems.");
+  if (fit.noisy) warns.push("Your file is quite noisy, so faint lines can't be measured.");
+  if (fit.coverage[1] - fit.coverage[0] < 250) warns.push(`Your file covers only ${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm; a wider range gives a surer answer.`);
+  $("star-h").textContent = head;
+  $("star-p").innerHTML = `${body} Match quality: <b>${fit.quality}</b>.` + warns.map((w) => `<span class="warn">⚠ ${w}</span>`).join("");
+  const facts = [];
+  if (b.kind === "star") facts.push(["Type", esc(b.type)], ["Temperature", `≈ ${fmt(b.teff)} K`]);
+  if (b.id) facts.push(["Template star", esc(/^\d+$/.test(b.id) ? "HD " + b.id : b.id)]);
   facts.push(["File", esc(u.name)], ["Covers", `${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm (read as ${u.unit})`]);
   $("star-facts").innerHTML = facts.map(([k, v]) => `<span>${k}: <b>${v}</b></span>`).join("");
 
-  drawStrip(fit.grid.wl, fit.grid.data.map((v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : NaN)));
-  const found = fit.lines.filter((l) => l.n && l.depth > Math.max(0.03, 3 * l.err)).sort((a, b) => b.depth - a.depth);
+  drawStrip(fit.grid.wl, fit.grid.norm.map((v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : NaN)));
+  const found = fit.lines.filter((l) => l.found).sort((a, b2) => b2.depth - a.depth);
   const strength = Object.fromEntries(found.map((l) => [l.id, l.depth]));
   drawLabels(S.SPECIES.map((sp) => ({ ...sp, strength: strength[sp.id] || 0 })), true, 0);
 
-  const missing = fit.lines.filter((l) => l.n && !strength[l.id]).map((l) => S.PLAIN[l.id].name);
+  const missing = fit.lines.filter((l) => l.n && l.plausible && !l.found).map((l) => S.PLAIN[l.id].name);
   const outside = fit.lines.filter((l) => !l.n).map((l) => S.PLAIN[l.id].name);
   $("ingr").innerHTML = (found.length ? found.map((l) => `
       <button class="ing ${star.focus === l.id ? "on" : ""}" data-id="${l.id}">
         <div class="top"><b>${S.PLAIN[l.id].name}</b><span class="lvl">${l.depth > 0.25 ? "Strong" : l.depth > 0.1 ? "Clear" : "Weak"}</span></div>
         <div class="bar"><i style="width:${Math.round(100 * Math.min(1, l.depth / 0.6))}%;background:${SP_COLOR[l.id]}"></i></div>
-        <p>${S.PLAIN[l.id].why}<br>Dip in your file: <b style="color:var(--ink)">${pct(l.depth)}%</b> · the model expects ${pct(l.expected)}%</p>
+        <p>${S.PLAIN[l.id].why}<br>Dip in your file: <b style="color:var(--ink)">${pct(l.depth)}%</b> · in the matched star: ${pct(l.expected)}%</p>
       </button>`).join("") : `<div class="muted" style="grid-column:1/-1">No lines stood out clearly from the noise.</div>`)
-    + `<div class="muted" style="grid-column:1/-1;margin-top:0">${missing.length ? `Not detected: ${missing.join(", ")}. ` : ""}${outside.length ? `Outside your file's range: ${outside.join(", ")}.` : ""}</div>`;
+    + `<div class="muted" style="grid-column:1/-1;margin-top:0">${missing.length ? `Expected at this temperature but too faint to measure: ${missing.join(", ")}. ` : ""}${outside.length ? `Outside your file's range: ${outside.join(", ")}.` : ""}</div>`;
+
+  const top = fit.matches;
+  $("up-matches").innerHTML = top.map((m, i) => {
+    const sim = Math.max(4, Math.round(100 / m.score ** 2));
+    const id = m.id ? (/^\d+$/.test(m.id) ? "HD " + m.id : m.id) : "";
+    const label = m.kind === "star" ? `${m.type}${m.lum ? ` ${U.lumName(m.lum)}` : ""}${id ? ` · ${id}` : ""}` : m.label;
+    return `<div class="rank"><span>${i === 0 ? "<b>" : ""}${esc(label)}${i === 0 ? "</b>" : ""}</span><span class="bar"><i style="width:${sim}%;background:${i === 0 ? hex : "var(--dim)"}"></i></span><span style="color:var(--dim)">${m.teff ? "≈ " + fmt(m.teff) + " K" : ""}</span></div>`;
+  }).join("");
 
   const g = fit.grid, shown = (arr) => arr.map((v, i) => (g.mask[i] ? v : null));
   Plotly.react("up-plot", [
-    { x: g.wl, y: g.data, mode: "lines", line: { color: css("--dim"), width: 1 }, hovertemplate: "%{x:.1f} nm<extra>your file</extra>" },
-    { x: g.wl, y: shown(g.model), mode: "lines", line: { color: hex, width: 1.6 }, hovertemplate: "%{x:.1f} nm<extra>model</extra>" },
-  ], layout("Wavelength (nm)", "Brightness (tilt removed)", {
+    { x: g.wl, y: g.data, mode: "lines", name: "Your spectrum", line: { color: css("--dim"), width: 1 }, hovertemplate: "%{x:.0f} nm<extra>your file</extra>" },
+    { x: g.wl, y: shown(g.model), mode: "lines", name: `Best match: ${b.kind === "star" ? b.type : b.label}`, line: { color: hex, width: 1.6 }, hovertemplate: "%{x:.0f} nm<extra>match</extra>" },
+  ], layout("Wavelength (nm)", "Brightness (scaled)", {
+    showlegend: true, legend: { orientation: "h", x: 0, y: 1.12, font: { color: css("--body") } }, margin: { l: 50, r: 10, t: 30, b: 42 },
     xaxis: { title: { text: "Wavelength (nm)" }, gridcolor: css("--line"), zeroline: false, range: fit.coverage },
-    yaxis: { title: { text: "Brightness (tilt removed)" }, gridcolor: css("--line"), zeroline: false, range: [0, 1.35] },
-    shapes: U.TELLURIC.filter(([a, b]) => b > fit.coverage[0] && a < fit.coverage[1])
-      .map(([a, b]) => ({ type: "rect", x0: a, x1: b, yref: "paper", y0: 0, y1: 1, fillcolor: "rgba(255,255,255,0.06)", line: { width: 0 }, layer: "below" })),
+    yaxis: { title: { text: "Brightness (scaled)" }, gridcolor: css("--line"), zeroline: false, rangemode: "tozero" },
+    shapes: U.TELLURIC.filter(([a, c]) => c > fit.coverage[0] && a < fit.coverage[1])
+      .map(([a, c]) => ({ type: "rect", x0: a, x1: c, yref: "paper", y0: 0, y1: 1, fillcolor: "rgba(255,255,255,0.06)", line: { width: 0 }, layer: "below" })),
   }), CFG);
   Plotly.Plots.resize($("up-plot")); // it may have been drawn at another width
 }
 
 let worker = null;
 function runFit(obs) {
-  const local = (resolve, reject) => setTimeout(() => { try { resolve(U.fitStar(obs)); } catch (e) { reject(e); } }, 30);
+  const local = (resolve, reject) => U.getLibrary().then((lib) => resolve(U.fitTemplates(obs, lib))).catch(reject);
   return new Promise((resolve, reject) => {
     try {
       worker ??= new Worker(new URL("./fit-worker.js", import.meta.url), { type: "module" });
@@ -667,7 +703,7 @@ async function handleFile(file, label) {
   $("up-status").innerHTML = `<span class="spinner"></span>Reading ${esc(label)}…`;
   try {
     const obs = await U.readSpectrumFile(file);
-    $("up-status").innerHTML = `<span class="spinner"></span>Comparing with ${U.FIT_TEMPS.length * U.FIT_FEH.length} model stars…`;
+    $("up-status").innerHTML = `<span class="spinner"></span>Comparing with 123 real stars…`;
     const fit = await runFit(obs);
     star.upload = { name: label, object: obs.object || "", unit: obs.unit, fit };
     star.focus = null;
@@ -683,10 +719,10 @@ const drop = $("drop");
 drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
 drop.ondragleave = () => drop.classList.remove("over");
 drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); const f = e.dataTransfer.files[0]; if (f) handleFile(f, f.name); };
-const EXAMPLE = U.exampleCSV();
-$("dl-example").href = URL.createObjectURL(new Blob([EXAMPLE], { type: "text/csv" }));
-$("try-example").onclick = () => handleFile(new Blob([EXAMPLE]), "example-star-spectrum.csv (simulated)");
-
+$("try-example").onclick = async () => {
+  try { handleFile(await (await fetch("data/example-sdss-k5.csv")).blob(), "example-sdss-k5.csv (a real SDSS star)"); }
+  catch { $("up-status").innerHTML = `<div class="up-err">Couldn't load the example file.</div>`; }
+};
 
 // ---------------------------------------------------------------- asteroids
 const KEYS = Object.keys(S.ASTEROID_CLASSES);
