@@ -16,7 +16,7 @@
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 var(--sans); }
   a { color:var(--acc); }
-  .wrap { max-width:1000px; margin:0 auto; padding:56px 20px 40px; }
+  .wrap { max-width:1160px; margin:0 auto; padding:56px 20px 40px; }
   .mark { display:flex; align-items:center; gap:16px; }
   .mark svg { flex:0 0 auto; }
   h1 { margin:0; font:700 34px var(--title); letter-spacing:.16em; }
@@ -25,7 +25,8 @@
   .intro b { color:var(--ink); font-weight:700; }
   .why { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin:0 0 40px; padding:22px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
   .why p { color:#cfd5e6; margin:8px 0 0; font:14px/1.7 var(--sub); }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  @media (max-width:1040px) { .grid { grid-template-columns:1fr 1fr; } }
   .matters { font-size:14px; border-left:2px solid var(--acc); padding-left:10px; }
   .matters b { color:var(--ink); }
   @media (max-width:760px) { .grid, .why { grid-template-columns:1fr; } h1 { font-size:22px; } }
@@ -49,11 +50,11 @@
     <svg width="54" height="54" viewBox="0 0 100 100" aria-hidden="true"><g stroke-linecap="round"><line x1="10" y1="82" x2="44" y2="66" stroke="#3d4a75" stroke-width="7"/><line x1="18" y1="66" x2="52" y2="50" stroke="#5b6b9e" stroke-width="7"/><line x1="30" y1="52" x2="58" y2="39" stroke="#8b9cc7" stroke-width="7"/><circle cx="70" cy="38" r="20" fill="#eef2fc"/></g></svg>
     <div><h1>SPACESIFT</h1><p class="tag">What can telescopes find, and what do they miss?</p></div>
   </div>
-  <p class="intro">SpaceSift is an open research project about one question: <b>when astronomers search the sky for something, how often do they actually catch it, and how often are they fooled?</b> It looks at that question in two places: asteroids that could come near Earth, and planets orbiting other stars.</p>
+  <p class="intro">SpaceSift is an open research project about one question: <b>when astronomers search the sky for something, how often do they actually catch it, and how often are they fooled?</b> It looks at that question for asteroids that could come near Earth and planets orbiting other stars, and at the light that tells us what they are made of.</p>
 
   <div class="why">
     <div><div class="kicker">WHAT IT IS</div>
-      <p>Two free tools. A live dashboard that ranks newly spotted asteroids by how likely they are to be real near-Earth objects. And a lab that tests how well planet-hunting software finds planets, including the ones it misses.</p></div>
+      <p>Three free tools. A live dashboard that ranks newly spotted asteroids by how likely they are to be real near-Earth objects. A lab that tests how well planet-hunting software finds planets, including the ones it misses. And a lab for reading what stars and asteroids are made of from their light.</p></div>
     <div><div class="kicker">WHO IT'S FOR</div>
       <p>Observers deciding where to point a telescope tonight. Students and researchers who want to see how detection works, not just the headline results. Anyone curious how we know what's out there.</p></div>
     <div><div class="kicker">WHY IT MATTERS</div>
@@ -77,9 +78,17 @@
       <p class="matters"><b>Why it matters:</b> estimates of how common Earth-like planets are have to correct for planets the search missed. This lab measures those misses directly.</p>
       <span class="go">OPEN THE LAB →</span>
     </a>
+    <a class="inst" href="/spectra/">
+      <div class="kicker">INTERACTIVE · LEARN</div>
+      <h2>Spectrum Lab</h2>
+      <p>What is it made of? Split a star's light into a rainbow and read its temperature and ingredients from the dark lines, or match an asteroid's reflected color to its rock type.</p>
+      <ul><li>Ten real stars, from blue ζ Puppis to red TRAPPIST-1</li><li>Asteroid classes matched to meteorites and sample-return missions</li><li>Mystery star and mystery asteroid quizzes</li></ul>
+      <p class="matters"><b>Why it matters:</b> whether an asteroid is solid rock or a loose rubble pile changes how to deflect it, and a planet's size is only known as well as its star's.</p>
+      <span class="go">OPEN THE SPECTRUM LAB →</span>
+    </a>
   </div>
 
-  <footer>Code and data: <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">github.com/LeahS-blip/Planetary-Defense-Spacesift</a> · Data: Minor Planet Center; NASA Kepler mission (MAST).</footer>
+  <footer>Code and data: <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">github.com/LeahS-blip/Planetary-Defense-Spacesift</a> · Data: Minor Planet Center; NASA Kepler mission (MAST); Spectrum Lab models cite their sources on the page.</footer>
 </div>
 </body>
 </html>

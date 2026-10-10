@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spectrum Lab · SpaceSift</title>
+<meta name="description" content="What is it made of? Read a star's temperature and ingredients, or an asteroid's rock type, from its spectrum and color.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
+<style>
+  :root { --bg:#0b1020; --card:#141a30; --card2:#10162a; --ink:#e8ecf8; --dim:#8b93ad; --line:#252d4a;
+          --acc:#7aa2ff; --hi:#4ade80; --mid:#fbbf24; --bad:#f87171;
+          /* Two fonts: Syncopate for titles and small section labels, Comfortaa for everything else. */
+          --title:"Syncopate",ui-sans-serif,sans-serif; --sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 var(--sub); }
+  a { color:var(--acc); }
+  header { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  header .brand { font:700 16px var(--title); letter-spacing:.14em; color:var(--ink); text-decoration:none; }
+  header .crumb { color:var(--dim); font-size:15px; }
+  nav { margin-left:auto; display:flex; gap:4px; flex-wrap:wrap; }
+  nav button { background:none; border:1px solid transparent; color:var(--dim); padding:6px 12px; border-radius:6px; cursor:pointer; font:13px var(--sub); }
+  nav button.on { border-color:var(--line); color:var(--ink); background:var(--card); }
+  main { padding:16px 20px 40px; max-width:1400px; margin:0 auto; }
+  .lead { color:var(--dim); max-width:860px; margin:4px 0 16px; line-height:1.7; }
+  .lead b { color:var(--ink); }
+  .split { display:grid; grid-template-columns:330px minmax(0,1fr); gap:16px; align-items:start; }
+  @media (max-width:900px) { .split { grid-template-columns:minmax(0,1fr); } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  fieldset { border:none; padding:0; margin:0 0 16px; }
+  legend { font:700 10px var(--title); letter-spacing:.14em; color:var(--dim); margin-bottom:8px; }
+  label { display:flex; justify-content:space-between; margin:10px 0 3px; color:var(--dim); font-size:12.5px; }
+  label b { color:var(--ink); font-weight:600; }
+  input[type=range] { width:100%; accent-color:var(--acc); }
+  input[type=number], select { width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card2); color:var(--ink); font:inherit; }
+  .row { display:flex; gap:8px; } .row > * { flex:1; min-width:0; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chips button { border:1px solid var(--line); background:var(--card2); color:var(--ink); border-radius:999px; padding:4px 10px; cursor:pointer; font:12.5px var(--sub); }
+  .chips button:hover, .chips button.on { border-color:var(--acc); }
+  .checks { display:grid; grid-template-columns:1fr 1fr; gap:2px 8px; font-size:12.5px; }
+  .checks label { display:flex; justify-content:flex-start; gap:6px; align-items:center; margin:2px 0; color:var(--ink); cursor:pointer; }
+  .checks i { display:inline-block; width:10px; height:10px; border-radius:2px; }
+  .btn { width:100%; padding:10px; border:none; border-radius:8px; background:var(--acc); color:#0b1020; font:700 13px var(--sub); letter-spacing:.04em; cursor:pointer; margin-top:6px; }
+  .btn.ghost { background:none; border:1px solid var(--line); color:var(--ink); }
+  .hint { color:var(--dim); font-size:12px; margin-top:6px; line-height:1.55; }
+  .result-top { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .orb { width:64px; height:64px; border-radius:50%; flex:0 0 auto; }
+  .big { font:700 22px var(--sub); }
+  .sub { color:var(--dim); }
+  .nums { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px; }
+  .num { border:1px solid var(--line); border-radius:8px; padding:8px; background:var(--card2); }
+  .num b { display:block; font:700 15px var(--sub); }
+  .num span { color:var(--dim); font-size:12px; }
+  .strip-wrap { margin-top:14px; }
+  .strip-wrap .cap { display:flex; justify-content:space-between; color:var(--dim); font-size:11.5px; margin-bottom:4px; }
+  canvas.strip { width:100%; height:46px; display:block; border-radius:6px; border:1px solid var(--line); }
+  .plot { height:320px; margin-top:8px; overflow:hidden; }
+  .reads { margin-top:10px; }
+  .reads h3, h3.sec { font:700 10px var(--title); letter-spacing:.14em; color:var(--dim); margin:16px 0 8px; }
+  .feat { border-left:3px solid var(--acc); padding:4px 0 4px 12px; margin:8px 0; color:#cfd5e6; line-height:1.65; }
+  .feat b { color:var(--ink); }
+  .note { background:var(--card2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; color:#cfd5e6; line-height:1.65; margin-top:12px; }
+  .guess { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .guess button { min-width:46px; padding:8px 12px; border:1px solid var(--line); background:var(--card2); color:var(--ink); border-radius:8px; cursor:pointer; font:700 14px var(--sub); }
+  .guess button:hover { border-color:var(--acc); }
+  .verdict { font:700 16px var(--sub); margin-top:10px; }
+  .verdict.good { color:var(--hi); } .verdict.close { color:var(--mid); } .verdict.bad { color:var(--bad); }
+  .ranks { display:grid; gap:4px; margin-top:6px; }
+  .rank { display:grid; grid-template-columns:120px 1fr 60px; gap:8px; align-items:center; font-size:12.5px; }
+  .rank .bar { height:8px; border-radius:4px; background:var(--line); overflow:hidden; }
+  .rank .bar i { display:block; height:100%; }
+  .about { max-width:860px; }
+  .about h2 { font:700 15px var(--title); letter-spacing:.06em; margin:26px 0 8px; text-transform:uppercase; }
+  .about p, .about li { color:#cfd5e6; line-height:1.75; }
+</style>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">SPACESIFT</a><span class="crumb">/ Spectrum Lab</span>
+  <nav><button id="tab-stars" class="on">Stars</button><button id="tab-asteroids">Asteroids</button><button id="tab-about">How it works</button></nav>
+</header>
+
+<main>
+<!-- ============================================================ STARS -->
+<section id="view-stars">
+  <p class="lead">Split a star's light into a rainbow and dark lines appear: atoms in the star's atmosphere absorbing particular colors. <b>Which lines show up tells you how hot the star is and what it's made of.</b> Pick a star or slide the temperature to see how its spectrum changes.</p>
+  <div class="split">
+    <div class="card">
+      <fieldset><legend>REAL STARS</legend><div class="chips" id="star-presets"></div></fieldset>
+      <fieldset id="star-controls">
+        <legend>MAKE A STAR</legend>
+        <label>Surface temperature <b id="t-val"></b></label>
+        <input type="range" id="t" min="0" max="1000" step="1">
+        <label>Metals (elements heavier than helium) <b id="feh-val"></b></label>
+        <input type="range" id="feh" min="-2" max="0.5" step="0.05" value="0">
+        <div class="hint">Old stars formed before the galaxy had made many metals, so their metal lines are weaker.</div>
+      </fieldset>
+      <fieldset>
+        <legend>MARK THE LINES OF</legend>
+        <div class="checks" id="species"></div>
+        <div class="hint"><a href="#" id="auto-lines">Mark the strongest automatically</a></div>
+      </fieldset>
+      <fieldset>
+        <legend>TEST YOURSELF</legend>
+        <button class="btn" id="mystery-star">Mystery star</button>
+        <div class="hint">You get a noisy spectrum with no labels. Guess its class from the lines.</div>
+      </fieldset>
+    </div>
+
+    <div class="card">
+      <div id="star-reveal">
+        <div class="result-top">
+          <div class="orb" id="orb"></div>
+          <div><div class="big" id="star-title"></div><div class="sub" id="star-sub"></div></div>
+        </div>
+        <div class="nums" id="star-nums"></div>
+      </div>
+      <div id="star-quiz" hidden>
+        <div class="big">Mystery star</div>
+        <div class="sub">What class is it? Hot to cool: O B A F G K M.</div>
+        <div class="guess" id="star-guess"></div>
+        <div id="star-verdict"></div>
+      </div>
+      <div class="strip-wrap">
+        <div class="cap"><span>What a spectrograph shows (visible light)</span><span id="strip-cap">380 → 750 nm</span></div>
+        <canvas class="strip" id="star-strip" width="1200" height="46"></canvas>
+      </div>
+      <div class="plot" id="star-plot"></div>
+      <div class="reads" id="star-reads"></div>
+      <div class="note"><b>Most stars are made of nearly the same stuff:</b> about 74% hydrogen and 25% helium by mass, with everything else making up the last 1 to 2%. The big differences between spectra come from <b>temperature</b>, which decides which atoms can absorb visible light. The ingredients show up in the details: slide <i>Metals</i> and watch only the metal lines change.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ ASTEROIDS -->
+<section id="view-asteroids" hidden>
+  <p class="lead">Asteroids don't make their own light; they reflect sunlight. Different rocks absorb different colors, especially in the infrared near 1 and 2 microns. <b>Comparing the reflected light to sunlight tells you what kind of rock the asteroid is.</b> That matters for planetary defense: a solid stony asteroid and a loose carbon-rich rubble pile react very differently to being pushed.</p>
+  <div class="split">
+    <div class="card">
+      <fieldset><legend>REAL ASTEROIDS</legend><div class="chips" id="ast-presets"></div>
+        <div class="hint">Shows the template for each asteroid's measured class, not its exact measured spectrum.</div></fieldset>
+      <fieldset><legend>ASTEROID CLASSES</legend><div class="chips" id="ast-classes"></div></fieldset>
+      <fieldset>
+        <legend>BUILD A SPECTRUM</legend>
+        <label>Red slope <b id="a-slope-val"></b></label><input type="range" id="a-slope" min="-0.2" max="0.9" step="0.01" value="0.35">
+        <label>Blue drop-off <b id="a-uv-val"></b></label><input type="range" id="a-uv" min="0" max="0.4" step="0.01" value="0.2">
+        <label>1 µm band depth (olivine, pyroxene) <b id="a-d1-val"></b></label><input type="range" id="a-d1" min="0" max="0.5" step="0.01" value="0.15">
+        <label>2 µm band depth (pyroxene) <b id="a-d2-val"></b></label><input type="range" id="a-d2" min="0" max="0.35" step="0.01" value="0.07">
+        <label>Brightness (albedo), if known</label>
+        <select id="a-albedo"><option value="">Unknown</option><option value="dark">Dark (under 0.1)</option><option value="mid">Medium (0.1 to 0.3)</option><option value="bright">Bright (over 0.3)</option></select>
+      </fieldset>
+      <fieldset>
+        <legend>FROM COLORS ONLY</legend>
+        <div class="row">
+          <div><label>g−r</label><input type="number" id="c-gr" step="0.01" value="0.60"></div>
+          <div><label>r−i</label><input type="number" id="c-ri" step="0.01" value="0.18"></div>
+          <div><label>i−z</label><input type="number" id="c-iz" step="0.01" value="-0.05"></div>
+        </div>
+        <div class="hint" id="color-out"></div>
+        <div class="hint">Sky surveys like the Sloan Digital Sky Survey (SDSS) and the Rubin Observatory see most asteroids only through a few color filters. Enter colors (in magnitudes) to get a rough group.</div>
+      </fieldset>
+      <fieldset>
+        <legend>TEST YOURSELF</legend>
+        <button class="btn" id="mystery-ast">Mystery asteroid</button>
+      </fieldset>
+    </div>
+
+    <div class="card">
+      <div id="ast-reveal">
+        <div class="result-top">
+          <div class="orb" id="ast-orb" style="width:48px;height:48px"></div>
+          <div><div class="big" id="ast-title"></div><div class="sub" id="ast-sub"></div></div>
+        </div>
+      </div>
+      <div id="ast-quiz" hidden>
+        <div class="big">Mystery asteroid</div>
+        <div class="sub">Which class does this reflectance spectrum belong to?</div>
+        <div class="guess" id="ast-guess"></div>
+        <div id="ast-verdict"></div>
+      </div>
+      <div class="plot" id="ast-plot"></div>
+      <div id="ast-info"></div>
+      <h3 class="sec">CLOSEST CLASSES</h3>
+      <div class="hint" style="margin-top:-4px">Average difference between this spectrum and each class template.</div>
+      <div class="ranks" id="ast-ranks"></div>
+      <div class="hint" id="ast-colors"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ ABOUT -->
+<section id="view-about" class="about" hidden>
+  <h2>What a spectrum is</h2>
+  <p>A spectrum is light spread out by color (wavelength), like a prism making a rainbow. Every atom and molecule absorbs light only at its own set of wavelengths, so dark lines in a spectrum work like fingerprints. Hydrogen always absorbs at 656.3 nm, sodium at 589.0 and 589.6 nm, and so on.</p>
+
+  <h2>Stars: temperature first, ingredients second</h2>
+  <p>The overall color of a star comes from its temperature. Hot stars glow blue, cool stars red, following the blackbody (Planck) curve; Wien's law gives the peak color. The pattern of absorption lines comes mostly from temperature too, because heat decides which electrons are in place to absorb visible light. That is why astronomers sort stars into the O B A F G K M sequence by their lines.</p>
+  <p>Once the temperature is known, line depths give the composition. The standard measure is iron, written [Fe/H]: 0 means the Sun's share of iron, −1 means a tenth of it, +0.3 means double.</p>
+  <p><b>Why it matters for planets:</b> a transit tells you how big a planet is compared with its star. To turn that into kilometers you need the star's size, which comes from its spectrum. Metal-rich stars are also more likely to host giant planets (Fischer &amp; Valenti 2005).</p>
+
+  <h2>Asteroids: reflected sunlight</h2>
+  <p>Asteroids are seen by reflected sunlight, so astronomers divide their spectrum by the Sun's to get <i>reflectance</i>: how much of each color the surface bounces back. Silicate minerals carve absorption bands near 1 µm (olivine and pyroxene) and 2 µm (pyroxene). Carbon-rich surfaces are dark and nearly flat. Organic-rich outer-solar-system bodies are very red. These shapes define the Bus-DeMeo classes (DeMeo et al. 2009), and samples brought back by Hayabusa (Itokawa), Hayabusa2 (Ryugu) and OSIRIS-REx (Bennu) have confirmed what the classes mean.</p>
+  <p><b>Why it matters for planetary defense:</b> composition hints at density and structure. Whether an asteroid is solid rock or a loose rubble pile changes how much a spacecraft impact moves it; the DART mission showed that debris thrown off a target can multiply the push.</p>
+
+  <h2>What this lab simplifies</h2>
+  <ul>
+    <li>Star spectra are a teaching model: a blackbody times a few dozen of the strongest lines, with strengths that follow the real temperature pattern. Real spectra have thousands of lines, and gravity, rotation and magnetic fields also shape them.</li>
+    <li>Spectral class comes from temperature alone. Real classification also uses a luminosity class (dwarf, giant, supergiant), which is not modeled here.</li>
+    <li>Asteroid curves are smooth templates that capture each class's shape, not the averaged class spectra from DeMeo et al. 2009. Colors from them use filter centers only.</li>
+    <li>The color rule (Ivezić et al. 2001) gives a rough group, not a class. Many asteroids sit near the boundaries.</li>
+  </ul>
+
+  <h2>References</h2>
+  <ul>
+    <li>Ballesteros, F. J. 2012, <i>EPL</i> 97, 34008: temperature from B−V color.</li>
+    <li>Wyman, C., Sloan, P.-P. &amp; Shirley, P. 2013, <i>JCGT</i> 2(2): fitted color-matching functions used for star colors.</li>
+    <li>DeMeo, F. E. et al. 2009, <i>Icarus</i> 202, 160: the Bus-DeMeo asteroid taxonomy.</li>
+    <li>Ivezić, Ž. et al. 2001, <i>AJ</i> 122, 2749: asteroid colors in the Sloan Digital Sky Survey.</li>
+    <li>Fischer, D. A. &amp; Valenti, J. 2005, <i>ApJ</i> 622, 1102: the planet–metallicity correlation.</li>
+  </ul>
+  <p>Code: <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift/tree/main/spectra">spectra/</a> in the SpaceSift repository. Everything runs in your browser.</p>
+</section>
+</main>
+
+<script type="module">
+import * as S from "./spectra.js";
+
+const $ = (id) => document.getElementById(id);
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (n) => Math.round(n).toLocaleString("en-US");
+const CFG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] };
+function layout(xt, yt, extra = {}) {
+  return Object.assign({
+    margin: { l: 52, r: 12, t: 26, b: 42 }, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { color: css("--dim"), size: 11, family: "Comfortaa, sans-serif" }, showlegend: false,
+    xaxis: { title: { text: xt }, gridcolor: css("--line"), zeroline: false },
+    yaxis: { title: { text: yt }, gridcolor: css("--line"), zeroline: false, rangemode: "tozero" },
+  }, extra);
+}
+
+// ---------------------------------------------------------------- tabs
+const TABS = ["stars", "asteroids", "about"];
+function show(name) {
+  for (const t of TABS) { $("view-" + t).hidden = t !== name; $("tab-" + t).classList.toggle("on", t === name); }
+  try { localStorage.setItem("spectra-tab", name); } catch {}
+  // Plots drawn while their tab was hidden get Plotly's default width; refit them to the screen.
+  for (const el of document.querySelectorAll(`#view-${name} .js-plotly-plot`)) Plotly.Plots.resize(el);
+}
+for (const t of TABS) $("tab-" + t).onclick = () => show(t);
+
+// ---------------------------------------------------------------- stars
+const TMIN = 2400, TMAX = 45000;
+const sliderToT = (v) => Math.round(10 ** (Math.log10(TMIN) + (v / 1000) * (Math.log10(TMAX) - Math.log10(TMIN))));
+const tToSlider = (T) => Math.round((1000 * (Math.log10(T) - Math.log10(TMIN))) / (Math.log10(TMAX) - Math.log10(TMIN)));
+const SP_COLOR = { HeII: "#c4b5fd", HeI: "#93c5fd", H: "#f87171", CaII: "#fbbf24", CH: "#a3e635", Fe: "#fb923c", Mg: "#4ade80", Na: "#fde047", TiO: "#f472b6" };
+const star = { T: 5772, feh: 0, auto: true, marked: new Set(), quiz: null, score: [0, 0], preset: "Sun" };
+
+$("star-presets").innerHTML = S.REAL_STARS.map((s) => `<button data-name="${s.name}">${s.name}</button>`).join("");
+$("star-presets").onclick = (e) => {
+  const s = S.REAL_STARS.find((x) => x.name === e.target.dataset.name);
+  if (!s) return;
+  Object.assign(star, { T: s.T, feh: s.feh, preset: s.name, quiz: null });
+  syncStarInputs(); drawStar();
+};
+$("species").innerHTML = S.SPECIES.map((s) =>
+  `<label><input type="checkbox" value="${s.id}"><i style="background:${SP_COLOR[s.id]}"></i>${s.short}</label>`).join("");
+$("species").onchange = () => {
+  star.auto = false;
+  star.marked = new Set([...$("species").querySelectorAll("input:checked")].map((x) => x.value));
+  drawStar();
+};
+$("auto-lines").onclick = (e) => { e.preventDefault(); star.auto = true; drawStar(); };
+$("t").oninput = () => { star.T = sliderToT(+$("t").value); star.preset = null; drawStar(); };
+$("feh").oninput = () => { star.feh = +$("feh").value; star.preset = null; drawStar(); };
+function syncStarInputs() { $("t").value = tToSlider(star.T); $("feh").value = star.feh; }
+
+function metalText(feh) {
+  const x = 10 ** feh;
+  return Math.abs(feh) < 0.01 ? "Same as the Sun" : `${x.toFixed(x < 0.1 ? 2 : 1)}× the Sun`;
+}
+
+function drawStrip(canvas, wl, transmission) {
+  const ctx = canvas.getContext("2d"), W = canvas.width, H = canvas.height;
+  const img = ctx.createImageData(W, H);
+  for (let x = 0; x < W; x++) {
+    const l = 380 + (370 * x) / (W - 1);
+    const i = Math.min(wl.length - 1, Math.max(0, Math.round((l - wl[0]) / (wl[1] - wl[0]))));
+    const k = transmission[i];
+    const [r, g, b] = S.wavelengthRGB(l);
+    for (let y = 0; y < H; y++) {
+      const p = 4 * (y * W + x);
+      img.data[p] = 255 * r * k; img.data[p + 1] = 255 * g * k; img.data[p + 2] = 255 * b * k; img.data[p + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function drawStar() {
+  const q = star.quiz;
+  const T = q ? q.T : star.T, feh = q ? q.feh : star.feh;
+  const sp = S.starSpectrum(T, feh);
+  let flux = sp.flux, trans = sp.transmission;
+  if (q) {
+    const rng = S.makeRng(q.seed);
+    flux = S.addNoise(sp.flux, rng, 0.012);
+    trans = sp.transmission.map((t, i) => Math.max(0, Math.min(1, flux[i] / sp.continuum[i])));
+  }
+  const feats = S.features(T, feh);
+  const cls = S.spectralClass(T);
+
+  $("t-val").textContent = fmt(star.T) + " K";
+  $("feh-val").textContent = metalText(star.feh);
+  for (const b of $("star-presets").children) b.classList.toggle("on", !q && b.dataset.name === star.preset);
+  $("star-reveal").hidden = !!q;
+  $("star-quiz").hidden = !q;
+  $("star-controls").style.opacity = q ? 0.4 : 1;
+
+  if (!q) {
+    const preset = S.REAL_STARS.find((s) => s.name === star.preset);
+    $("orb").style.background = `radial-gradient(circle at 35% 35%, #fff, ${S.starHex(T)} 45%, ${S.starHex(T)}88 75%, transparent 76%)`;
+    $("orb").style.boxShadow = `0 0 28px ${S.starHex(T)}66`;
+    $("star-title").textContent = `${preset ? preset.name + " · " : ""}${cls.name}-type star`;
+    $("star-sub").textContent = preset ? preset.note : S.CLASS_INFO[cls.letter].text;
+    const bv = S.bvFromT(T);
+    $("star-nums").innerHTML = [
+      [fmt(T) + " K", "surface temperature"],
+      [cls.name + " (" + S.CLASS_INFO[cls.letter].color + ")", "spectral class"],
+      [fmt(S.wienPeakNm(T)) + " nm", "brightest color (Wien)"],
+      [(T > 21000 ? "< " : T < 2750 ? "> " : "") + bv.toFixed(2), "B−V color index"],
+      [metalText(feh), "metal content"],
+    ].map(([v, k]) => `<div class="num"><b>${v}</b><span>${k}</span></div>`).join("");
+  }
+
+  drawStrip($("star-strip"), sp.wl, trans);
+
+  const marked = q ? new Set() : star.auto ? new Set(feats.filter((f) => f.strength > 0.12).map((f) => f.id)) : star.marked;
+  if (star.auto && !q) for (const box of $("species").querySelectorAll("input")) box.checked = marked.has(box.value);
+  const shapes = [], ann = [];
+  for (const f of feats) {
+    if (!marked.has(f.id)) continue;
+    for (const c of f.nm) {
+      if (c < 380 || c > 900) continue;
+      shapes.push({ type: "line", x0: c, x1: c, yref: "paper", y0: 0, y1: 1, line: { color: SP_COLOR[f.id], width: 1, dash: "dot" } });
+      ann.push({ x: c, yref: "paper", y: 1, yanchor: "bottom", text: f.short, showarrow: false, textangle: -90,
+                 font: { size: 9, color: SP_COLOR[f.id] } });
+    }
+  }
+  // Visible band shading.
+  shapes.push({ type: "rect", x0: 750, x1: 900, yref: "paper", y0: 0, y1: 1, fillcolor: "rgba(255,255,255,0.03)", line: { width: 0 }, layer: "below" });
+  ann.push({ x: 825, yref: "paper", y: 0.02, text: "infrared (invisible)", showarrow: false, font: { size: 10, color: css("--dim") } });
+  const traces = [{ x: sp.wl, y: flux, mode: "lines", line: { color: q ? css("--ink") : S.starHex(T), width: 1.3 }, name: "spectrum",
+                    hovertemplate: "%{x:.1f} nm<br>%{y:.3f}<extra></extra>" }];
+  if (!q) traces.unshift({ x: sp.wl, y: sp.continuum, mode: "lines", line: { color: css("--dim"), width: 1, dash: "dash" }, name: "blackbody", hoverinfo: "skip" });
+  Plotly.react("star-plot", traces, layout("Wavelength (nm)", "Brightness (relative)", {
+    shapes, annotations: ann, margin: { l: 52, r: 12, t: 40, b: 42 },
+    xaxis: { title: { text: "Wavelength (nm)" }, gridcolor: css("--line"), zeroline: false, range: [380, 900] },
+  }), CFG);
+
+  if (q) { $("star-reads").innerHTML = ""; return; }
+  const strong = feats.filter((f) => f.strength > 0.08).slice(0, 4);
+  const absent = feats.filter((f) => f.strength < 0.03).map((f) => f.short);
+  $("star-reads").innerHTML = `<h3>WHAT THIS SPECTRUM SAYS</h3>
+    <div class="feat"><b>${cls.letter} star.</b> ${S.CLASS_INFO[cls.letter].text} The dashed curve is the blackbody glow for ${fmt(T)} K; it peaks at ${fmt(S.wienPeakNm(T))} nm${S.wienPeakNm(T) < 400 ? ", in the ultraviolet, which is why the star looks blue" : S.wienPeakNm(T) > 750 ? ", in the infrared, which is why the star looks red" : ""}.</div>
+    ${strong.map((f) => `<div class="feat" style="border-color:${SP_COLOR[f.id]}"><b>${f.label}: ${f.strength > 0.4 ? "strong" : f.strength > 0.2 ? "clear" : "weak"}.</b> ${f.note}</div>`).join("")}
+    ${absent.length ? `<div class="hint">Too weak to see at this temperature: ${absent.join(", ")}.</div>` : ""}`;
+}
+
+$("mystery-star").onclick = () => {
+  const seed = (Math.random() * 2 ** 31) >>> 0;
+  star.quiz = { ...S.mysteryStar(S.makeRng(seed)), seed, answered: false };
+  $("star-guess").innerHTML = "OBAFGKM".split("").map((c) => `<button data-c="${c}">${c}</button>`).join("");
+  $("star-verdict").innerHTML = "";
+  drawStar();
+};
+$("star-guess").onclick = (e) => {
+  const c = e.target.dataset.c, q = star.quiz;
+  if (!c || !q || q.answered) return;
+  q.answered = true;
+  const cls = S.spectralClass(q.T), order = "OBAFGKM";
+  const off = Math.abs(order.indexOf(c) - order.indexOf(cls.letter));
+  star.score[1]++; if (!off) star.score[0]++;
+  const top = S.features(q.T, q.feh).filter((f) => f.strength > 0.15).slice(0, 2).map((f) => f.label);
+  $("star-verdict").innerHTML = `<div class="verdict ${off ? (off === 1 ? "close" : "bad") : "good"}">${off ? (off === 1 ? "Close!" : "Not quite.") : "Correct!"} It was a ${cls.name} star at ${fmt(q.T)} K.</div>
+    <div class="hint">Giveaway: ${top.length ? top.join(" and ") : "very few lines at all"}. Score: ${star.score[0]} of ${star.score[1]}.</div>
+    <div class="row" style="margin-top:8px"><button class="btn" id="again-star">Another one</button><button class="btn ghost" id="explore-star">Explore this star</button></div>`;
+  $("again-star").onclick = () => $("mystery-star").click();
+  $("explore-star").onclick = () => { Object.assign(star, { T: q.T, feh: q.feh, preset: null, quiz: null }); syncStarInputs(); drawStar(); };
+};
+
+// ---------------------------------------------------------------- asteroids
+const ast = { p: null, base: "S", custom: false, preset: null, quiz: null, score: [0, 0] };
+const KEYS = Object.keys(S.ASTEROID_CLASSES);
+$("ast-presets").innerHTML = S.REAL_ASTEROIDS.map((a) => `<button data-name="${a.name}">${a.name}</button>`).join("");
+$("ast-classes").innerHTML = KEYS.map((k) => `<button data-c="${k}">${k}</button>`).join("");
+function loadClass(k, preset = null) {
+  const p = S.ASTEROID_CLASSES[k];
+  const b1 = p.bands.find((b) => b[0] < 1.4), b2 = p.bands.find((b) => b[0] > 1.4);
+  $("a-slope").value = p.slope; $("a-uv").value = p.uv; $("a-d1").value = b1 ? b1[2] : 0; $("a-d2").value = b2 ? b2[2] : 0;
+  ast.base = k; ast.custom = false; ast.preset = preset; ast.quiz = null;
+  ast.p = { slope: p.slope, uv: p.uv, bands: p.bands.map((b) => [...b]) };
+  drawAst();
+}
+$("ast-classes").onclick = (e) => e.target.dataset.c && loadClass(e.target.dataset.c);
+$("ast-presets").onclick = (e) => {
+  const a = S.REAL_ASTEROIDS.find((x) => x.name === e.target.dataset.name);
+  if (a) loadClass(a.cls, a);
+};
+for (const id of ["a-slope", "a-uv", "a-d1", "a-d2"]) $(id).oninput = () => {
+  const d1 = +$("a-d1").value, d2 = +$("a-d2").value;
+  // Keep a class's band centers and widths when editing from it; fall back to S-type shapes.
+  const base = S.ASTEROID_CLASSES[ast.base];
+  const b1 = base.bands.find((b) => b[0] < 1.4) || [0.95, 0.09], b2 = base.bands.find((b) => b[0] > 1.4) || [1.95, 0.25];
+  ast.p = { slope: +$("a-slope").value, uv: +$("a-uv").value, bands: [[b1[0], b1[1], d1], [b2[0], b2[1], d2]] };
+  ast.preset = null; ast.quiz = null; ast.custom = true;
+  drawAst();
+};
+$("a-albedo").onchange = () => drawAst();
+
+function xSubtype(albedo) {
+  return { dark: "P-type (primitive, dark carbon-rich)", mid: "M-type (possibly metal-rich)", bright: "E-type (enstatite)" }[albedo];
+}
+
+function drawAst() {
+  const q = ast.quiz;
+  const R = q ? q.R : S.reflectance(ast.p);
+  const ranks = S.classifySpectrum(R);
+  const best = ranks[0].cls, info = S.ASTEROID_CLASSES[best];
+  for (const b of $("ast-presets").children) b.classList.toggle("on", !q && ast.preset && b.dataset.name === ast.preset.name);
+  for (const b of $("ast-classes").children) b.classList.toggle("on", !q && !ast.preset && !ast.custom && b.dataset.c === ast.base);
+  $("a-slope-val").textContent = (+$("a-slope").value).toFixed(2);
+  $("a-uv-val").textContent = Math.round(100 * $("a-uv").value) + "%";
+  $("a-d1-val").textContent = Math.round(100 * $("a-d1").value) + "%";
+  $("a-d2-val").textContent = Math.round(100 * $("a-d2").value) + "%";
+  $("ast-reveal").hidden = !!q; $("ast-quiz").hidden = !q;
+
+  const traces = [{ x: S.AST_WL, y: R, mode: q ? "markers" : "lines", marker: { size: 3, color: css("--ink") },
+                    line: { color: css("--ink"), width: 2 }, hovertemplate: "%{x:.2f} µm<br>%{y:.3f}<extra></extra>" }];
+  if (!q) traces.push({ x: S.AST_WL, y: S.reflectance(info), mode: "lines", line: { color: info.color, width: 1.5, dash: "dash" }, hoverinfo: "skip" });
+  const band = (x0, x1, t) => [{ type: "rect", x0, x1, yref: "paper", y0: 0, y1: 1, fillcolor: "rgba(122,162,255,0.07)", line: { width: 0 }, layer: "below" }];
+  Plotly.react("ast-plot", traces, layout("Wavelength (microns, µm)", "Reflectance (1 at 0.55 µm)", {
+    shapes: [...band(0.85, 1.1), ...band(1.8, 2.1), { type: "rect", x0: 0.45, x1: 0.75, yref: "paper", y0: 0, y1: 1, fillcolor: "rgba(255,255,255,0.03)", line: { width: 0 }, layer: "below" }],
+    annotations: [
+      { x: 0.975, yref: "paper", y: 1, yanchor: "bottom", text: "1 µm band", showarrow: false, font: { size: 10, color: css("--acc") } },
+      { x: 1.95, yref: "paper", y: 1, yanchor: "bottom", text: "2 µm band", showarrow: false, font: { size: 10, color: css("--acc") } },
+      { x: 0.6, yref: "paper", y: 0.02, text: "visible", showarrow: false, font: { size: 10, color: css("--dim") } },
+    ],
+    xaxis: { title: { text: "Wavelength (microns, µm)" }, gridcolor: css("--line"), zeroline: false, range: [0.45, 2.45] },
+    yaxis: { title: { text: "Reflectance (1 at 0.55 µm)" }, gridcolor: css("--line"), zeroline: false, range: [0.4, Math.max(1.6, Math.max(...R) * 1.05)] },
+    margin: { l: 52, r: 12, t: 30, b: 42 },
+  }), CFG);
+
+  const worst = ranks[ranks.length - 1].rms;
+  $("ast-ranks").innerHTML = ranks.slice(0, q && !q.answered ? 0 : 4).map((r) => {
+    const c = S.ASTEROID_CLASSES[r.cls], w = Math.max(4, 100 * (1 - r.rms / worst));
+    return `<div class="rank"><span>${c.name}</span><span class="bar"><i style="width:${w}%;background:${c.color}"></i></span><span class="sub">${(100 * r.rms).toFixed(1)}% off</span></div>`;
+  }).join("") || `<div class="hint">Hidden until you guess.</div>`;
+
+  const col = S.sdssColors(R);
+  $("ast-colors").textContent = q && !q.answered ? "" :
+    `Survey colors this spectrum would show: g−r ${col.gr.toFixed(2)}, r−i ${col.ri.toFixed(2)}, i−z ${col.iz.toFixed(2)} (a* = ${col.astar.toFixed(2)}): ${S.COLOR_GROUPS[col.group].split(":")[0]}.`;
+
+  if (q) { $("ast-info").innerHTML = ""; return; }
+  const albedo = $("a-albedo").value;
+  const pre = ast.preset;
+  $("ast-orb").style.background = `radial-gradient(circle at 35% 35%, ${info.color}, #2a2f45 70%)`;
+  $("ast-title").textContent = pre ? `${pre.name}: ${S.ASTEROID_CLASSES[pre.cls].name}` : `Best match: ${info.name}`;
+  $("ast-sub").textContent = pre ? pre.note : ast.custom ? "Your spectrum, matched against the class templates." : "Class template.";
+  let comp = info.composition;
+  if (best === "X" && albedo) comp = `With that brightness, most likely ${xSubtype(albedo)}. ` + comp;
+  $("ast-info").innerHTML = `<h3 class="sec">WHAT IT'S PROBABLY MADE OF</h3>
+    <div class="feat" style="border-color:${info.color}"><b>Composition.</b> ${comp}</div>
+    <div class="feat" style="border-color:${info.color}"><b>Meteorite match.</b> ${info.analog}</div>
+    <div class="feat" style="border-color:${info.color}"><b>Brightness (albedo).</b> ${info.albedo}${albedo && best !== "X" ? albedoCheck(best, albedo) : ""}</div>
+    <div class="feat" style="border-color:${info.color}"><b>Density, and why defense cares.</b> ${info.density}</div>`;
+}
+function albedoCheck(cls, albedo) {
+  const expect = { S: "mid", Q: "mid", C: "dark", B: "dark", D: "dark", V: "bright", A: "mid" }[cls];
+  return expect === albedo ? ". Your brightness fits." : `. Your brightness doesn't fit this class well, so treat the match with caution.`;
+}
+
+function colorCalc() {
+  const c = { gr: +$("c-gr").value, ri: +$("c-ri").value, iz: +$("c-iz").value };
+  const r = S.colorRule(c);
+  $("color-out").innerHTML = `<b style="color:var(--ink)">a* = ${r.astar.toFixed(2)} → ${S.COLOR_GROUPS[r.group]}</b>`;
+}
+for (const id of ["c-gr", "c-ri", "c-iz"]) $(id).oninput = colorCalc;
+
+$("mystery-ast").onclick = () => {
+  const seed = (Math.random() * 2 ** 31) >>> 0;
+  ast.quiz = { ...S.mysteryAsteroid(S.makeRng(seed)), answered: false };
+  $("ast-guess").innerHTML = KEYS.map((k) => `<button data-c="${k}">${k}</button>`).join("");
+  $("ast-verdict").innerHTML = "";
+  drawAst();
+};
+const FAMILY = { S: "S", Q: "S", C: "C", B: "C", X: "X", D: "D", V: "V", A: "A" };
+$("ast-guess").onclick = (e) => {
+  const c = e.target.dataset.c, q = ast.quiz;
+  if (!c || !q || q.answered) return;
+  q.answered = true;
+  const right = c === q.cls, close = !right && FAMILY[c] === FAMILY[q.cls];
+  ast.score[1]++; if (right) ast.score[0]++;
+  const info = S.ASTEROID_CLASSES[q.cls];
+  $("ast-verdict").innerHTML = `<div class="verdict ${right ? "good" : close ? "close" : "bad"}">${right ? "Correct!" : close ? "Close: same family." : "Not quite."} It was ${info.name}.</div>
+    <div class="hint">${info.composition} Score: ${ast.score[0]} of ${ast.score[1]}.</div>
+    <div class="row" style="margin-top:8px"><button class="btn" id="again-ast">Another one</button><button class="btn ghost" id="explore-ast">Learn about ${q.cls}-types</button></div>`;
+  $("again-ast").onclick = () => $("mystery-ast").click();
+  $("explore-ast").onclick = () => loadClass(q.cls);
+  drawAst();
+};
+
+// ---------------------------------------------------------------- start
+syncStarInputs();
+drawStar();
+loadClass("S");
+colorCalc();
+let saved = null;
+try { saved = localStorage.getItem("spectra-tab"); } catch {}
+const fromHash = location.hash.slice(1);
+show(TABS.includes(fromHash) ? fromHash : TABS.includes(saved) ? saved : "stars");
+</script>
+</body>
+</html>
