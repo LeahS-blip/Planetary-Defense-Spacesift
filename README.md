@@ -44,3 +44,7 @@ Original research plan: `Planetary Defense v1 — Project Plan.md`.
 Data credits: Minor Planet Center (NEOCP, MPECs, observations API), Catalina
 Sky Survey / Zooniverse Daily Minor Planet. Please cite the MPC when using
 their data and poll politely.
+
+
+** Now has 2 other capabilities **
+** Go to https://spacesift.vercel.app to see **
