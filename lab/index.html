@@ -7,13 +7,14 @@
 <meta name="description" content="Where does planet-hunting break? Plant a planet in a star's light curve and see whether the search finds it.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syncopate:wght@700&family=Comfortaa:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
 <style>
   :root { --bg:#0b1020; --card:#141a30; --card2:#10162a; --ink:#e8ecf8; --dim:#8b93ad; --line:#252d4a;
           --acc:#7aa2ff; --hi:#4ade80; --mid:#fbbf24; --bad:#f87171; --model:#fb923c;
-          --mono:"Space Mono",ui-monospace,Consolas,monospace; --sans:ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif;
-          --title:"Syncopate","Space Mono",sans-serif; --sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }
+          /* Two fonts: Syncopate for titles and small section labels, Comfortaa for everything else. */
+          --title:"Syncopate",ui-sans-serif,sans-serif; --sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif;
+          --mono:var(--sub); --sans:var(--sub); }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
   body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 var(--sans); }
@@ -31,7 +32,7 @@
   @media (max-width:900px) { .explore { grid-template-columns:1fr; } }
   .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
   fieldset { border:none; padding:0; margin:0 0 14px; }
-  legend { font:700 11px var(--mono); letter-spacing:.14em; color:var(--dim); margin-bottom:6px; }
+  legend { font:700 10px var(--title); letter-spacing:.14em; color:var(--dim); margin-bottom:8px; }
   label { display:block; margin:8px 0 3px; color:var(--dim); font-size:12.5px; }
   input[type=number], input[type=text], select { width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
          background:var(--card2); color:var(--ink); font:inherit; }
@@ -42,7 +43,7 @@
   .seg button.on { background:var(--acc); color:#0b1020; font-weight:600; }
   .presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
   .presets button { border:1px solid var(--line); background:var(--card2); color:var(--ink); border-radius:999px;
-                    padding:4px 10px; cursor:pointer; font-size:12.5px; }
+                    padding:4px 10px; cursor:pointer; font:12.5px var(--sub); }
   .presets button:hover { border-color:var(--acc); }
   .run { width:100%; padding:10px; border:none; border-radius:8px; background:var(--acc); color:#0b1020;
          font:700 14px var(--mono); letter-spacing:.06em; cursor:pointer; margin-top:6px; }
@@ -74,7 +75,7 @@
   .gallery figcaption { font:11px var(--mono); color:#555; margin-top:4px; word-break:break-all; }
   pre.notes { white-space:pre-wrap; font:12.5px/1.55 var(--mono); background:var(--card2); padding:12px; border-radius:8px;
               border:1px solid var(--line); max-height:420px; overflow:auto; color:var(--ink); }
-  h3.sec { font:700 12px var(--mono); letter-spacing:.14em; color:var(--dim); margin:18px 0 6px; }
+  h3.sec { font:700 10px var(--title); letter-spacing:.14em; color:var(--dim); margin:20px 0 8px; }
   .about { max-width:860px; }
   .about h2 { font:700 15px var(--title); letter-spacing:.06em; margin:26px 0 8px; text-transform:uppercase; }
   .about p, .about li { color:#cfd5e6; font-family:var(--sub); line-height:1.75; }
@@ -110,12 +111,12 @@
             <div><label>Noise per 30 min (ppm)</label><input type="number" id="noise" value="150" min="10" step="10"></div>
             <div><label>Days of data</label><select id="baseline"><option>90</option><option selected>120</option><option>368</option></select></div>
           </div>
-          <div class="hint">368 days means more transits but a slower search (~20 s).</div>
+          <div class="hint">More days means more transits, and a slightly slower search.</div>
         </div>
         <div id="kepler-opts" hidden>
           <label>Star</label><select id="kic"></select>
           <div class="hint" id="kic-why"></div>
-          <div class="hint">About a year of Kepler data (quarters 2–5); a search takes ~15–20 s.</div>
+          <div class="hint">About a year of Kepler data (quarters 2–5).</div>
         </div>
       </fieldset>
       <fieldset>
@@ -315,9 +316,9 @@ function request() {
 const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function layout(title, xt, yt, extra = {}) {
   return Object.assign({
-    title: { text: title, font: { size: 13, color: css("--ink"), family: "Space Mono, monospace" }, x: 0.01, xanchor: "left" },
+    title: { text: title, font: { size: 13, color: css("--ink"), family: "Comfortaa, sans-serif", weight: 600 }, x: 0.01, xanchor: "left" },
     margin: { l: 58, r: 12, t: 34, b: 40 }, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
-    font: { color: css("--dim"), size: 11 }, showlegend: false,
+    font: { color: css("--dim"), size: 11, family: "Comfortaa, sans-serif" }, showlegend: false,
     xaxis: { title: { text: xt }, gridcolor: css("--line"), zeroline: false },
     yaxis: { title: { text: yt }, gridcolor: css("--line"), zeroline: false },
   }, extra);
@@ -327,7 +328,7 @@ const CFG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ["la
 async function run() {
   const req = request();
   $("run").disabled = true;
-  $("result").innerHTML = `<div class="empty"><span class="spinner"></span> Searching ${req.source === "kepler" || req.baselineD > 200 ? "(about 15–20 s)" : "(a few seconds)"}…</div>`;
+  $("result").innerHTML = `<div class="empty"><span class="spinner"></span> Searching…</div>`;
   try { render(await call(req), req); }
   catch (e) { $("result").innerHTML = `<div class="error">${String(e.message || e)}</div>`; $("plots").hidden = true; }
   finally { $("run").disabled = false; }
