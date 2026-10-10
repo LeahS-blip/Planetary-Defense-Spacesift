@@ -1,6 +1,6 @@
 {
- "fetched_utc": "2026-10-09 22:15 UTC",
- "total_monitored": 2219,
+ "fetched_utc": "2026-10-10 11:55 UTC",
+ "total_monitored": 2222,
  "top": [
   {
    "des": "29075",
@@ -123,6 +123,18 @@
    "last_obs": "2021-04-17"
   },
   {
+   "des": "2024 TK5",
+   "fullname": "(2024 TK5)",
+   "ip_cum": 0.0003347,
+   "ps_cum": -3.45,
+   "ts_max": "0",
+   "diameter_km": 0.0099,
+   "h": 27.67,
+   "n_imp": 1,
+   "range": "2028-2028",
+   "last_obs": "2024-10-08"
+  },
+  {
    "des": "2023 DO",
    "fullname": "(2023 DO)",
    "ip_cum": 0.000454910373,
@@ -133,18 +145,6 @@
    "n_imp": 25,
    "range": "2057-2092",
    "last_obs": "2023-03-26"
-  },
-  {
-   "des": "2019 VB37",
-   "fullname": "(2019 VB37)",
-   "ip_cum": 5.697875e-05,
-   "ps_cum": -3.59,
-   "ts_max": "0",
-   "diameter_km": 0.043,
-   "h": 24.5,
-   "n_imp": 5,
-   "range": "2049-2067",
-   "last_obs": "2019-11-03"
   }
  ]
 }
