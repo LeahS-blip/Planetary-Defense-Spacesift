@@ -423,15 +423,15 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
 <link rel="icon" href="data:image/svg+xml,{favicon}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syncopate:wght@700&family=Comfortaa:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {{ --bg:#0b1020; --card:#141a30; --ink:#e8ecf8; --dim:#8b93ad;
         --hi:#4ade80; --mid:#fbbf24; --lo:#64748b; --acc:#7aa2ff; }}
 * {{ box-sizing:border-box; margin:0; }}
 body {{ background:var(--bg); color:var(--ink);
-       font:14px/1.55 "Space Mono",ui-monospace,Consolas,monospace; padding:28px; }}
-svg text {{ font-family:"Space Mono",ui-monospace,Consolas,monospace; }}
-h1 {{ font:700 30px "Syncopate","Space Mono",sans-serif; letter-spacing:.14em; }}
+       font:14px/1.55 "Comfortaa",ui-sans-serif,system-ui,sans-serif; padding:28px; }}
+svg text {{ font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }}
+h1 {{ font:700 30px "Syncopate",sans-serif; letter-spacing:.14em; }}
 .topbar {{ display:flex; justify-content:flex-start; align-items:center; gap:18px; }}
 .topbar svg {{ flex:0 0 auto; }}
 .subtitle {{ color:var(--dim); font:13px/1.6 "Comfortaa",ui-sans-serif,system-ui,sans-serif; margin-top:4px; }}
@@ -483,7 +483,7 @@ th {{ position:relative; }}
          width:210px; padding:8px 10px; background:#0e1430; color:#cdd5ee;
          border:1px solid #2a3358; border-radius:7px; font-size:11px; font-weight:400;
          line-height:1.45; text-align:left; white-space:normal; letter-spacing:normal;
-         text-transform:none; font-family:ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif;
+         text-transform:none; font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif;
          box-shadow:0 6px 18px rgba(0,0,0,.45); }}
 /* right-half columns: grow the tooltip leftward so the table's overflow:hidden can't clip it */
 .hint.r:hover::after {{ left:auto; right:0; }}
@@ -492,7 +492,7 @@ th {{ position:relative; }}
 footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
 .searchwrap {{ display:flex; align-items:center; gap:10px; margin:0 0 10px; }}
 .tsearch {{ background:#0e1430; border:1px solid #2a3358; color:var(--ink); border-radius:8px;
-           padding:7px 12px; font:13px "Space Mono",ui-monospace,monospace; width:230px; max-width:60vw; }}
+           padding:7px 12px; font:13px "Comfortaa",ui-sans-serif,sans-serif; width:230px; max-width:60vw; }}
 .tsearch:focus {{ outline:none; border-color:var(--acc); }}
 .tsearch::placeholder {{ color:var(--dim); }}
 .scount {{ color:var(--dim); font-size:12px; white-space:nowrap; }}
