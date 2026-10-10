@@ -497,7 +497,10 @@ footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
 .tsearch::placeholder {{ color:var(--dim); }}
 .scount {{ color:var(--dim); font-size:12px; white-space:nowrap; }}
 @media (max-width:900px) {{ .cols {{ grid-template-columns:1fr; }} }}
-</style></head><body>
+</style>
+<script>window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</head><body>
 <div class="topbar">
 {logo}
 <div>
