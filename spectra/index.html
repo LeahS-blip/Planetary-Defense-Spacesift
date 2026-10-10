@@ -21,8 +21,10 @@
   header { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   header .brand { font:700 16px var(--title); letter-spacing:.14em; color:var(--ink); text-decoration:none; }
   header .crumb { color:var(--dim); font-size:15px; }
-  header .about-link { margin-left:auto; color:var(--dim); font-size:13px; text-decoration:none; border:1px solid var(--line); padding:6px 12px; border-radius:999px; }
-  header .about-link:hover { color:var(--ink); border-color:var(--acc); }
+  header .about-link { margin-left:auto; display:inline-flex; align-items:center; gap:8px; color:#0b1020; background:var(--acc); font:700 13.5px var(--sub);
+                       text-decoration:none; padding:8px 16px; border-radius:999px; box-shadow:0 0 0 3px rgba(122,162,255,.18), 0 4px 18px rgba(122,162,255,.25); transition:transform .15s, box-shadow .15s; }
+  header .about-link i { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:#0b1020; color:var(--acc); font:700 12px var(--sub); font-style:normal; }
+  header .about-link:hover { transform:translateY(-1px); box-shadow:0 0 0 4px rgba(122,162,255,.28), 0 6px 22px rgba(122,162,255,.35); }
   main { max-width:920px; margin:0 auto; padding:28px 20px 60px; }
 
   /* Big choice between stars and asteroids */
@@ -176,7 +178,7 @@
 <body>
 <header>
   <a class="brand" href="/">SPACESIFT</a><span class="crumb">/ Spectrum Lab</span>
-  <a class="about-link" href="#about">How it works</a>
+  <a class="about-link" href="#about"><i>?</i>How it works</a>
 </header>
 
 <main>
