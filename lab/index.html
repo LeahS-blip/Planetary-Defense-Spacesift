@@ -7,25 +7,26 @@
 <meta name="description" content="Where does planet-hunting break? Plant a planet in a star's light curve and see whether the search finds it.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syncopate:wght@700&family=Comfortaa:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
 <style>
   :root { --bg:#0b1020; --card:#141a30; --card2:#10162a; --ink:#e8ecf8; --dim:#8b93ad; --line:#252d4a;
           --acc:#7aa2ff; --hi:#4ade80; --mid:#fbbf24; --bad:#f87171; --model:#fb923c;
-          --mono:"Space Mono",ui-monospace,Consolas,monospace; --sans:ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif; }
+          --mono:"Space Mono",ui-monospace,Consolas,monospace; --sans:ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif;
+          --title:"Syncopate","Space Mono",sans-serif; --sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
   body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 var(--sans); }
   a { color:var(--acc); }
   header { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-  header .brand { font:700 17px var(--mono); letter-spacing:.2em; color:var(--ink); text-decoration:none; }
-  header .crumb { color:var(--dim); font-family:var(--mono); }
+  header .brand { font:700 16px var(--title); letter-spacing:.14em; color:var(--ink); text-decoration:none; }
+  header .crumb { color:var(--dim); font-family:var(--sub); font-size:15px; }
   nav { margin-left:auto; display:flex; gap:4px; flex-wrap:wrap; }
   nav button { background:none; border:1px solid transparent; color:var(--dim); padding:6px 12px; border-radius:6px;
                cursor:pointer; font:13px var(--mono); }
   nav button.on { border-color:var(--line); color:var(--ink); background:var(--card); }
   main { padding:16px 20px 40px; max-width:1400px; margin:0 auto; }
-  .lead { color:var(--dim); max-width:820px; margin:4px 0 16px; }
+  .lead { color:var(--dim); max-width:820px; margin:4px 0 16px; font-family:var(--sub); line-height:1.7; }
   .explore { display:grid; grid-template-columns:330px 1fr; gap:16px; align-items:start; }
   @media (max-width:900px) { .explore { grid-template-columns:1fr; } }
   .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
@@ -60,7 +61,7 @@
   .plot { height:260px; }
   .empty { color:var(--dim); padding:36px; text-align:center; }
   .error { color:var(--bad); white-space:pre-wrap; font:12px var(--mono); }
-  .explain { color:var(--dim); margin-top:8px; }
+  .explain { color:var(--dim); margin-top:8px; font-family:var(--sub); }
   .exps { display:grid; grid-template-columns:300px 1fr; gap:16px; }
   @media (max-width:900px) { .exps { grid-template-columns:1fr; } }
   .exp-item { padding:10px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; cursor:pointer; background:var(--card); }
@@ -75,9 +76,9 @@
               border:1px solid var(--line); max-height:420px; overflow:auto; color:var(--ink); }
   h3.sec { font:700 12px var(--mono); letter-spacing:.14em; color:var(--dim); margin:18px 0 6px; }
   .about { max-width:860px; }
-  .about h2 { font:700 16px var(--mono); margin:22px 0 6px; }
-  .about p, .about li { color:#cfd5e6; }
-  .finding { border-left:3px solid var(--acc); padding:4px 0 4px 12px; margin:10px 0; }
+  .about h2 { font:700 15px var(--title); letter-spacing:.06em; margin:26px 0 8px; text-transform:uppercase; }
+  .about p, .about li { color:#cfd5e6; font-family:var(--sub); line-height:1.75; }
+  .finding { border-left:3px solid var(--acc); padding:4px 0 4px 12px; margin:10px 0; font-family:var(--sub); line-height:1.75; color:#cfd5e6; }
   .spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--acc);
              border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; }
   @keyframes spin { to { transform:rotate(360deg); } }

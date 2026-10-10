@@ -423,7 +423,7 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
 <link rel="icon" href="data:image/svg+xml,{favicon}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syncopate:wght@700&family=Comfortaa:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root {{ --bg:#0b1020; --card:#141a30; --ink:#e8ecf8; --dim:#8b93ad;
         --hi:#4ade80; --mid:#fbbf24; --lo:#64748b; --acc:#7aa2ff; }}
@@ -431,10 +431,10 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
 body {{ background:var(--bg); color:var(--ink);
        font:14px/1.55 "Space Mono",ui-monospace,Consolas,monospace; padding:28px; }}
 svg text {{ font-family:"Space Mono",ui-monospace,Consolas,monospace; }}
-h1 {{ font-size:32px; font-weight:700; letter-spacing:.18em; }}
+h1 {{ font:700 30px "Syncopate","Space Mono",sans-serif; letter-spacing:.14em; }}
 .topbar {{ display:flex; justify-content:flex-start; align-items:center; gap:18px; }}
 .topbar svg {{ flex:0 0 auto; }}
-.subtitle {{ color:var(--dim); font-size:13px; margin-top:2px; }}
+.subtitle {{ color:var(--dim); font:13px/1.6 "Comfortaa",ui-sans-serif,system-ui,sans-serif; margin-top:4px; }}
 .brand {{ text-align:center; flex:0 0 auto; }}
 .brand svg {{ display:block; margin:0 auto; }}
 .brandname {{ font-size:12px; font-weight:700; letter-spacing:.38em; color:var(--ink);

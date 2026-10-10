@@ -7,28 +7,29 @@
 <meta name="description" content="SpaceSift: computational experiments on what telescopes can and cannot find, from new near-Earth asteroids to planets around other stars.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syncopate:wght@700&family=Comfortaa:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root { --bg:#0b1020; --card:#141a30; --ink:#e8ecf8; --dim:#8b93ad; --line:#252d4a; --acc:#7aa2ff; --hi:#4ade80;
-          --mono:"Space Mono",ui-monospace,Consolas,monospace; --sans:ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif; }
+          --mono:"Space Mono",ui-monospace,Consolas,monospace; --sans:ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif;
+          --title:"Syncopate","Space Mono",sans-serif; --sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 var(--sans); }
   a { color:var(--acc); }
   .wrap { max-width:1000px; margin:0 auto; padding:56px 20px 40px; }
   .mark { display:flex; align-items:center; gap:16px; }
   .mark svg { flex:0 0 auto; }
-  h1 { margin:0; font:700 34px var(--mono); letter-spacing:.24em; }
-  .tag { color:var(--dim); font:15px var(--mono); margin:6px 0 0; }
-  .intro { color:#cfd5e6; max-width:720px; margin:28px 0 36px; }
+  h1 { margin:0; font:700 34px var(--title); letter-spacing:.16em; }
+  .tag { color:var(--dim); font:16px var(--sub); margin:8px 0 0; }
+  .intro { color:#cfd5e6; max-width:720px; margin:28px 0 36px; font-family:var(--sub); line-height:1.7; }
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-  @media (max-width:760px) { .grid { grid-template-columns:1fr; } h1 { font-size:26px; } }
+  @media (max-width:760px) { .grid { grid-template-columns:1fr; } h1 { font-size:22px; } }
   .inst { display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px; color:inherit;
           text-decoration:none; transition:border-color .15s, transform .15s; }
   .inst:hover { border-color:var(--acc); transform:translateY(-2px); }
   .kicker { font:700 11px var(--mono); letter-spacing:.16em; color:var(--dim); }
-  .inst h2 { font:700 20px var(--mono); margin:6px 0 8px; }
-  .inst p { color:#cfd5e6; margin:0 0 12px; }
-  .inst ul { margin:0 0 14px; padding-left:18px; color:var(--dim); font-size:14px; }
+  .inst h2 { font:700 18px var(--title); letter-spacing:.06em; margin:8px 0 10px; text-transform:uppercase; }
+  .inst p { color:#cfd5e6; margin:0 0 12px; font-family:var(--sub); line-height:1.65; }
+  .inst ul { margin:0 0 14px; padding-left:18px; color:var(--dim); font:14px/1.7 var(--sub); }
   .go { font:700 13px var(--mono); color:var(--acc); letter-spacing:.06em; }
   .live { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--hi); margin-right:6px; box-shadow:0 0 8px var(--hi); }
   footer { color:var(--dim); font-size:13px; margin-top:44px; border-top:1px solid var(--line); padding-top:16px; }
