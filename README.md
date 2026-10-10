@@ -1,5 +1,7 @@
 # planetary-defense-neocp-vetting
 
+** Now has 2 other capabilities. Go to https://spacesift.vercel.app to see **
+
 Machine-learned vetting for the Minor Planet Center's [NEO Confirmation Page](https://www.minorplanetcenter.net/iau/NEO/toconfirm_tabular.html):
 for every candidate awaiting confirmation, predict the probability it's a **real
 near-Earth object** vs. a false positive (artifact, satellite, star, or main-belt
@@ -44,3 +46,6 @@ Original research plan: `Planetary Defense v1 — Project Plan.md`.
 Data credits: Minor Planet Center (NEOCP, MPECs, observations API), Catalina
 Sky Survey / Zooniverse Daily Minor Planet. Please cite the MPC when using
 their data and poll politely.
+
+
+** Now has 2 other capabilities. Go to https://spacesift.vercel.app to see **
