@@ -155,6 +155,13 @@
   .btn.ghost { background:none; border:1px solid var(--line); color:var(--ink); }
   #up-status { margin-top:10px; color:var(--body); font-size:14px; }
   .up-err { color:var(--bad); background:#2a1420; border:1px solid #5a2333; border-radius:10px; padding:10px 12px; }
+  .calib { margin-top:12px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--body); font-size:13.5px; line-height:1.6; }
+  .calib b { color:var(--ink); }
+  .calib-row { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:10px 0 6px; }
+  .calib-row label { display:flex; align-items:center; gap:6px; color:var(--dim); font-size:13px; }
+  .calib-row input[type=number] { width:84px; padding:5px 8px; }
+  .calib-row .btn { padding:7px 16px; }
+  .calib-hint { color:var(--dim); font-size:12.5px; }
   .warn { display:block; color:var(--mid); margin-top:6px; font-size:13.5px; }
   .spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--acc); border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; margin-right:6px; }
   @keyframes spin { to { transform:rotate(360deg); } }
@@ -200,13 +207,23 @@
     <div id="star-upload" hidden>
       <div class="step">1 · ADD A SPECTRUM FILE</div>
       <label class="drop" id="drop">
-        <input type="file" id="file" accept=".csv,.txt,.dat,.tsv,.tab,.asc,.ascii,.fits,.fit,.fts,.gz">
+        <input type="file" id="file" accept=".csv,.txt,.dat,.tsv,.tab,.asc,.ascii,.json,.xml,.vot,.fits,.fit,.fts,.gz,image/*">
         <span class="drop-ico">↑</span>
         <b>Drop a star's spectrum here, or <u>choose a file</u></b>
-        <span>A text file with two columns (wavelength, brightness), or a FITS file from a survey such as SDSS or LAMOST. Your file stays on your device.</span>
+        <span>A data file (a table of wavelength and brightness, or a FITS file from a survey such as SDSS or LAMOST), or a <b>picture</b> of a spectrum: a rainbow strip with dark lines. Your file stays on your device.</span>
       </label>
       <div class="up-links"><button class="btn ghost" id="try-example">Try an example</button><a id="dl-example" href="data/example-sdss-k5.csv" download>Download the example file</a> (a real star observed by SDSS) to see the format.</div>
       <div id="up-status"></div>
+      <div id="img-calib" class="calib" hidden>
+        <b>Read from a picture.</b> <span id="cal-how"></span>
+        <div class="calib-row">
+          <label>Blue end <input type="number" id="cal-l" step="1"> nm</label>
+          <label>Red end <input type="number" id="cal-r" step="1"> nm</label>
+          <label class="chk"><input type="checkbox" id="cal-rev"> red is on the left</label>
+          <button class="btn" id="cal-go">Update</button>
+        </div>
+        <span class="calib-hint">If your picture has a wavelength scale, check these numbers against it and fix them if needed.</span>
+      </div>
     </div>
 
     <div class="step" id="star-step2">2 · WHAT IT IS</div>
@@ -345,7 +362,8 @@
   </ul>
   <h2>Uploading a spectrum</h2>
   <p>Your spectrum is compared with 123 real stellar spectra, mostly from the Indo-US library of stars observed at Kitt Peak, as packaged by the Sloan Digital Sky Survey for its own classifications. Each library star is gently reshaped by a smooth curve to allow for differences in flux calibration and dust, and the features astronomers classify by (hydrogen, helium, calcium, magnesium, sodium and molecular bands) count extra. Element lines are measured directly in your file against their surroundings. Tested on 11 SDSS stars from O to M: 7 matched SDSS's own type within one subclass, a K7 came out K5, a G2 came out F8, and two faint “A0” and “B9” stars (probably blue horizontal-branch stars) came out as B stars.</p>
-  <p>Text files need two columns: wavelength, then brightness. Wavelengths can be in ångströms, nanometers, microns or log₁₀ ångströms; the lab works out which from their size. FITS files can be 1D images with a wavelength solution, LAMOST-style stacked images, or tables with wavelength and flux columns, such as SDSS spectra; .gz files are unzipped in the browser. Nothing is uploaded to a server.</p>
+  <p><b>Pictures</b> of a spectrum (a rainbow strip with dark lines, like the classic diagram of the Sun's Fraunhofer lines) are read too. The lab finds the colorful strip, guesses the wavelength scale from its colors, then slides and stretches that scale until the dark lines line up with well-known ones such as calcium H and K, hydrogen, sodium and the oxygen bands of Earth's air. Because drawings show where lines are but not how strong they are, pictures are matched on the pattern of lines only, and the answer is a good guess rather than a measurement. You can correct the wavelength scale by hand if your picture has one.</p>
+  <p>Text files need a column of wavelengths and a column of brightness; headers, extra columns (errors, sky), quoted values and decimal commas are fine, and JSON or VOTable exports work too. Wavelengths can be in ångströms, nanometers, microns or log₁₀ ångströms; the lab works out which from their size. FITS files can be 1D images with a wavelength solution, LAMOST-style stacked images, or tables with wavelength and flux columns, such as SDSS spectra; .gz files are unzipped in the browser. Nothing is uploaded to a server.</p>
   <h2>References</h2>
   <ul>
     <li>Ballesteros, F. J. 2012, <i>EPL</i> 97, 34008: temperature from B−V color.</li>
@@ -363,6 +381,7 @@
 <script type="module">
 import * as S from "./spectra.js";
 import * as U from "./upload.js";
+import { analyze } from "./analyze.js";
 
 const $ = (id) => document.getElementById(id);
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -620,7 +639,12 @@ function drawUpload() {
     head = `${name} looks like ${aColor(b.letter)} ${b.letter}-type ${lum ? lum + " star" : "star"}`;
     const [tlo, thi] = fit.Trange || [b.teff, b.teff];
     const range = tlo === thi ? "" : ` (likely ${fmt(tlo)}–${fmt(thi)} K${fit.classes.length > 1 ? `, so type ${fit.classes.join(" or ")}` : ""})`;
-    const what = { dwarf: "a dwarf, burning hydrogen in its core like the Sun", giant: "a giant, an older star that has swelled up", supergiant: "a supergiant, a rare, hugely luminous star" }[lum] || lum;
+    const what = {
+      dwarf: "a dwarf, burning hydrogen in its core like the Sun", subgiant: "a subgiant, just starting to swell up as it ages",
+      giant: "a giant, an older star that has swelled up", "bright giant": "a bright giant, a large aging star",
+      supergiant: "a supergiant, a rare, hugely luminous star", "bright supergiant": "a bright supergiant, among the most luminous stars",
+      "metal-poor subdwarf": "a metal-poor subdwarf, an old star from the early galaxy",
+    }[lum] || "";
     body = `Closest match: a <b>${esc(b.type)}</b> star${what ? `, ${what}` : ""}. Its surface is about <b>${fmt(b.teff)} K</b>${range}, ${compareSun(b.teff)}. ${S.CLASS_INFO[b.letter].text}`;
     const h = fit.lines.find((l) => l.id === "H");
     if ((b.letter === "B" || b.letter === "A") && h && h.found && h.depth > 1.15 * h.expected) {
@@ -636,15 +660,16 @@ function drawUpload() {
     head = `${name} looks like ${KIND[0]}`;
     body = `Closest match: <b>${esc(b.label)}</b>. ${KIND[1]}`;
   }
-  if (fit.quality === "poor" && !warns.length) warns.push("The match is poor, so treat this with caution. The object may not be a normal star (a galaxy, quasar or emission-line star, for example), or the file may have calibration problems.");
+  if (u.image) warns.push("Pictures show where the dark lines are, but not how strong they really are, and drawings use made-up colors. So the lab matches the pattern of lines only: treat the result as a good guess, not a measurement.");
+  else if (fit.quality === "poor" && !warns.length) warns.push("The match is poor, so treat this with caution. The object may not be a normal star (a galaxy, quasar or emission-line star, for example), or the file may have calibration problems.");
   if (fit.noisy) warns.push("Your file is quite noisy, so faint lines can't be measured.");
   if (fit.coverage[1] - fit.coverage[0] < 250) warns.push(`Your file covers only ${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm; a wider range gives a surer answer.`);
   $("star-h").textContent = head;
-  $("star-p").innerHTML = `${body} Match quality: <b>${fit.quality}</b>.` + warns.map((w) => `<span class="warn">⚠ ${w}</span>`).join("");
+  $("star-p").innerHTML = `${body}${u.image ? "" : ` Match quality: <b>${fit.quality}</b>.`}` + warns.map((w) => `<span class="warn">⚠ ${w}</span>`).join("");
   const facts = [];
   if (b.kind === "star") facts.push(["Type", esc(b.type)], ["Temperature", `≈ ${fmt(b.teff)} K`]);
   if (b.id) facts.push(["Template star", esc(/^\d+$/.test(b.id) ? "HD " + b.id : b.id)]);
-  facts.push(["File", esc(u.name)], ["Covers", `${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm (read as ${u.unit})`]);
+  facts.push(["File", esc(u.name)], ["Covers", `${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm (${u.image ? "read from the picture" : `read as ${u.unit}`})`]);
   $("star-facts").innerHTML = facts.map(([k, v]) => `<span>${k}: <b>${v}</b></span>`).join("");
 
   drawStrip(fit.grid.wl, fit.grid.norm.map((v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : NaN)));
@@ -672,7 +697,7 @@ function drawUpload() {
 
   const g = fit.grid, shown = (arr) => arr.map((v, i) => (g.mask[i] ? v : null));
   Plotly.react("up-plot", [
-    { x: g.wl, y: g.data, mode: "lines", name: "Your spectrum", line: { color: css("--dim"), width: 1 }, hovertemplate: "%{x:.0f} nm<extra>your file</extra>" },
+    { x: g.wl, y: g.data, mode: "lines", name: u.image ? "Your picture" : "Your spectrum", line: { color: css("--dim"), width: 1 }, hovertemplate: "%{x:.0f} nm<extra>your file</extra>" },
     { x: g.wl, y: shown(g.model), mode: "lines", name: `Best match: ${b.kind === "star" ? b.type : b.label}`, line: { color: hex, width: 1.6 }, hovertemplate: "%{x:.0f} nm<extra>match</extra>" },
   ], layout("Wavelength (nm)", "Brightness (scaled)", {
     showlegend: true, legend: { orientation: "h", x: 0, y: 1.12, font: { color: css("--body") } }, margin: { l: 50, r: 10, t: 30, b: 42 },
@@ -685,35 +710,103 @@ function drawUpload() {
 }
 
 let worker = null;
-function runFit(obs) {
-  const local = (resolve, reject) => U.getLibrary().then((lib) => resolve(U.fitTemplates(obs, lib))).catch(reject);
+function runAnalyze(msg) {
+  const local = (resolve, reject) => analyze(msg).then(resolve, reject);
   return new Promise((resolve, reject) => {
     try {
       worker ??= new Worker(new URL("./fit-worker.js", import.meta.url), { type: "module" });
-      worker.onmessage = (e) => (e.data.ok ? resolve(e.data.fit) : reject(new Error(e.data.error)));
+      worker.onmessage = (e) => (e.data.ok ? resolve(e.data) : reject(new Error(e.data.error)));
       worker.onerror = (e) => { e.preventDefault?.(); worker = null; local(resolve, reject); };
-      worker.postMessage({ wl: obs.wl, flux: obs.flux });
+      worker.postMessage(msg);
     } catch {
-      local(resolve, reject); // no module workers: fit on the main thread
+      local(resolve, reject); // no module workers: run on the main thread
     }
   });
 }
 
+/** Decode a picture (PNG, JPG, GIF, WebP, SVG...) into pixels, on a white background, at most 2000 px wide. */
+async function decodeImage(file) {
+  const head = await file.slice(0, 512).text();
+  const blob = /<svg/i.test(head) && !file.type ? new Blob([file], { type: "image/svg+xml" }) : file;
+  let src = null, url = null;
+  try {
+    src = await createImageBitmap(blob); // PNG, JPG, GIF, WebP, BMP
+  } catch {
+    url = URL.createObjectURL(blob); // SVG and anything else the browser can show
+    src = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Couldn't open this picture. Try saving it as a PNG or JPG."));
+      img.src = url;
+    });
+  }
+  try {
+    let w = src.naturalWidth || src.width || 1600, h = src.naturalHeight || src.height || 400;
+    const k = Math.min(1, 2000 / w);
+    w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k));
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(src, 0, 0, w, h);
+    return { width: w, height: h, data: ctx.getImageData(0, 0, w, h).data };
+  } finally {
+    if (url) URL.revokeObjectURL(url);
+    src.close?.();
+  }
+}
+
+function showCalib() {
+  const im = star.upload && star.upload.image;
+  $("img-calib").hidden = !im;
+  if (!im) return;
+  $("cal-l").value = Math.round(im.cal.left);
+  $("cal-r").value = Math.round(im.cal.right);
+  $("cal-rev").checked = !!im.cal.reversed;
+  $("cal-how").textContent = {
+    lines: `The lab worked out the wavelength scale (${Math.round(im.cal.left)}–${Math.round(im.cal.right)} nm) by lining up the dark lines with well-known ones.`,
+    colors: `The lab guessed the wavelength scale (${Math.round(im.cal.left)}–${Math.round(im.cal.right)} nm) from the colors; there weren't clear lines to line up, so it may be off.`,
+    default: "The lab couldn't tell the wavelength scale from this picture, so it assumed 380–750 nm.",
+    manual: `Using your wavelength scale (${Math.round(im.cal.left)}–${Math.round(im.cal.right)} nm).`,
+  }[im.cal.method];
+}
+
+async function run(msg, name, meta) {
+  $("up-status").innerHTML = `<span class="spinner"></span>Comparing with 123 real stars…`;
+  const res = await runAnalyze(msg);
+  star.upload = { name, ...meta, fit: res.fit, image: res.image || null };
+  star.focus = null;
+  $("up-status").innerHTML = "";
+  showCalib();
+  drawStar();
+}
+
 async function handleFile(file, label) {
   $("up-status").innerHTML = `<span class="spinner"></span>Reading ${esc(label)}…`;
+  $("img-calib").hidden = true;
   try {
-    const obs = await U.readSpectrumFile(file);
-    $("up-status").innerHTML = `<span class="spinner"></span>Comparing with 123 real stars…`;
-    const fit = await runFit(obs);
-    star.upload = { name: label, object: obs.object || "", unit: obs.unit, fit };
-    star.focus = null;
-    $("up-status").innerHTML = "";
-    drawStar();
+    if (U.sniff(new Uint8Array(await file.slice(0, 512).arrayBuffer())) === "image") {
+      $("up-status").innerHTML = `<span class="spinner"></span>Finding the rainbow strip and reading its lines…`;
+      await run({ kind: "image", img: await decodeImage(file) }, label, { object: "", unit: "picture" });
+    } else {
+      const obs = await U.readSpectrumFile(file);
+      await run({ kind: "data", obs: { wl: obs.wl, flux: obs.flux } }, label, { object: obs.object || "", unit: obs.unit });
+    }
     $("star-step2").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (err) {
     $("up-status").innerHTML = `<div class="up-err">${esc(err.message || err)}</div>`;
   }
 }
+$("cal-go").onclick = async () => {
+  const u = star.upload, l = +$("cal-l").value, r = +$("cal-r").value;
+  if (!u || !u.image) return;
+  if (!(r - l >= 50)) { $("up-status").innerHTML = `<div class="up-err">The red end needs to be at least 50 nm above the blue end.</div>`; return; }
+  try {
+    await run({ kind: "recal", profile: u.image.profile, cal: { left: l, right: r, reversed: $("cal-rev").checked, method: "manual" } }, u.name, { object: u.object, unit: u.unit });
+  } catch (err) {
+    $("up-status").innerHTML = `<div class="up-err">${esc(err.message || err)}</div>`;
+  }
+};
 $("file").onchange = () => { const f = $("file").files[0]; if (f) handleFile(f, f.name); $("file").value = ""; };
 const drop = $("drop");
 drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };

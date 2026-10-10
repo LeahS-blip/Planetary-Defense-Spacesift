@@ -15,7 +15,38 @@ test("text parser: headers, comments, separators and units", () => {
   assert.equal(c.unit, "microns"); assert.ok(Math.abs(c.wl[10] - 410) < 1e-6);
   const d = U.parseSpectrumText(rows((l) => `${Math.log10(l * 10)};4`));
   assert.equal(d.unit, "log₁₀ ångströms"); assert.ok(Math.abs(d.wl[0] - 400) < 1e-6);
-  assert.throws(() => U.parseSpectrumText("hello\nworld"), /two columns/);
+  assert.throws(() => U.parseSpectrumText("hello\nworld"), /wavelength column/);
+});
+
+test("text parser: messy real-world tables", () => {
+  const W = S.grid(400, 800, 2);
+  const check = (txt, label) => {
+    const s = U.parseSpectrumText(txt);
+    assert.ok(Math.abs(s.wl[0] - 400) < 1e-6 && Math.abs(s.wl[s.wl.length - 1] - 800) < 1e-6, label + ": wavelengths " + s.wl[0]);
+    assert.ok(Math.abs(s.flux[0] - 1.5) < 1e-9, label + ": flux " + s.flux[0]);
+  };
+  check('"wavelength","flux"\n' + W.map((l) => `"${l * 10}","${1.5 + (l - 400) / 1000}"`).join("\n"), "quoted CSV");
+  check("index,wave,flux\n" + W.map((l, i) => `${i},${l},${1.5 + (l - 400) / 1000}`).join("\n"), "index column");
+  check("Wellenlänge;Fluss\n" + W.map((l) => `${l},0;${String(1.5 + (l - 400) / 1000).replace(".", ",")}`).join("\n"), "semicolons and decimal commas");
+  check("wave err flux sky\n" + W.map((l) => `${l} 0.01 ${1.5 + (l - 400) / 1000} 9`).join("\n"), "flux after an error column");
+  check("\uFEFF# exported\n" + W.map((l) => `${l}\t${1.5 + (l - 400) / 1000}\t# note`).join("\n"), "BOM, tabs and trailing comments");
+  check([...W].reverse().map((l) => `${l} ${1.5 + (l - 400) / 1000}`).join("\n"), "decreasing wavelengths");
+  check(JSON.stringify(W.map((l) => ({ lambda: l, flux: 1.5 + (l - 400) / 1000 }))), "JSON rows");
+  check(JSON.stringify({ spectrum: { wavelength: W, flux: W.map((l) => 1.5 + (l - 400) / 1000) } }), "JSON arrays");
+  check('<?xml version="1.0"?><VOTABLE><TABLE><FIELD name="WAVELENGTH"/><FIELD name="FLUX"/><DATA><TABLEDATA>' +
+    W.map((l) => `<TR><TD>${l * 10}</TD><TD>${1.5 + (l - 400) / 1000}</TD></TR>`).join("") + "</TABLEDATA></DATA></TABLE></VOTABLE>", "VOTable");
+  assert.throws(() => U.parseSpectrumText("name,notes\nfoo,bar\n"), /It starts with: “name,notes”/);
+});
+
+test("file sniffing", () => {
+  const b = (s) => Uint8Array.from(s, (c) => c.charCodeAt(0));
+  assert.equal(U.sniff(Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 13, 10])), "image");
+  assert.equal(U.sniff(Uint8Array.from([0xff, 0xd8, 0xff, 0xe0])), "image");
+  assert.equal(U.sniff(b('<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg">')), "image");
+  assert.equal(U.sniff(b("%PDF-1.7")), "pdf");
+  assert.equal(U.sniff(b("PK\u0003\u0004")), "zip");
+  assert.equal(U.sniff(b("SIMPLE  =                    T")), "fits");
+  assert.equal(U.sniff(b("wavelength,flux\n4000,1")), "text");
 });
 
 // Minimal FITS writer for tests.

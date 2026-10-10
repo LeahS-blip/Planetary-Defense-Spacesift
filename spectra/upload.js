@@ -1,10 +1,10 @@
 // SpaceSift Spectrum Lab: classify an uploaded star spectrum.
 //
-// Reads two-column text (CSV, TSV, whitespace) or FITS (1D images with a wavelength solution, LAMOST-style
-// stacked images, or binary tables such as SDSS spectra), then fits the lab's star model over a grid of
-// temperatures and metallicities. Each model is multiplied by a smooth polynomial fitted to the data, so the
-// unknown shape of the instrument's response (and dust reddening) is absorbed and the absorption lines
-// decide the match. Everything runs in the browser; files never leave the device.
+// Reads text tables (CSV, TSV, whitespace, semicolons; JSON; VOTable) or FITS (1D images with a wavelength
+// solution, LAMOST-style stacked images, or binary tables such as SDSS spectra), then matches the spectrum
+// against 123 real stellar templates. Each template is multiplied by a smooth polynomial fitted to the data,
+// so differences in flux calibration and dust reddening are absorbed and the absorption lines decide the
+// match. Pictures of spectra are read by image.js. Everything runs in the browser; files never leave the device.
 
 import { SPECIES, lineDepth as modelDepth } from "./spectra.js";
 
@@ -31,20 +31,6 @@ export function toNm(w, f) {
   else if (m < 1e-4) { wl = wl.map((x) => x * 1e9); unit = "meters"; }
   else if (m < 5) { wl = wl.map((x) => x * 1000); unit = "microns"; }
   return { wl, flux, unit };
-}
-
-/** Two numeric columns (wavelength, flux) from CSV/TSV/whitespace text; header and comment lines are skipped. */
-export function parseSpectrumText(text) {
-  const w = [], f = [];
-  for (const line of text.split(/\r?\n/)) {
-    const s = line.trim();
-    if (!s || /^[#%!;]/.test(s)) continue;
-    const parts = s.split(/[\s,;|]+/).filter(Boolean).map(Number);
-    if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) continue;
-    w.push(parts[0]); f.push(parts[1]);
-  }
-  if (w.length < 20) throw new Error("Couldn't find two columns of numbers (wavelength, then brightness) in this file.");
-  return toNm(w, f);
 }
 
 // ---------------------------------------------------------------- FITS
@@ -150,16 +136,128 @@ export function parseFITS(buf) {
   throw new Error("Found no spectrum (wavelength and flux) in this FITS file.");
 }
 
-/** Read a File/Blob of any supported type, un-gzipping if needed. */
+const NUM_RE = /^[+-]?(\d+[.,]?\d*|[.,]\d+)([eEdD][+-]?\d+)?$/;
+function num(s) {
+  const t = String(s).trim().replace(/^["']+|["']+$/g, "").trim();
+  return NUM_RE.test(t) ? Number(t.replace(",", ".").replace(/[dD]/, "e")) : NaN;
+}
+
+function monotone(a) {
+  let inc = 0, dec = 0;
+  for (let i = 1; i < a.length; i++) { if (a[i] > a[i - 1]) inc++; else if (a[i] < a[i - 1]) dec++; }
+  return Math.max(inc, dec) / Math.max(1, a.length - 1) > 0.95;
+}
+// Row numbers (0, 1, 2... or 1, 2, 3...), not to be mistaken for wavelengths in whole nanometers.
+const isIndex = (a) => (a[0] === 0 || a[0] === 1) && a.every(Number.isInteger) && monotone(a) && Math.abs((a[a.length - 1] - a[0]) / (a.length - 1) - 1) < 0.01;
+function plausibleWave(a) {
+  const m = median(a.filter(Number.isFinite));
+  return (m > 3.3 && m < 4.2) || (m > 1500 && m < 30000) || (m > 150 && m < 3000) || (m > 0.15 && m < 3) || (m > 1.5e-7 && m < 3e-6);
+}
+const WAVE_NAME = /wave|lambda|^wl\b|^lam\b|angstrom|^nm$|^um$|loglam|^x$/i;
+const FLUX_NAME = /flux|f_?lam|intens|count|signal|spec|^y$|norm|bright/i;
+const NOT_FLUX = /err|sig|unc|ivar|var\b|sky|model|fit|mask|cont|snr|noise|quality|flag/i;
+
+/** Pick the wavelength and flux columns from a table of numbers, using header names when present. */
+function pickColumns(rows, names = []) {
+  const ncol = Math.max(...rows.map((r) => r.length));
+  const col = (j) => rows.map((r) => r[j]);
+  const finite = (a) => a.filter(Number.isFinite).length / a.length > 0.9;
+  const nm = names.map((n) => String(n).replace(/["']/g, "").trim());
+  let wj = nm.findIndex((n) => WAVE_NAME.test(n));
+  let fj = nm.findIndex((n, j) => j !== wj && FLUX_NAME.test(n) && !NOT_FLUX.test(n));
+  if (wj < 0 || !finite(col(wj))) {
+    wj = [...Array(ncol).keys()].find((j) => { const a = col(j); return finite(a) && monotone(a) && !isIndex(a) && plausibleWave(a); }) ?? -1;
+  }
+  if (wj < 0) return null;
+  if (fj < 0 || !finite(col(fj))) {
+    fj = [...Array(ncol).keys()].find((j) => j !== wj && finite(col(j)) && !isIndex(col(j)) && !NOT_FLUX.test(nm[j] || "")) ?? -1;
+  }
+  if (fj < 0) return null;
+  return { w: col(wj), f: col(fj), columns: [nm[wj] || `column ${wj + 1}`, nm[fj] || `column ${fj + 1}`] };
+}
+
+function fail(text) {
+  const first = text.split(/\r?\n/).map((l) => l.trim()).find((l) => l && !/^[#%!]/.test(l)) || "";
+  return new Error(`Couldn't find a wavelength column and a brightness column in this file${first ? `. It starts with: “${first.slice(0, 70)}${first.length > 70 ? "…" : ""}”` : ""}. The lab needs a table with wavelengths in one column and brightness in another.`);
+}
+
+function fromJSON(text) {
+  const j = JSON.parse(text);
+  const arrays = (o) => {
+    const keys = Object.keys(o), w = keys.find((k) => WAVE_NAME.test(k)), f = keys.find((k) => FLUX_NAME.test(k) && !NOT_FLUX.test(k));
+    return w && f && Array.isArray(o[w]) ? { w: o[w].map(num), f: o[f].map(num) } : null;
+  };
+  let t = null;
+  if (Array.isArray(j) && Array.isArray(j[0])) t = pickColumns(j.map((r) => r.map(num)));
+  else if (Array.isArray(j) && j[0] && typeof j[0] === "object") {
+    const keys = Object.keys(j[0]);
+    t = pickColumns(j.map((r) => keys.map((k) => num(r[k]))), keys);
+  } else if (j && typeof j === "object") t = arrays(j) || Object.values(j).map((v) => (v && typeof v === "object" ? arrays(v) : null)).find(Boolean);
+  if (!t || t.w.length < 20) throw new Error("Couldn't find wavelength and brightness arrays in this JSON file.");
+  return { ...toNm(t.w, t.f), columns: t.columns };
+}
+
+function fromVOTable(text) {
+  const names = [...text.matchAll(/<FIELD\b[^>]*\bname="([^"]*)"/gi)].map((m) => m[1]);
+  const rows = [...text.matchAll(/<TR\b[^>]*>([\s\S]*?)<\/TR>/gi)].map((m) => [...m[1].matchAll(/<TD\b[^>]*>([\s\S]*?)<\/TD>/gi)].map((c) => num(c[1])));
+  const t = rows.length >= 20 && pickColumns(rows, names);
+  if (!t) throw new Error("Couldn't read this VOTable. Only plain TABLEDATA tables are supported; try exporting the spectrum as CSV.");
+  return { ...toNm(t.w, t.f), columns: t.columns };
+}
+
+/**
+ * Wavelength and flux from text: CSV/TSV/whitespace/semicolon tables (quoted values, decimal commas,
+ * header rows, index columns and extra columns are handled), JSON, or VOTable XML.
+ */
+export function parseSpectrumText(text) {
+  text = text.replace(/^﻿/, "");
+  const head = text.trimStart();
+  if (head.startsWith("{") || head.startsWith("[")) return fromJSON(head);
+  if (/^<\?xml|^<VOTABLE/i.test(head) && /<VOTABLE/i.test(head)) return fromVOTable(head);
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !/^([#%!\\|]|\/\/)/.test(l));
+  const sample = lines.slice(0, 60), count = (re) => sample.filter((l) => re.test(l)).length;
+  const delim = count(/;/) > sample.length / 2 ? /;/ : count(/\t/) > sample.length / 2 ? /\t/ : count(/,/) > sample.length / 2 ? /,/ : /\s+/;
+  let header = null;
+  const rows = [];
+  for (const l of lines) {
+    const cells = l.split(delim).map((c) => c.trim()).filter((c, i, a) => c !== "" || (delim.source !== "\\s+" && i < a.length - 1));
+    const nums = cells.map(num), nf = nums.filter(Number.isFinite).length;
+    if (nf >= 2 && nf >= cells.length / 2) rows.push(nums);
+    else if (!rows.length) header = cells;
+  }
+  const t = rows.length >= 20 && pickColumns(rows, header || []);
+  if (!t) throw fail(text);
+  return { ...toNm(t.w, t.f), columns: t.columns };
+}
+
+/** What kind of file this is, from its first bytes. */
+export function sniff(u8) {
+  const s = ascii(u8, 0, Math.min(u8.length, 512));
+  if (u8[0] === 0x1f && u8[1] === 0x8b) return "gzip";
+  if (s.startsWith("SIMPLE")) return "fits";
+  if (u8[0] === 0x89 && s.slice(1, 4) === "PNG") return "image";
+  if (u8[0] === 0xff && u8[1] === 0xd8) return "image";
+  if (s.startsWith("GIF8") || s.startsWith("BM") || (s.startsWith("RIFF") && s.slice(8, 12) === "WEBP")) return "image";
+  if (/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE svg[^>]*>\s*)?<svg/i.test(s)) return "image";
+  if (s.startsWith("%PDF")) return "pdf";
+  if (s.startsWith("PK\u0003\u0004")) return "zip";
+  return "text";
+}
+
+/** Read a File/Blob of any supported type, un-gzipping if needed. Pictures are handled by the page. */
 export async function readSpectrumFile(file) {
   let buf = await file.arrayBuffer();
   let u8 = new Uint8Array(buf);
-  if (u8[0] === 0x1f && u8[1] === 0x8b) {
+  if (sniff(u8) === "gzip") {
     if (typeof DecompressionStream === "undefined") throw new Error("This browser can't open .gz files; unzip it first.");
     buf = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
     u8 = new Uint8Array(buf);
   }
-  if (ascii(u8, 0, 6) === "SIMPLE") return parseFITS(buf);
+  const kind = sniff(u8);
+  if (kind === "fits") return parseFITS(buf);
+  if (kind === "pdf") throw new Error("This is a PDF. Save the spectrum as a picture (PNG or JPG) or upload the data file instead.");
+  if (kind === "zip") throw new Error("This looks like a spreadsheet or zip file. Save the spectrum as a CSV file first.");
+  if (kind === "image") throw Object.assign(new Error("picture"), { isImage: true });
   return parseSpectrumText(new TextDecoder().decode(u8));
 }
 
@@ -313,7 +411,11 @@ export function fitTemplates(obs, lib, opts = {}) {
   const sig = step > 1.2 ? step / 2.3548 : 0;
   const temps = lib.list.map((t) => {
     const f = sig ? smooth(t.flux, sig) : t.flux;
-    return idx.map((i) => f[i]);
+    const arr = idx.map((i) => f[i]);
+    if (!opts.normalized) return arr;
+    // Line pattern only: divide out the template's own continuum.
+    const e = envelope(arr, 12);
+    return arr.map((v, i) => v / e[i]);
   });
 
   const telluric = (l) => TELLURIC.some(([a, b]) => l >= a && l <= b);
@@ -321,11 +423,12 @@ export function fitTemplates(obs, lib, opts = {}) {
   const n0 = mask.filter(Boolean).length;
   if (n0 < 40) throw new Error("Too few usable points between 380 and 900 nm to classify this spectrum.");
   const scale = median(d.filter((_, i) => mask[i]).map(Math.abs)) || 1;
-  const dn = Array.from(d, (v) => v / scale);
+  let dn = Array.from(d, (v) => v / scale);
+  if (opts.normalized) { const e = envelope(dn, 12); dn = dn.map((v, i) => v / e[i]); }
   if (median(dn.filter((_, i) => mask[i])) <= 0) throw new Error("The brightness column is mostly zero or negative, so there is nothing to match.");
   const mid = (lo + hi) / 2, hw = (hi - lo) / 2;
   const x = g.map((l) => (l - mid) / hw);
-  const deg = opts.deg ?? 2;
+  const deg = opts.deg ?? (opts.normalized ? 1 : 2);
   // Extra weight on the features astronomers classify by (hydrogen, helium, calcium, magnesium, molecules).
   const wt = opts.weight ?? 3;
   const w = g.map((l) => (DIAGNOSTIC.some(([c, h]) => Math.abs(l - c) <= h) ? wt : 1));
@@ -344,7 +447,9 @@ export function fitTemplates(obs, lib, opts = {}) {
   const wsum = w.reduce((s, v, i) => s + (mask[i] ? v : 0), 0);
   // Templates never match real stars perfectly, so formal error bars are meaningless; instead count as
   // "close" every template whose misfit is within 25% of the best one (tuned on SDSS stars of known type).
-  const close = res.filter((r) => Math.sqrt(r.chi2 / best.chi2) <= 1.25).map((r) => lib.list[r.k]);
+  // Line-pattern-only matches (pictures) are flatter, so they get a tighter window.
+  const closeWithin = opts.normalized ? 1.06 : 1.25;
+  const close = res.slice(0, 8).filter((r) => Math.sqrt(r.chi2 / best.chi2) <= closeWithin).map((r) => lib.list[r.k]);
   const stars = close.filter((t) => t.kind === "star");
   const teffs = stars.map((t) => t.teff);
   const level = median(bf.fit.filter((_, i) => mask[i]).map(Math.abs));
