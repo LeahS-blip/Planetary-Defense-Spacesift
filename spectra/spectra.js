@@ -101,26 +101,37 @@ export function features(T, feh = 0) {
   return SPECIES.map((sp) => ({ ...sp, strength: lineDepth(sp, T, feh) })).sort((a, b) => b.strength - a.strength);
 }
 
-/** Model spectrum: {wl, flux, continuum}, normalized so the brightest point of the continuum is 1. */
-export function starSpectrum(T, feh = 0, wl = STAR_WL) {
+/** First index with wl[i] >= x (wl sorted ascending). */
+function lowerBound(wl, x) {
+  let lo = 0, hi = wl.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (wl[m] < x) lo = m + 1; else hi = m; }
+  return lo;
+}
+
+/**
+ * Model spectrum: {wl, flux, continuum, transmission}, normalized so the brightest point of the continuum
+ * is 1. vKms shifts the lines by a radial velocity (km/s), as the star's motion does in real spectra.
+ */
+export function starSpectrum(T, feh = 0, wl = STAR_WL, vKms = 0) {
   const cont = wl.map((l) => planck(l, T));
   const tau = new Float64Array(wl.length);
+  const z = 1 + vKms / 299792.458;
   for (const sp of SPECIES) {
     const d = lineDepth(sp, T, feh);
     if (d < 1e-4) continue;
     const tau0 = -Math.log(1 - d);
-    for (const c of sp.nm) {
+    for (const c0 of sp.nm) {
+      const c = c0 * z;
       if (sp.band) {
         // Band head: sharp edge on the blue side, absorption fading toward the red.
-        for (let i = 0; i < wl.length; i++) {
+        for (let i = lowerBound(wl, c - 1); i < wl.length && wl[i] < c + 120; i++) {
           const x = wl[i] - c;
-          if (x > -1 && x < 120) tau[i] += tau0 * (x < 0 ? 1 + x : Math.exp(-x / 18));
+          tau[i] += tau0 * (x < 0 ? 1 + x : Math.exp(-x / 18));
         }
       } else {
         const s = sp.fwhm / 2.3548;
-        for (let i = 0; i < wl.length; i++) {
-          const x = wl[i] - c;
-          if (Math.abs(x) < 6 * s) tau[i] += tau0 * Math.exp(-0.5 * (x / s) ** 2);
+        for (let i = lowerBound(wl, c - 6 * s); i < wl.length && wl[i] < c + 6 * s; i++) {
+          tau[i] += tau0 * Math.exp(-0.5 * ((wl[i] - c) / s) ** 2);
         }
       }
     }

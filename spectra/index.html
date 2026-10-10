@@ -142,6 +142,23 @@
   .rank .bar { height:8px; border-radius:4px; background:var(--line); overflow:hidden; }
   .rank .bar i { display:block; height:100%; }
 
+  /* Upload */
+  .drop { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding:26px 18px; border:2px dashed #34406a;
+          border-radius:16px; background:var(--card); cursor:pointer; transition:border-color .15s, background .15s; }
+  .drop:hover, .drop.over { border-color:var(--acc); background:#18203d; }
+  .drop input { display:none; }
+  .drop .drop-ico { width:44px; height:44px; border-radius:50%; background:#1f2a52; color:var(--acc); display:flex; align-items:center; justify-content:center; font:700 22px var(--sub); }
+  .drop b { font-size:15px; } .drop u { color:var(--acc); }
+  .drop span { color:var(--dim); font-size:13px; max-width:520px; line-height:1.55; }
+  .up-links { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px; color:var(--dim); font-size:13px; }
+  .up-links .btn { padding:7px 14px; }
+  .btn.ghost { background:none; border:1px solid var(--line); color:var(--ink); }
+  #up-status { margin-top:10px; color:var(--body); font-size:14px; }
+  .up-err { color:var(--bad); background:#2a1420; border:1px solid #5a2333; border-radius:10px; padding:10px 12px; }
+  .warn { display:block; color:var(--mid); margin-top:6px; font-size:13.5px; }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--acc); border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; margin-right:6px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
   .about { max-width:760px; }
   .about h2 { font:700 15px var(--title); letter-spacing:.06em; margin:28px 0 8px; text-transform:uppercase; }
   .about p, .about li { color:var(--body); line-height:1.75; }
@@ -167,7 +184,7 @@
   <!-- ============================================================ STARS -->
   <section id="view-stars">
     <div class="mode">
-      <div class="seg" id="star-mode"><button data-m="explore" class="on">Explore</button><button data-m="quiz">Quiz me</button></div>
+      <div class="seg" id="star-mode"><button data-m="explore" class="on">Explore</button><button data-m="quiz">Quiz me</button><button data-m="upload">Upload</button></div>
       <span class="score" id="star-score"></span>
     </div>
 
@@ -178,6 +195,18 @@
         <input type="range" id="t" min="0" max="1000" step="1" aria-label="Surface temperature">
         <div class="ends"><span>← cooler, redder</span><b id="t-now"></b><span>hotter, bluer →</span></div>
       </div>
+    </div>
+
+    <div id="star-upload" hidden>
+      <div class="step">1 · ADD A SPECTRUM FILE</div>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".csv,.txt,.dat,.tsv,.tab,.asc,.ascii,.fits,.fit,.fts,.gz">
+        <span class="drop-ico">↑</span>
+        <b>Drop a star's spectrum here, or <u>choose a file</u></b>
+        <span>A text file with two columns (wavelength, brightness), or a FITS file from a survey such as SDSS or LAMOST. Your file stays on your device.</span>
+      </label>
+      <div class="up-links"><button class="btn ghost" id="try-example">Try an example</button><a id="dl-example" download="example-star-spectrum.csv">Download the example file</a> to see the format.</div>
+      <div id="up-status"></div>
     </div>
 
     <div class="step" id="star-step2">2 · WHAT IT IS</div>
@@ -194,6 +223,7 @@
       </div>
     </div>
 
+    <div id="star-strip-wrap">
     <div class="step" id="star-step3">3 · ITS RAINBOW</div>
     <div class="strip-box">
       <div class="labels" id="labels"></div>
@@ -202,11 +232,18 @@
     </div>
     <div class="strip-ends"><span>violet</span><span>red</span></div>
     <div class="caption">Starlight spread into its colors. <b>Each dark line is an element</b> in the star's atmosphere soaking up one exact color, like a fingerprint.</div>
+    </div>
 
     <div id="star-ingr-wrap">
       <div class="step">4 · WHAT'S IN IT</div>
       <div class="ingr" id="ingr"></div>
       <div class="tip"><b>Why stars look so different:</b> almost every star is about 74% hydrogen and 25% helium. What changes is the <b>temperature</b>, which decides which elements can absorb visible light. That's why the Sun shows calcium and iron lines but hardly any helium.</div>
+    </div>
+
+    <div id="up-result" hidden>
+      <div class="step">HOW WELL IT MATCHES</div>
+      <div class="card"><div class="plot" id="up-plot"></div></div>
+      <div class="caption">Grey: your spectrum, with the instrument's overall tilt removed. Color: the best-matching model star. Shaded bands are where Earth's own atmosphere absorbs light, so they are left out of the match.</div>
     </div>
 
     <details class="adv" id="star-adv">
@@ -302,7 +339,10 @@
     <li>Spectral class comes from temperature alone; real classification also uses a luminosity class (dwarf, giant, supergiant).</li>
     <li>Asteroid curves are smooth templates that capture each class's shape, not averaged survey spectra. Colors from them use filter centers only.</li>
     <li>The color rule (Ivezić et al. 2001) gives a rough group, not a class. Many asteroids sit near the boundaries.</li>
+    <li>Uploaded spectra are matched against the same simplified model: good for the spectral type, rough for temperature, and very rough for metal content. The overall slope of your file is divided out (instruments and dust change it), so the answer comes from the absorption lines. It isn't built for white dwarfs, galaxies, quasars or stars with emission lines.</li>
   </ul>
+  <h2>Uploading a spectrum</h2>
+  <p>Text files need two columns: wavelength, then brightness. Wavelengths can be in ångströms, nanometers, microns or log₁₀ ångströms; the lab works out which from their size. FITS files can be 1D images with a wavelength solution, LAMOST-style stacked images, or tables with wavelength and flux columns, such as SDSS spectra; .gz files are unzipped in the browser. Nothing is uploaded to a server.</p>
   <h2>References</h2>
   <ul>
     <li>Ballesteros, F. J. 2012, <i>EPL</i> 97, 34008: temperature from B−V color.</li>
@@ -317,6 +357,7 @@
 
 <script type="module">
 import * as S from "./spectra.js";
+import * as U from "./upload.js";
 
 const $ = (id) => document.getElementById(id);
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -381,7 +422,7 @@ function segment(id, onChange) {
 const TMIN = 2400, TMAX = 45000;
 const sliderToT = (v) => Math.round(10 ** (Math.log10(TMIN) + (v / 1000) * (Math.log10(TMAX) - Math.log10(TMIN))));
 const tToSlider = (T) => Math.round((1000 * (Math.log10(T) - Math.log10(TMIN))) / (Math.log10(TMAX) - Math.log10(TMIN)));
-const star = { T: 5772, feh: 0, preset: "Sun", focus: null, quiz: null, score: [0, 0] };
+const star = { T: 5772, feh: 0, preset: "Sun", focus: null, quiz: null, score: [0, 0], mode: "explore", upload: null };
 
 // Paint the slider track in real star colors, cool to hot.
 $("t").style.background = `linear-gradient(90deg, ${Array.from({ length: 9 }, (_, i) => vivid(S.starHex(sliderToT(i * 125)))).join(",")})`;
@@ -411,16 +452,18 @@ function drawStrip(wl, trans) {
   const img = ctx.createImageData(W, H);
   for (let x = 0; x < W; x++) {
     const l = 380 + (370 * x) / (W - 1);
-    const i = Math.min(wl.length - 1, Math.max(0, Math.round((l - wl[0]) / (wl[1] - wl[0]))));
-    const [r, g, b] = S.wavelengthRGB(l).map((v) => 255 * v * trans[i]);
+    const i = Math.round((l - wl[0]) / (wl[1] - wl[0]));
+    const k = i >= 0 && i < wl.length ? trans[i] : NaN;
+    // Gaps (outside an uploaded file's range, or missing data) are drawn dark grey.
+    const [r, g, b] = Number.isFinite(k) ? S.wavelengthRGB(l).map((v) => 255 * v * k) : [26, 31, 51];
     for (let y = 0; y < H; y++) { const p = 4 * (y * W + x); img.data[p] = r; img.data[p + 1] = g; img.data[p + 2] = b; img.data[p + 3] = 255; }
   }
   ctx.putImageData(img, 0, 0);
 }
 
-function drawLabels(feats, show) {
+function drawLabels(feats, show, min = 0.1) {
   const pos = (nm) => ((nm - 380) / 370) * 100;
-  const shown = show ? feats.filter((f) => f.strength > 0.1) : [];
+  const shown = show ? feats.filter((f) => f.strength > min) : [];
   const dim = (id) => (star.focus && star.focus !== id ? "dim" : "");
   let ticks = "", labs = "";
   for (const f of shown) for (const nm of f.nm) if (nm >= 380 && nm <= 750)
@@ -442,6 +485,9 @@ function drawLabels(feats, show) {
 $("labels").onclick = (e) => { const id = e.target.dataset.id; if (id) { star.focus = star.focus === id ? null : id; drawStar(); } };
 
 function drawStar() {
+  $("star-upload").hidden = star.mode !== "upload";
+  if (star.mode === "upload") return drawUpload();
+  $("star-strip-wrap").hidden = false; $("up-result").hidden = true;
   const q = star.quiz;
   const T = q ? q.T : star.T, feh = q ? q.feh : star.feh;
   const sp = S.starSpectrum(T, feh);
@@ -472,7 +518,7 @@ function drawStar() {
     const top = [...new Set(feats.filter((f) => f.strength > 0.15).map((f) => S.PLAIN[f.id].name.replace(" (super-hot)", "").replace(/^\w/, (c) => c.toLowerCase())))].slice(0, 3);
     const list = top.length > 1 ? top.slice(0, -1).join(", ") + " and " + top[top.length - 1] : top[0];
     const name = q ? "It's" : preset ? `${preset.name === "Sun" ? "The Sun" : preset.name} is` : "This is";
-    $("star-h").textContent = `${name} a ${S.CLASS_INFO[cls.letter].color} ${cls.letter}-type star`;
+    $("star-h").textContent = `${name} ${aColor(cls.letter)} ${cls.letter}-type star`;
     $("star-p").innerHTML = `${preset ? preset.note + " " : ""}Its surface is about <b>${fmt(T)} K</b>${preset && preset.name === "Sun" ? "" : `, ${compareSun(T)}`}.${list ? ` Its light shows the fingerprints of <b>${list}</b>.` : ""}`;
     $("star-facts").innerHTML = [
       ["Type", cls.name], ["Temperature", fmt(T) + " K"], ["Brightest color", `${fmt(S.wienPeakNm(T))} nm`], ["Metals", metalText(feh)],
@@ -521,6 +567,7 @@ function newStarQuiz() {
   drawStar();
 }
 segment("star-mode", (m) => {
+  star.mode = m;
   if (m === "quiz") newStarQuiz();
   else { star.quiz = null; drawStar(); }
 });
@@ -538,6 +585,108 @@ $("star-guess").onclick = (e) => {
   $("again-star").onclick = newStarQuiz;
   drawStar();
 };
+
+// ---------------------------------------------------------------- upload
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pct = (x) => Math.round(100 * Math.max(0, x));
+const aColor = (letter) => { const c = S.CLASS_INFO[letter].color; return (/^[aeiou]/.test(c) ? "an " : "a ") + c; };
+
+function drawUpload() {
+  const u = star.upload, fit = u && u.fit;
+  $("star-explore").hidden = true; $("star-quiz").hidden = true; $("star-adv").hidden = true;
+  $("star-step2").textContent = "2 · YOUR STAR";
+  $("star-step3").textContent = "3 · ITS RAINBOW, FROM YOUR FILE";
+  $("star-strip-wrap").hidden = !fit; $("star-ingr-wrap").hidden = !fit; $("up-result").hidden = !fit;
+  if (!fit) {
+    setStyle($("orb"), MYSTERY); $("orb").textContent = "↑";
+    $("star-h").textContent = "Upload a star's spectrum";
+    $("star-p").innerHTML = "The lab compares it with model stars at 64 temperatures and 8 metal levels, then tells you the star's <b>type</b>, <b>temperature</b> and which <b>elements</b> show up in its light. Works with visible-light spectra between 380 and 900 nm.";
+    $("star-facts").innerHTML = "";
+    return;
+  }
+  const cls = fit.cls, hex = vivid(S.starHex(fit.T));
+  setStyle($("orb"), glow(hex)); $("orb").textContent = "";
+  $("star-h").textContent = `${u.object || "Your star"} looks like ${aColor(cls.letter)} ${cls.letter}-type star`;
+  const [tlo, thi] = fit.Trange;
+  const range = tlo === thi ? "" : ` (likely ${fmt(tlo)}–${fmt(thi)} K${fit.classes.length > 1 ? `, so type ${fit.classes.join(" or ")}` : ""})`;
+  const warns = [];
+  if (fit.quality === "poor") warns.push("The match is poor, so treat this with caution. The object may not be a normal star (a galaxy, quasar, white dwarf or emission-line star, for example), or the file may be noisy.");
+  if (fit.atEdge) warns.push("The best match sits at the edge of the lab's range (2,500 to 45,000 K), so the real star may be hotter or cooler.");
+  if (fit.coverage[1] - fit.coverage[0] < 250) warns.push(`Your file covers only ${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm of the visible range; a wider range gives a surer answer.`);
+  $("star-p").innerHTML = `Best match: about <b>${fmt(fit.T)} K</b>${range}, ${compareSun(fit.T)}. ${S.CLASS_INFO[cls.letter].text} Match quality: <b>${fit.quality}</b>.`
+    + warns.map((w) => `<span class="warn">⚠ ${w}</span>`).join("");
+  const facts = [["Type", cls.name], ["Temperature", fmt(fit.T) + " K"], ["Metals (rough)", metalText(fit.feh)]];
+  if (fit.gstep <= 1 && fit.v) facts.push(["Moving", `${fit.v > 0 ? "away from" : "toward"} us at about ${Math.abs(fit.v)} km/s`]);
+  facts.push(["File", esc(u.name)], ["Covers", `${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm (read as ${u.unit})`]);
+  $("star-facts").innerHTML = facts.map(([k, v]) => `<span>${k}: <b>${v}</b></span>`).join("");
+
+  drawStrip(fit.grid.wl, fit.grid.data.map((v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : NaN)));
+  const found = fit.lines.filter((l) => l.n && l.depth > Math.max(0.03, 3 * l.err)).sort((a, b) => b.depth - a.depth);
+  const strength = Object.fromEntries(found.map((l) => [l.id, l.depth]));
+  drawLabels(S.SPECIES.map((sp) => ({ ...sp, strength: strength[sp.id] || 0 })), true, 0);
+
+  const missing = fit.lines.filter((l) => l.n && !strength[l.id]).map((l) => S.PLAIN[l.id].name);
+  const outside = fit.lines.filter((l) => !l.n).map((l) => S.PLAIN[l.id].name);
+  $("ingr").innerHTML = (found.length ? found.map((l) => `
+      <button class="ing ${star.focus === l.id ? "on" : ""}" data-id="${l.id}">
+        <div class="top"><b>${S.PLAIN[l.id].name}</b><span class="lvl">${l.depth > 0.25 ? "Strong" : l.depth > 0.1 ? "Clear" : "Weak"}</span></div>
+        <div class="bar"><i style="width:${Math.round(100 * Math.min(1, l.depth / 0.6))}%;background:${SP_COLOR[l.id]}"></i></div>
+        <p>${S.PLAIN[l.id].why}<br>Dip in your file: <b style="color:var(--ink)">${pct(l.depth)}%</b> · the model expects ${pct(l.expected)}%</p>
+      </button>`).join("") : `<div class="muted" style="grid-column:1/-1">No lines stood out clearly from the noise.</div>`)
+    + `<div class="muted" style="grid-column:1/-1;margin-top:0">${missing.length ? `Not detected: ${missing.join(", ")}. ` : ""}${outside.length ? `Outside your file's range: ${outside.join(", ")}.` : ""}</div>`;
+
+  const g = fit.grid, shown = (arr) => arr.map((v, i) => (g.mask[i] ? v : null));
+  Plotly.react("up-plot", [
+    { x: g.wl, y: g.data, mode: "lines", line: { color: css("--dim"), width: 1 }, hovertemplate: "%{x:.1f} nm<extra>your file</extra>" },
+    { x: g.wl, y: shown(g.model), mode: "lines", line: { color: hex, width: 1.6 }, hovertemplate: "%{x:.1f} nm<extra>model</extra>" },
+  ], layout("Wavelength (nm)", "Brightness (tilt removed)", {
+    xaxis: { title: { text: "Wavelength (nm)" }, gridcolor: css("--line"), zeroline: false, range: fit.coverage },
+    yaxis: { title: { text: "Brightness (tilt removed)" }, gridcolor: css("--line"), zeroline: false, range: [0, 1.35] },
+    shapes: U.TELLURIC.filter(([a, b]) => b > fit.coverage[0] && a < fit.coverage[1])
+      .map(([a, b]) => ({ type: "rect", x0: a, x1: b, yref: "paper", y0: 0, y1: 1, fillcolor: "rgba(255,255,255,0.06)", line: { width: 0 }, layer: "below" })),
+  }), CFG);
+  Plotly.Plots.resize($("up-plot")); // it may have been drawn at another width
+}
+
+let worker = null;
+function runFit(obs) {
+  const local = (resolve, reject) => setTimeout(() => { try { resolve(U.fitStar(obs)); } catch (e) { reject(e); } }, 30);
+  return new Promise((resolve, reject) => {
+    try {
+      worker ??= new Worker(new URL("./fit-worker.js", import.meta.url), { type: "module" });
+      worker.onmessage = (e) => (e.data.ok ? resolve(e.data.fit) : reject(new Error(e.data.error)));
+      worker.onerror = (e) => { e.preventDefault?.(); worker = null; local(resolve, reject); };
+      worker.postMessage({ wl: obs.wl, flux: obs.flux });
+    } catch {
+      local(resolve, reject); // no module workers: fit on the main thread
+    }
+  });
+}
+
+async function handleFile(file, label) {
+  $("up-status").innerHTML = `<span class="spinner"></span>Reading ${esc(label)}…`;
+  try {
+    const obs = await U.readSpectrumFile(file);
+    $("up-status").innerHTML = `<span class="spinner"></span>Comparing with ${U.FIT_TEMPS.length * U.FIT_FEH.length} model stars…`;
+    const fit = await runFit(obs);
+    star.upload = { name: label, object: obs.object || "", unit: obs.unit, fit };
+    star.focus = null;
+    $("up-status").innerHTML = "";
+    drawStar();
+    $("star-step2").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (err) {
+    $("up-status").innerHTML = `<div class="up-err">${esc(err.message || err)}</div>`;
+  }
+}
+$("file").onchange = () => { const f = $("file").files[0]; if (f) handleFile(f, f.name); $("file").value = ""; };
+const drop = $("drop");
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); const f = e.dataTransfer.files[0]; if (f) handleFile(f, f.name); };
+const EXAMPLE = U.exampleCSV();
+$("dl-example").href = URL.createObjectURL(new Blob([EXAMPLE], { type: "text/csv" }));
+$("try-example").onclick = () => handleFile(new Blob([EXAMPLE]), "example-star-spectrum.csv (simulated)");
+
 
 // ---------------------------------------------------------------- asteroids
 const KEYS = Object.keys(S.ASTEROID_CLASSES);
