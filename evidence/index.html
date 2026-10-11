@@ -72,6 +72,18 @@
   pre { margin:0; background:#060914; border:1px solid var(--line); border-radius:12px; padding:14px; overflow-x:auto; font:12.5px/1.6 ui-monospace,Consolas,monospace; color:#cfd8ff; }
   details summary { cursor:pointer; color:var(--acc); font-size:14px; margin:6px 0 10px; }
   .muted { color:var(--dim); font-size:13px; }
+  .results { display:grid; gap:14px; margin-bottom:22px; }
+  .rrow { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(0,1fr); gap:14px; align-items:stretch; }
+  @media (max-width:860px) { .rrow { grid-template-columns:minmax(0,1fr); } }
+  .rrow .ss-plain { align-self:stretch; display:flex; flex-direction:column; justify-content:center; }
+  details.method { margin-top:6px; border:1px solid var(--line); border-radius:16px; background:rgba(11,16,32,.6); padding:0 18px; }
+  details.method > summary { cursor:pointer; padding:16px 0; color:var(--ink); font-weight:700; font-size:15px; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details.method > summary::-webkit-details-marker { display:none; }
+  details.method > summary::after { content:"+"; color:var(--dim); font-size:20px; line-height:1; }
+  details.method[open] > summary::after { content:"−"; }
+  details.method[open] { padding-bottom:18px; }
+  .rerun h4 { margin:14px 0 10px; font:700 9.5px var(--title); letter-spacing:.28em; color:var(--acc); }
+  .two .ss-limits { border-radius:14px; }
   footer { border-top:1px solid var(--line); margin-top:50px; padding-top:20px; color:var(--dim); font-size:13px; }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
@@ -96,29 +108,27 @@
   <section class="inv" id="transit">
     <div class="inv-head"><div><div class="k">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>When does a transit search miss a planet that is really there?</h2></div><a class="open" href="/lab/">Open the Transit Lab →</a></div>
     <div class="verdict"><span class="tag good">CLEAR RESULT</span>On quiet stars the standard search behaves as published. On stars that pulsate at 100 ppm or more, <b>no amount of filtering finds the planets, but removing the star's rhythm first recovers 99% or more</b>, in all 24 pulsation settings tested. The reverse holds for fast-spinning spotted stars. No single cleaning method works on every star.</div>
-    <div class="facts3">
-      <div class="fact"><h4>DATA</h4><p>200 quiet Kepler stars (SS-0001; NASA MAST light curves) and 820 simulated stars spanning pulsation and starspot periods and amplitudes (SS-0002A). 316 real variable Kepler stars for the pre-registered test (SS-0002B, running).</p></div>
-      <div class="fact"><h4>METHOD</h4><p>Plant planets of known size and orbit, clean the light curve, run a box least-squares (BLS) search, and grade each trial: found, wrong period, the star's own signal, or below threshold. Completeness is fit against signal-to-noise.</p></div>
-      <div class="fact"><h4>BASELINE</h4><p>The standard pipeline: a 1-day sliding biweight filter, compared against shorter and longer windows, no cleaning, and prewhitening (subtracting the star's rhythms) before filtering.</p></div>
-    </div>
-    <div class="charts">
-      <figure><h5>Quiet stars: chance of finding a planet</h5><div class="sub">SS-0001 · 10,000 planted planets on 200 Kepler stars</div><div id="ch-completeness"></div>
-        <figcaption>Fitted completeness (gamma CDF) against signal-to-noise. Half are found at SNR 10.7 (10.85 at a calibrated 1% false-alarm threshold); the plateau is 96–97%.</figcaption></figure>
-      <figure><h5>Variable stars: what each cleaning method returns</h5><div class="sub">SS-0002A · 8,200 trials per method across all variability settings</div><div class="legend" id="lg-outcomes"></div><div id="ch-outcomes"></div>
-        <figcaption>Share of trials by outcome. “Star's own signal” means the search locked onto the star's variability instead of the planet. Prewhitening almost eliminates it.</figcaption></figure>
-    </div>
-    <div class="two">
+    
+    
+    <div class="results"><div class="rrow"><figure><h5>Quiet stars: chance of finding a planet</h5><div class="sub">SS-0001 · 10,000 planted planets on 200 Kepler stars</div><div id="ch-completeness"></div>
+        <figcaption>Fitted completeness (gamma CDF) against signal-to-noise. Half are found at SNR 10.7 (10.85 at a calibrated 1% false-alarm threshold); the plateau is 96–97%.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p>This is a detection curve for quiet stars. A planet whose dips stand 5× above the noise is almost never found; at about 11× it's a coin flip; above 16× the search nearly always finds it.</p><p>It matches published results, which shows the pipeline works <b>before</b> we test the hard cases.</p></aside></div><div class="rrow"><figure><h5>Variable stars: what each cleaning method returns</h5><div class="sub">SS-0002A · 8,200 trials per method across all variability settings</div><div class="legend" id="lg-outcomes"></div><div id="ch-outcomes"></div>
+        <figcaption>Share of trials by outcome. “Star's own signal” means the search locked onto the star's variability instead of the planet. Prewhitening almost eliminates it.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p>On flickering stars the standard filter found the planet in just over a third of trials. Most misses weren't “too faint”: the search found the <b>star's own flicker and mistook it for a planet</b>.</p><p>Removing the star's rhythm first lifts recovery to 86% across every setting, and to 99% or more on pulsating stars.</p></aside></div></div><div class="two">
       <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul>
         <li><b>False alarms (false positives):</b> each method's detection threshold is set so only <b>1%</b> of searches on noise-only stars beat it (1,800 and 10,800 null searches). But on variable stars where cleaning fails, <b>60–100% of planet-free searches beat the threshold</b>: the false-alarm rate is only valid on quiet stars.</li>
         <li><b>Misses (false negatives):</b> half of planets at SNR 10.85 are missed on quiet stars, and <b>4% of strong signals (SNR &gt; 16)</b> are still missed. On two pulsating Kepler stars in SS-0001, all 100 planted planets were missed.</li>
       </ul></div>
-      <div class="box"><h4>LIMITATIONS</h4><ul>
+      <div class="ss-limits"><h4>LIMITATIONS</h4><ul>
         <li>Simulated pulsators are two constant sine waves, the ideal case for prewhitening; noise is white. <b>SS-0002B tests real stars</b>, with predictions committed before the run.</li>
         <li>BLS measures a box-shaped depth, so recovered transits are ~15% shallower than injected (explained in SS-0001-depth).</li>
         <li>The in-browser Transit Lab is a JavaScript port checked against the Python pipeline; one demo run is an example, not a result.</li>
       </ul></div>
     </div>
-    <details><summary>Rerun these experiments</summary><pre>cd spacesift
+    
+  <details class="method"><summary>Full methodology: data, method, baselines, detailed results and how to rerun</summary><div class="facts3">
+      <div class="fact"><h4>DATA</h4><p>200 quiet Kepler stars (SS-0001; NASA MAST light curves) and 820 simulated stars spanning pulsation and starspot periods and amplitudes (SS-0002A). 316 real variable Kepler stars for the pre-registered test (SS-0002B, running).</p></div>
+      <div class="fact"><h4>METHOD</h4><p>Plant planets of known size and orbit, clean the light curve, run a box least-squares (BLS) search, and grade each trial: found, wrong period, the star's own signal, or below threshold. Completeness is fit against signal-to-noise.</p></div>
+      <div class="fact"><h4>BASELINE</h4><p>The standard pipeline: a 1-day sliding biweight filter, compared against shorter and longer windows, no cleaning, and prewhitening (subtracting the star's rhythms) before filtering.</p></div>
+    </div><div class="rerun"><h4>Rerun these experiments</h4><pre>cd spacesift
 pip install -e . -c constraints-ci.txt
 spacesift run configs/SS-0001.yaml              # 10,000 injections on 200 quiet Kepler stars
 spacesift run configs/SS-0001-null.yaml         # noise-only searches that set the 1% threshold
@@ -126,39 +136,37 @@ spacesift analyze experiments/SS-0001 --null experiments/SS-0001-null --far 0.01
 spacesift run configs/SS-0002A.yaml && spacesift run configs/SS-0002A-null.yaml
 spacesift analyze-grid experiments/SS-0002A --null experiments/SS-0002A-null --name far1pct
 spacesift replay experiments/SS-0001 --star 1868918 --trial 3   # re-run and plot one trial</pre>
-      <p class="muted">Each record stores its git commit, package versions, configuration and seed. Full records: <a href="/lab/#results">Transit Lab → Experiments</a>.</p></details>
+      <p class="muted">Each record stores its git commit, package versions, configuration and seed. Full records: <a href="/lab/#results">Transit Lab → Experiments</a>.</p></div></details>
   </section>
 
   <!-- ====================================================================== 02 -->
   <section class="inv" id="spectra">
     <div class="inv-head"><div><div class="k">INVESTIGATION 02 · STARLIGHT</div><h2>Can a star's type be read reliably from any spectrum someone uploads?</h2></div><a class="open" href="/spectra/">Open the Spectrum Lab →</a></div>
     <div class="verdict" id="sp-verdict"><span class="tag good">WORKS, WITH KNOWN GAPS</span>Loading…</div>
-    <div class="facts3">
-      <div class="fact"><h4>DATA</h4><p>Templates: 123 real stellar spectra (SDSS <i>spEigenStar-55734</i>, mostly the Indo-US library). Test set: the highest signal-to-noise SDSS DR17 star of each class, O to M (11 stars), chosen by a fixed query before tuning.</p></div>
-      <div class="fact"><h4>METHOD</h4><p>Fit every template times a smooth curve (absorbing flux calibration and dust), weighting the features astronomers classify by. Errors are counted in subclasses against SDSS's own pipeline type (10 subclasses = one class).</p></div>
-      <div class="fact"><h4>BASELINES</h4><p>(1) The lab's first classifier: a simplified physics model (blackbody plus ~40 lines). (2) “Temperature from color”: the same templates using only the overall continuum shape.</p></div>
-    </div>
-    <div class="charts">
-      <figure><h5>Error per star</h5><div class="sub">Distance from SDSS's type, in subclasses (lower is better)</div><div class="legend"><span><i style="background:var(--c1)"></i>Template matcher</span><span><i style="background:var(--c2)"></i>Physics-model baseline</span></div><div id="ch-sp-stars"></div>
-        <figcaption>Each row is one SDSS star. A full class (e.g. A0 to F0) is 10 subclasses.</figcaption></figure>
-      <figure><h5>Robustness to bad calibration</h5><div class="sub">Median error when each spectrum is tilted as dust or a bad flux calibration would</div><div class="legend"><span><i style="background:var(--c1)"></i>As observed</span><span><i style="background:var(--c2)"></i>Tilted</span></div><div id="ch-sp-tilt"></div>
-        <figcaption>Color alone does well on SDSS's well-calibrated spectra but collapses when the slope is wrong; the template matcher barely moves.</figcaption></figure>
-    </div>
-    <div class="tablewrap"><table id="tb-sp"></table></div>
-    <div class="two">
+    
+    
+    
+    <div class="results"><div class="rrow"><figure><h5>Error per star</h5><div class="sub">Distance from SDSS's type, in subclasses (lower is better)</div><div class="legend"><span><i style="background:var(--c1)"></i>Template matcher</span><span><i style="background:var(--c2)"></i>Physics-model baseline</span></div><div id="ch-sp-stars"></div>
+        <figcaption>Each row is one SDSS star. A full class (e.g. A0 to F0) is 10 subclasses.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p>Each row is one real star. Blue dots (the current method) mostly sit within a few subclasses of the right answer. Orange dots (our first method) are often off by a whole class or more, calling an A star a G star, for example.</p></aside></div><div class="rrow"><figure><h5>Robustness to bad calibration</h5><div class="sub">Median error when each spectrum is tilted as dust or a bad flux calibration would</div><div class="legend"><span><i style="background:var(--c1)"></i>As observed</span><span><i style="background:var(--c2)"></i>Tilted</span></div><div id="ch-sp-tilt"></div>
+        <figcaption>Color alone does well on SDSS's well-calibrated spectra but collapses when the slope is wrong; the template matcher barely moves.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p>Real spectra often have the wrong overall slope, from dust or calibration. Judging temperature by color alone gets fooled badly. Reading the <b>absorption lines</b> instead barely changes the answer.</p></aside></div></div><div class="two">
       <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul id="sp-errors">
         <li><b>Too hot:</b> faint SDSS “A0” and “B9” stars come out as B stars (5 and 6.5 subclasses off). They are probably blue horizontal-branch stars, old and metal-poor, which the library lacks.</li>
         <li><b>Too cool:</b> rare here; the G2 star comes out F8 (too hot by 4) and K7 comes out K5.</li>
       </ul></div>
-      <div class="box"><h4>LIMITATIONS</h4><ul>
+      <div class="ss-limits"><h4>LIMITATIONS</h4><ul>
         <li><b>Small test set (11 stars)</b>, one per class; “truth” is itself SDSS's template fit, not an independent measurement.</li>
         <li>The library is thin on red dwarfs and has no blue horizontal-branch stars. Temperatures come from the matched type (±a few hundred K); metal content is not measured.</li>
         <li>Pictures of spectra are matched on line positions only, since drawings don't show true line strengths.</li>
       </ul></div>
     </div>
-    <details><summary>Rerun this evaluation</summary><pre>node spectra/eval/eval_sdss.mjs     # downloads 11 SDSS spectra (~2 MB) on first run
+    
+  <details class="method"><summary>Full methodology: data, method, baselines, detailed results and how to rerun</summary><div class="facts3">
+      <div class="fact"><h4>DATA</h4><p>Templates: 123 real stellar spectra (SDSS <i>spEigenStar-55734</i>, mostly the Indo-US library). Test set: the highest signal-to-noise SDSS DR17 star of each class, O to M (11 stars), chosen by a fixed query before tuning.</p></div>
+      <div class="fact"><h4>METHOD</h4><p>Fit every template times a smooth curve (absorbing flux calibration and dust), weighting the features astronomers classify by. Errors are counted in subclasses against SDSS's own pipeline type (10 subclasses = one class).</p></div>
+      <div class="fact"><h4>BASELINES</h4><p>(1) The lab's first classifier: a simplified physics model (blackbody plus ~40 lines). (2) “Temperature from color”: the same templates using only the overall continuum shape.</p></div>
+    </div><div class="tablewrap"><table id="tb-sp"></table></div><div class="rerun"><h4>Rerun this evaluation</h4><pre>node spectra/eval/eval_sdss.mjs     # downloads 11 SDSS spectra (~2 MB) on first run
 node --test spectra/test/            # parsers, template library, picture reader, known stars</pre>
-      <p class="muted">Results file: <a href="/spectra/eval/results.json">spectra/eval/results.json</a>. Templates are rebuilt from the SDSS file with <code>spectra/tools/build_templates.mjs</code>.</p></details>
+      <p class="muted">Results file: <a href="/spectra/eval/results.json">spectra/eval/results.json</a>. Templates are rebuilt from the SDSS file with <code>spectra/tools/build_templates.mjs</code>.</p></div></details>
   </section>
 
   <!-- ====================================================================== 03 -->
@@ -169,33 +177,31 @@ node --test spectra/test/            # parsers, template library, picture reader
       <li><b>P(real NEO)</b> is the chance that a candidate on the Minor Planet Center's confirmation page turns out to be a genuine near-Earth object, rather than junk (artifacts, satellites, stars, lost objects) or an ordinary main-belt asteroid.</li>
       <li><b>It is not an impact probability.</b> Nothing in this model estimates whether anything will hit Earth. Impact probabilities for known objects come from NASA JPL's Sentry system and are shown separately on the dashboard.</li>
     </ul></div>
-    <div class="facts3">
-      <div class="fact"><h4>DATA</h4><p>Twice-daily captures of the MPC confirmation page since July 2026 (<span id="ast-outcomes">3,326</span> resolved outcomes). Labels from the MPC's Previous-NEOCP list: designated NEO = 1; not confirmed, not real, artificial, star or main-belt = 0.</p></div>
-      <div class="fact"><h4>METHOD</h4><p>Gradient-boosted trees (LightGBM DART, 67 features: digest2 orbit-class scores, motion, brightness, sky position, observatory, and changes across snapshots). Tested on a <b>time split</b>: trained on older candidates, scored once on newer ones.</p></div>
-      <div class="fact"><h4>BASELINE</h4><p>The digest2 score alone, the standard tool observers already use to judge whether a candidate looks like a near-Earth object.</p></div>
-    </div>
-    <div class="charts">
-      <figure><h5>Ranking quality on newer candidates</h5><div class="sub" id="ast-split-sub">ROC-AUC on the held-out time split (0.5 = coin flip)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span></div><div id="ch-ast-auc"></div>
-        <figcaption id="ast-auc-cap">Random-fold cross-validation gives a higher AUC, but it mixes old and new candidates, so the time split is the honest number.</figcaption></figure>
-      <figure><h5>Junk excluded while keeping real NEOs</h5><div class="sub">Share of non-NEOs dropped at a strict setting (≥99% of real NEOs kept)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span><span><i style="background:transparent;border:1px dashed var(--dim)"></i>A&amp;A 2025 benchmark</span></div><div id="ch-ast-excl"></div>
-        <figcaption>This is the operating point that matters for observers: drop as much junk as possible without losing real objects. The model does not meet it yet.</figcaption></figure>
-    </div>
-    <div class="tablewrap" id="ast-cm-wrap"></div>
-    <div class="two">
+    
+    
+    
+    <div class="results"><div class="rrow"><figure><h5>Ranking quality on newer candidates</h5><div class="sub" id="ast-split-sub">ROC-AUC on the held-out time split (0.5 = coin flip)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span></div><div id="ch-ast-auc"></div>
+        <figcaption id="ast-auc-cap">Random-fold cross-validation gives a higher AUC, but it mixes old and new candidates, so the time split is the honest number.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="pl-auc">Pick one real NEO and one non-NEO at random: how often does the model score the real one higher? 0.5 is a coin flip, 1.0 is perfect.</p></aside></div><div class="rrow"><figure><h5>Junk excluded while keeping real NEOs</h5><div class="sub">Share of non-NEOs dropped at a strict setting (≥99% of real NEOs kept)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span><span><i style="background:transparent;border:1px dashed var(--dim)"></i>A&amp;A 2025 benchmark</span></div><div id="ch-ast-excl"></div>
+        <figcaption>This is the operating point that matters for observers: drop as much junk as possible without losing real objects. The model does not meet it yet.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="pl-excl">Observers need to drop as much junk as possible without losing real NEOs.</p></aside></div></div><div class="two">
       <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul id="ast-errors"></ul></div>
-      <div class="box"><h4>LIMITATIONS</h4><ul>
+      <div class="ss-limits"><h4>LIMITATIONS</h4><ul>
         <li><b>Labels are noisy:</b> “not confirmed” includes some real NEOs that were simply lost; “designated other” is assumed not to be an NEO.</li>
         <li><b>Few junk examples:</b> most negatives are ordinary main-belt asteroids, and the MPC deletes tracklets of unconfirmed objects, so the hardest junk can't be backfilled.</li>
         <li><b>Small test set</b> (about a hundred candidates per split), so differences have wide error bars.</li>
         <li><b>Probabilities are not calibrated</b> (class-balanced training); treat them as a ranking.</li>
       </ul></div>
     </div>
-    <details><summary>Rerun training and evaluation</summary><pre># needs digest2 (github.com/Smithsonian/digest2) built into ./d2
+    
+  <details class="method"><summary>Full methodology: data, method, baselines, detailed results and how to rerun</summary><div class="facts3">
+      <div class="fact"><h4>DATA</h4><p>Twice-daily captures of the MPC confirmation page since July 2026 (<span id="ast-outcomes">3,326</span> resolved outcomes). Labels from the MPC's Previous-NEOCP list: designated NEO = 1; not confirmed, not real, artificial, star or main-belt = 0.</p></div>
+      <div class="fact"><h4>METHOD</h4><p>Gradient-boosted trees (LightGBM DART, 67 features: digest2 orbit-class scores, motion, brightness, sky position, observatory, and changes across snapshots). Tested on a <b>time split</b>: trained on older candidates, scored once on newer ones.</p></div>
+      <div class="fact"><h4>BASELINE</h4><p>The digest2 score alone, the standard tool observers already use to judge whether a candidate looks like a near-Earth object.</p></div>
+    </div><div class="tablewrap" id="ast-cm-wrap"></div><div class="rerun"><h4>Rerun training and evaluation</h4><pre># needs digest2 (github.com/Smithsonian/digest2) built into ./d2
 pip install numpy scikit-learn lightgbm
 python src/features.py ./d2 && python src/dataset.py
 python src/train.py          # time-split test, held-out report, model -> models/vetting_model.pkl
 python src/predict.py ./d2 && python src/make_dashboard.py</pre>
-      <p class="muted">Runs automatically every Monday (GitHub Actions: <code>neocp-retrain</code>); results in <a href="/outputs/training_results.json">outputs/training_results.json</a>.</p></details>
+      <p class="muted">Runs automatically every Monday (GitHub Actions: <code>neocp-retrain</code>); results in <a href="/outputs/training_results.json">outputs/training_results.json</a>.</p></div></details>
   </section>
 
   <footer>SpaceSift · the science of detection · open code and data on <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">GitHub</a>. Data: NASA Kepler (MAST), Sloan Digital Sky Survey, Minor Planet Center, NASA JPL Sentry.</footer>
@@ -317,6 +323,8 @@ if (tr) {
     if (bench != null) b += `<line x1="${sx(bench)}" x2="${sx(bench)}" y1="${f.y0}" y2="${h - 22}" stroke="#eef2fc" stroke-dasharray="4 4" opacity=".6"/><text class="lbl" x="${sx(bench) - 4}" y="${f.y0 + 8}" text-anchor="end">benchmark</text>`;
     return svg(h, b, items.map(([n, v]) => `${n} ${fmt(v)}`).join(", "));
   };
+  if (aucM != null && aucB != null) $("pl-auc").innerHTML = `Pick one real NEO and one non-NEO at random: how often does the model score the real one higher? 0.5 is a coin flip, 1.0 is perfect. On candidates it never saw, the model scores <b>${aucM.toFixed(2)}</b> against <b>${aucB.toFixed(2)}</b> for the standard digest2 score, so it <b>${aucM > aucB ? "ranks better" : "does not rank better"}</b>.`;
+  if (exM != null && exB != null) $("pl-excl").innerHTML = `Observers need to drop as much junk as possible <b>without losing real NEOs</b>. At that strict setting the model drops ${pct(exM)} of junk and digest2 ${pct(exB)}, against a published 80%. ${exM > exB ? "The model is ahead here too." : "So the model ranks better overall but <b>isn't yet useful as a filter</b>, which is why the dashboard presents it only as a ranking."}`;
   $("ch-ast-auc").innerHTML = bars([["Model", aucM, C.c1], ["digest2 alone", aucB, C.c2]], 1, (v) => v.toFixed(2));
   $("ch-ast-excl").innerHTML = bars([["Model", exM, C.c1], ["digest2 alone", exB, C.c2]], 1, (v) => pct(v), 0.8);
   const errs = [];

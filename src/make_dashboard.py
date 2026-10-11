@@ -305,6 +305,19 @@ candidates better. But at the strict setting that keeps ≥99% of real NEOs it e
 versus {_pct(op_b.get('non_neo_excluded_frac'))} for digest2 alone, far from the 80% benchmark. Confusion matrices and a calibration check
 appear here after the next weekly retrain.</p></div>"""
 
+    # Limitations shown where people act on the ranking, not buried in documentation.
+    lim = [f"It ranks better than the digest2 score alone (ROC-AUC {auc_m:.2f} vs {auc_b:.2f} on newer candidates), "
+           f"but at the strict setting that keeps ≥99% of real NEOs it drops only {_pct(op.get('non_neo_excluded_frac'))} of junk "
+           f"(digest2 alone: {_pct(op_b.get('non_neo_excluded_frac'))})." if auc_m is not None and auc_b is not None else
+           "Its advantage over the digest2 score alone is not yet established.",
+           "Probabilities are <b>not calibrated</b>: use them to order follow-up, not as odds.",
+           "Labels are noisy: some candidates marked “not confirmed” were real NEOs that were simply lost.",
+           f"Trained on {res.get('n', '?')} candidates (retrained {trained}); unusual candidates unlike past ones may be scored poorly.",
+           "<b>Not an impact forecast:</b> a high score means “probably a real near-Earth object”, nothing about hitting Earth."]
+    limits_html = ('<div class="ss-limits" style="margin:0 0 14px"><h4>BEFORE YOU ACT ON THIS RANKING</h4><ul>'
+                   + "".join(f"<li>{x}</li>" for x in lim)
+                   + '</ul><a href="/evidence/#asteroids" style="display:inline-block;margin-top:8px;color:var(--acc);font-weight:700;text-decoration:none">Full evaluation →</a></div>')
+
     # Queue table header with hoverable "?" help on every column.
     QUEUE_COLS = [
         ("#", "Rank — candidates sorted by the model's P(real NEO), highest first."),
@@ -463,6 +476,7 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/nav.css">
 <style>
 :root {{ --bg:#0b1020; --card:#141a30; --ink:#e8ecf8; --dim:#8b93ad;
         --hi:#4ade80; --mid:#fbbf24; --lo:#64748b; --acc:#7aa2ff; }}
@@ -526,7 +540,8 @@ th {{ position:relative; }}
          box-shadow:0 6px 18px rgba(0,0,0,.45); }}
 /* right-half columns: grow the tooltip leftward so the table's overflow:hidden can't clip it */
 .hint.r:hover::after {{ left:auto; right:0; }}
-.cols {{ display:grid; grid-template-columns:2fr 1fr; gap:20px; align-items:start; }}
+.cols {{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:20px; align-items:start; }}
+.cols > div {{ min-width:0; overflow-x:auto; }}
 .note {{ color:var(--dim); font-size:12px; margin-top:10px; }}
 footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
 .searchwrap {{ display:flex; align-items:center; gap:10px; margin:0 0 10px; }}
@@ -535,7 +550,9 @@ footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
 .tsearch:focus {{ outline:none; border-color:var(--acc); }}
 .tsearch::placeholder {{ color:var(--dim); }}
 .scount {{ color:var(--dim); font-size:12px; white-space:nowrap; }}
-@media (max-width:900px) {{ .cols {{ grid-template-columns:1fr; }} }}
+@media (max-width:900px) {{ .cols {{ grid-template-columns:minmax(0,1fr); }} table {{ display:block; overflow-x:auto; max-width:100%; }} }}
+.ss-strip {{ margin:-28px -28px 0; }}
+.ss-mode {{ margin:0 -28px 22px; }}
 .meaning {{ border:1px solid #3a4570; background:#141a30; border-radius:10px; padding:12px 14px; margin:14px 0; font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif; line-height:1.6; }}
 .evalcard {{ border:1px solid #252d4a; background:#10162a; border-radius:10px; padding:12px 14px; margin-bottom:18px; }}
 .evalcard p {{ line-height:1.6; }}
@@ -544,6 +561,7 @@ footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
 <script>window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </head><body>
+<div id="ss-nav" data-active="asteroids"></div>
 <div class="topbar">
 {logo}
 <div>
@@ -587,6 +605,7 @@ and details.</p>
 <div class="cols">
 <div>
 <h2>Current confirmation queue — ranked</h2>
+{limits_html}
 <div class="searchwrap"><input id="queueSearch" class="tsearch" type="search" placeholder="Search designation…" autocomplete="off" aria-label="Search the confirmation queue by designation"><span id="queueSearch-count" class="scount"></span></div>
 <table id="queueTable">
 {queue_header}
@@ -636,6 +655,7 @@ regenerate with <span class="mono">python3 src/make_dashboard.py</span></footer>
   wire('trackedSearch','trackedTable');
 }})();
 </script>
+<script src="/shared/nav.js"></script>
 </body></html>"""
     out = ROOT / "outputs" / "dashboard.html"
     out.write_text(doc, encoding="utf-8")

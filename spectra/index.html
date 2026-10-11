@@ -244,6 +244,8 @@
       </div>
     </div>
 
+    <div class="ss-limits" id="up-limits" style="margin-top:12px" hidden></div>
+
     <div id="star-strip-wrap">
     <div class="step" id="star-step3">3 · ITS RAINBOW</div>
     <div class="strip-box">
@@ -514,6 +516,7 @@ $("labels").onclick = (e) => { const id = e.target.dataset.id; if (id) { star.fo
 
 function drawStar() {
   $("star-upload").hidden = star.mode !== "upload";
+  $("up-limits").hidden = true;
   if (star.mode === "upload") return drawUpload();
   $("star-strip-wrap").hidden = false; $("up-result").hidden = true;
   const q = star.quiz;
@@ -676,6 +679,13 @@ function drawUpload() {
   facts.push(["File", esc(u.name)], ["Covers", `${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm (${u.image ? "read from the picture" : `read as ${u.unit}`})`]);
   $("star-facts").innerHTML = facts.map(([k, v]) => `<span>${k}: <b>${v}</b></span>`).join("");
 
+  const lim = ["Checked on 11 real SDSS stars: median error <b>1 subclass</b>. Temperatures are approximate (± a few hundred K), and metal content isn't measured."];
+  if (u.image) lim.push("<b>Read from a picture:</b> drawings show where lines are, not how strong they are, so this is a pattern match.");
+  if (b.letter === "M") lim.push("The library has <b>few red dwarfs</b> (most of its M stars are giants), so M dwarfs match less closely.");
+  if (b.letter === "A" || b.letter === "B") lim.push("Old, metal-poor <b>blue horizontal-branch</b> stars aren't in the library and can come out as B stars.");
+  if (fit.quality === "poor" && !u.image) lim.push("<b>Poor match:</b> this may not be a normal star, or the file may have calibration problems.");
+  $("up-limits").innerHTML = `<h4>HOW SURE IS THIS?</h4><ul>${lim.map((x) => `<li>${x}</li>`).join("")}</ul><a href="/evidence/#spectra" style="display:inline-block;margin-top:8px;color:var(--acc);font-weight:700;text-decoration:none">How we tested it →</a>`;
+  $("up-limits").hidden = false;
   drawStrip(fit.grid.wl, fit.grid.norm.map((v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : NaN)));
   const found = fit.lines.filter((l) => l.found).sort((a, b2) => b2.depth - a.depth);
   const strength = Object.fromEntries(found.map((l) => [l.id, l.depth]));

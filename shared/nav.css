@@ -1,18 +1,60 @@
-/* SpaceSift platform strip: the same navigation on every page. */
+/* SpaceSift design language: the platform strip, mode banner and result components shared by every page.
+   Two fonts (Syncopate for labels, Comfortaa for everything else) and one palette. */
+:root {
+  --ss-bg:#04060d; --ss-panel:#0b1020; --ss-card:#10162a; --ss-ink:#eef2fc; --ss-body:#c9d0e4; --ss-dim:#7f88a6;
+  --ss-line:rgba(140,160,220,.16); --ss-acc:#7aa2ff;
+  --ss-exp:#7aa2ff; --ss-live:#4ade80; --ss-report:#b79cff; --ss-warn:#fbbf24;
+  --ss-title:"Syncopate",ui-sans-serif,sans-serif; --ss-sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif;
+}
+
+/* ---------------------------------------------------------------- platform strip */
 .ss-strip { position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:18px; padding:9px clamp(14px,3vw,28px);
-            background:rgba(4,6,13,.92); backdrop-filter:blur(8px); border-bottom:1px solid rgba(140,160,220,.16);
-            font:13px/1.2 "Comfortaa",ui-sans-serif,system-ui,sans-serif; }
-.ss-strip a { color:#c9d0e4; text-decoration:none; }
+            background:rgba(4,6,13,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--ss-line);
+            font:13px/1.2 var(--ss-sub); }
+.ss-strip a { color:var(--ss-body); text-decoration:none; }
 .ss-strip .ss-brand { display:flex; align-items:center; gap:9px; white-space:nowrap; }
-.ss-strip .ss-brand b { font:700 11.5px "Syncopate",ui-sans-serif,sans-serif; letter-spacing:.18em; color:#eef2fc; }
-.ss-strip .ss-brand span { color:#7f88a6; font-size:12px; }
+.ss-strip .ss-brand b { font:700 11.5px var(--ss-title); letter-spacing:.18em; color:var(--ss-ink); }
+.ss-strip .ss-brand span { color:var(--ss-dim); font-size:12px; }
 .ss-strip nav { margin-left:auto; display:flex; align-items:center; gap:4px; }
-.ss-strip nav a { padding:6px 10px; border-radius:999px; white-space:nowrap; }
-.ss-strip nav a i { font-style:normal; color:#7f88a6; margin-right:5px; font-size:11px; }
-.ss-strip nav a:hover { color:#eef2fc; background:rgba(122,162,255,.1); }
-.ss-strip nav a.on { color:#eef2fc; background:rgba(122,162,255,.16); }
-.ss-strip nav a.ev { border:1px solid rgba(122,162,255,.5); color:#eef2fc; margin-left:6px; }
-.ss-strip nav a.ev.on { background:#7aa2ff; color:#04060d; }
+.ss-strip nav a { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; white-space:nowrap; }
+.ss-strip nav a i { font-style:normal; color:var(--ss-dim); font-size:11px; }
+.ss-strip nav a:hover { color:var(--ss-ink); background:rgba(122,162,255,.1); }
+.ss-strip nav a.on { color:var(--ss-ink); background:rgba(122,162,255,.16); }
+.ss-strip nav .ss-live-dot { width:7px; height:7px; border-radius:50%; background:var(--ss-live); box-shadow:0 0 8px var(--ss-live); }
+.ss-strip nav .ss-sep { width:1px; height:18px; background:var(--ss-line); margin:0 6px; }
+.ss-strip nav a.ev { border:1px solid rgba(183,156,255,.5); color:var(--ss-ink); }
+.ss-strip nav a.ev.on { background:var(--ss-report); color:var(--ss-bg); border-color:var(--ss-report); }
 @media (max-width:980px) { .ss-strip .ss-brand span { display:none; } }
-@media (max-width:720px) { .ss-strip nav a .t { display:none; } .ss-strip nav a i { margin:0; font-size:12px; color:inherit; } .ss-strip { gap:8px; } }
+@media (max-width:760px) { .ss-strip nav a .t { display:none; } .ss-strip nav a i { font-size:12px; color:inherit; } .ss-strip { gap:8px; } .ss-strip nav .ss-sep { margin:0 2px; } }
 @media (max-width:380px) { .ss-strip .ss-brand b { display:none; } }
+
+/* ---------------------------------------------------------------- mode banner: what kind of page this is */
+.ss-mode { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:10px clamp(14px,3vw,28px);
+           border-bottom:1px solid var(--ss-line); background:linear-gradient(90deg, rgba(122,162,255,.07), transparent 70%);
+           font:13.5px/1.5 var(--ss-sub); color:var(--ss-body); }
+.ss-mode.live { background:linear-gradient(90deg, rgba(74,222,128,.08), transparent 70%); }
+.ss-mode.report { background:linear-gradient(90deg, rgba(183,156,255,.09), transparent 70%); }
+.ss-mode b { color:var(--ss-ink); font-weight:700; }
+.ss-pill { display:inline-flex; align-items:center; gap:7px; font:700 9.5px var(--ss-title); letter-spacing:.24em; padding:5px 10px; border-radius:6px; white-space:nowrap; }
+.ss-pill.exp { background:rgba(122,162,255,.16); color:var(--ss-exp); }
+.ss-pill.live { background:rgba(74,222,128,.14); color:var(--ss-live); }
+.ss-pill.live::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--ss-live); animation:ss-ping 2s infinite; }
+.ss-pill.report { background:rgba(183,156,255,.16); color:var(--ss-report); }
+.ss-mode a { color:var(--ss-acc); margin-left:auto; white-space:nowrap; }
+@keyframes ss-ping { 0% { box-shadow:0 0 0 0 rgba(74,222,128,.6); } 70% { box-shadow:0 0 0 8px rgba(74,222,128,0); } 100% { box-shadow:0 0 0 0 rgba(74,222,128,0); } }
+@media (prefers-reduced-motion: reduce) { .ss-pill.live::before { animation:none; } }
+
+/* ---------------------------------------------------------------- result components */
+.ss-kicker { font:700 10px var(--ss-title); letter-spacing:.3em; color:var(--ss-acc); }
+.ss-plain { border:1px solid var(--ss-line); border-radius:14px; padding:16px 18px; background:rgba(122,162,255,.06); color:var(--ss-body); font:15px/1.7 var(--ss-sub); }
+.ss-plain h4, .ss-limits h4 { margin:0 0 8px; font:700 9.5px var(--ss-title); letter-spacing:.28em; color:var(--ss-acc); }
+.ss-plain b, .ss-limits b { color:var(--ss-ink); }
+.ss-plain p { margin:0 0 8px; } .ss-plain p:last-child { margin:0; }
+.ss-plain a.ss-more { display:inline-block; margin-top:6px; color:var(--ss-acc); font-weight:700; text-decoration:none; }
+.ss-limits { border:1px solid rgba(251,191,36,.28); border-left:3px solid var(--ss-warn); border-radius:12px; padding:14px 16px; background:rgba(251,191,36,.05); color:var(--ss-body); font:14px/1.65 var(--ss-sub); }
+.ss-limits h4 { color:var(--ss-warn); }
+.ss-limits ul { margin:0; padding-left:18px; } .ss-limits li { margin-bottom:5px; } .ss-limits li:last-child { margin-bottom:0; }
+.ss-btn { display:inline-flex; align-items:center; gap:10px; padding:11px 20px; border-radius:999px; border:none; background:var(--ss-acc); color:var(--ss-bg);
+          font:700 14px var(--ss-sub); text-decoration:none; cursor:pointer; }
+.ss-btn.ghost { background:none; border:1px solid var(--ss-line); color:var(--ss-ink); }
+.ss-btn:hover { filter:brightness(1.08); }

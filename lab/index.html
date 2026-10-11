@@ -129,6 +129,8 @@
   .next button { border:1px solid var(--acc); background:#18203d; color:var(--ink); border-radius:999px; padding:7px 14px; cursor:pointer; font:600 13px var(--sub); }
   .next button:hover { background:#1f2a52; }
   @media (max-width:600px) { .verdict { flex-direction:column; text-align:center; } .facts, .next { justify-content:center; } }
+  .concl { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:12px; }
+  @media (max-width:820px) { .concl { grid-template-columns:minmax(0,1fr); } }
   .cap { color:var(--dim); font-size:12.5px; line-height:1.6; margin-top:6px; } .cap .o { color:var(--model); } .cap .r { color:var(--bad); }
   details.adv { margin-top:30px; border:1px solid var(--line); border-radius:14px; background:var(--card2); }
   details.adv summary { cursor:pointer; padding:14px 16px; font:600 14px var(--sub); color:#cfd5e6; list-style:none; display:flex; justify-content:space-between; }
@@ -213,13 +215,15 @@
   <div id="result-area" hidden>
     <div class="step">4 · DID IT FIND IT?</div>
     <div id="result"></div>
-    <div class="step">THE EVIDENCE</div>
+    <div class="step">THE GRAPHS</div>
     <div class="plots" id="plots">
       <div class="card"><div id="p-raw" class="plot"></div><div class="cap">The star's brightness over the whole observation. <b class="o">Orange</b>: where your planet dims it, usually far too small to see by eye.</div></div>
       <div class="card"><div id="p-flat" class="plot"></div><div class="cap">After cleaning: the star's own flicker removed, leaving (ideally) just noise and the planet's dips.</div></div>
       <div class="card"><div id="p-pgram" class="plot"></div><div class="cap">The search tries thousands of possible orbits. Tall peaks are candidate planets; above the <b class="r">red line</b> counts as a detection. <b class="o">Orange dashes</b>: your planet's real orbit.</div></div>
       <div class="card"><div id="p-fold" class="plot"></div><div class="cap">All the data stacked on the orbit the search picked, so every transit lands on top of the others. A real planet shows a dip in the middle.</div></div>
     </div>
+    <div class="step">5 · WHAT THIS TELLS US</div>
+    <div class="concl"><div class="ss-plain" id="lab-plain"></div><div class="ss-limits" id="lab-limits"></div></div>
   </div>
 
   <details class="adv" id="adv">
@@ -493,6 +497,46 @@ window.addEventListener("resize", () => {
   resizeTimer = setTimeout(() => { for (const id of ["p-raw", "p-flat", "p-pgram", "p-fold"]) if ($(id).data) Plotly.Plots.resize($(id)); }, 150);
 });
 
+// ---- connect a single run to the big experiments
+// SS-0001 completeness fit on quiet Kepler stars (gamma CDF): a * P(k, snr / theta).
+const SS0001 = { a: 0.962, k: 20.85, theta: 0.514 };
+function lgammaFn(z) { const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+  let x = z, y = z, tmp = x + 5.5; tmp -= (x + 0.5) * Math.log(tmp); let s = 1.000000000190015; for (const c of g) s += c / ++y; return -tmp + Math.log(2.5066282746310005 * s / x); }
+function gammaP(a, x) {
+  if (x <= 0) return 0;
+  if (x < a + 1) { let sum = 1 / a, del = sum, ap = a; for (let n = 0; n < 300; n++) { ap++; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-12) break; } return sum * Math.exp(-x + a * Math.log(x) - lgammaFn(a)); }
+  let b = x + 1 - a, c = 1e300, d = 1 / b, h = d;
+  for (let i = 1; i < 300; i++) { const an = -i * (i - a); b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300; c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300; d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 1e-12) break; }
+  return 1 - Math.exp(-x + a * Math.log(x) - lgammaFn(a)) * h;
+}
+const completeness = (snr) => SS0001.a * gammaP(SS0001.k, snr / SS0001.theta);
+
+function conclusion(d, req) {
+  const star = currentStar(), prew = req.detrend.startsWith("prewhiten"), found = d.status === "recovered";
+  if (!req.planet.enabled) return `With no planet hidden, any “detection” is a false alarm. The threshold is set so only <b>1%</b> of searches on quiet noise beat it; but on flickering stars where cleaning fails, <b>60–100% of planet-free searches</b> beat it (SS-0002A).`;
+  if (star === "quiet") {
+    if (req.planet.sizeMode !== "snr") return `On quiet stars the full experiment (SS-0001, 10,000 planets on 200 Kepler stars) finds half of planets at signal-to-noise about 11 and 96–97% of strong ones. Size by signal to see where your planet falls on that curve.`;
+    const c = Math.round(100 * completeness(req.planet.snr));
+    return `On quiet stars, the full experiment (SS-0001: 10,000 planets on 200 Kepler stars) finds about <b>${c}%</b> of planets at signal-to-noise ${req.planet.snr}. ${found ? "Your planet was one of those found." : "Your planet was one of the misses."} Half are found at signal-to-noise about 11.`;
+  }
+  if (star === "pulse") return prew
+    ? `This matches SS-0002A: removing the star's rhythm first recovers <b>99% or more</b> of planets in all 24 pulsation settings tested (signal-to-noise 10–16).`
+    : `This is the pattern SS-0002A found: on stars pulsing at 100 ppm or more, <b>filtering alone fails at every window tried</b>, and the search locks onto the star's own rhythm in 88–100% of trials. ${found ? "Your planet got through this time; strong signals sometimes do." : "Try removing the rhythm first."}`;
+  if (star === "spots") return prew
+    ? `SS-0002A: removing rhythms <b>fails on fast-spinning spotted stars</b> (spins of 1 day at 300 ppm or more), because spots drift instead of keeping a steady beat. The short filter works best there.`
+    : req.detrend === "biweight-0.25"
+      ? `SS-0002A: the 6-hour filter is the best choice on fast spots, but it trims long transits, so even on quiet stars it finds only <b>64%</b> of planets at signal-to-noise 10–16. Every method has a cost.`
+      : `SS-0002A: on fast-spinning spotted stars, longer filters can't follow the spots; the <b>6-hour filter</b> does best.`;
+  return `Real stars are messier than simulations. In SS-0001, two pulsating Kepler stars hid <b>all 100 planets</b> planted around them. SS-0002B is testing the simulated results on 316 real variable stars, with predictions written down before the run.`;
+}
+function limits(req) {
+  const star = currentStar(), out = ["<b>This is one run.</b> Random noise and transit timing can flip the outcome near the threshold; try “Same again, new random noise”."];
+  if (star !== "quiet" || !req.planet.enabled) out.push("The <b>1% false-alarm threshold</b> is calibrated on quiet noise; it isn't reliable on flickering stars.");
+  if (star === "pulse" || star === "spots") out.push("Simulated flicker is idealized (steady rhythms, white noise). Real stars are harder.");
+  out.push("This browser version is a JavaScript port of the research pipeline, checked against it, with its own calibrated thresholds.");
+  return out;
+}
+
 /** One-click suggestions for what to try next, based on what just happened. */
 function nextSteps(d, req) {
   const out = [], star = currentStar(), missed = ["wrong_period", "below_threshold"].includes(d.status);
@@ -548,6 +592,8 @@ function render(d, req) {
     { x: d.fold.binH, y: d.fold.binFlux, type: "scatter", mode: "lines", line: { color: acc, width: 2 } }],
     layout(`4 · Stacked on the ${c.period.toFixed(2)}-day orbit`, "hours from the middle of the dip", "change (ppm)"), CFG);
   for (const id of ["p-raw", "p-flat", "p-pgram", "p-fold"]) Plotly.Plots.resize($(id));
+  $("lab-plain").innerHTML = `<h4>WHAT THIS TELLS US</h4><p>${conclusion(d, req)}</p><a class="ss-more" href="/evidence/#transit">See the evidence →</a>`;
+  $("lab-limits").innerHTML = `<h4>HOW SURE IS THIS?</h4><ul>${limits(req).map((x) => `<li>${x}</li>`).join("")}</ul>`;
 }
 
 // Results and About
