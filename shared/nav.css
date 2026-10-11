@@ -1,0 +1,18 @@
+/* SpaceSift platform strip: the same navigation on every page. */
+.ss-strip { position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:18px; padding:9px clamp(14px,3vw,28px);
+            background:rgba(4,6,13,.92); backdrop-filter:blur(8px); border-bottom:1px solid rgba(140,160,220,.16);
+            font:13px/1.2 "Comfortaa",ui-sans-serif,system-ui,sans-serif; }
+.ss-strip a { color:#c9d0e4; text-decoration:none; }
+.ss-strip .ss-brand { display:flex; align-items:center; gap:9px; white-space:nowrap; }
+.ss-strip .ss-brand b { font:700 11.5px "Syncopate",ui-sans-serif,sans-serif; letter-spacing:.18em; color:#eef2fc; }
+.ss-strip .ss-brand span { color:#7f88a6; font-size:12px; }
+.ss-strip nav { margin-left:auto; display:flex; align-items:center; gap:4px; }
+.ss-strip nav a { padding:6px 10px; border-radius:999px; white-space:nowrap; }
+.ss-strip nav a i { font-style:normal; color:#7f88a6; margin-right:5px; font-size:11px; }
+.ss-strip nav a:hover { color:#eef2fc; background:rgba(122,162,255,.1); }
+.ss-strip nav a.on { color:#eef2fc; background:rgba(122,162,255,.16); }
+.ss-strip nav a.ev { border:1px solid rgba(122,162,255,.5); color:#eef2fc; margin-left:6px; }
+.ss-strip nav a.ev.on { background:#7aa2ff; color:#04060d; }
+@media (max-width:980px) { .ss-strip .ss-brand span { display:none; } }
+@media (max-width:720px) { .ss-strip nav a .t { display:none; } .ss-strip nav a i { margin:0; font-size:12px; color:inherit; } .ss-strip { gap:8px; } }
+@media (max-width:380px) { .ss-strip .ss-brand b { display:none; } }

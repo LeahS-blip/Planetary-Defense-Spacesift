@@ -8,6 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/nav.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
 <style>
   :root { --bg:#0b1020; --card:#141a30; --card2:#10162a; --ink:#e8ecf8; --body:#cfd5e6; --dim:#8b93ad; --line:#252d4a;
@@ -176,8 +177,9 @@
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
+<div id="ss-nav" data-active="spectra"></div>
 <header>
-  <a class="brand" href="/">SPACESIFT</a><span class="crumb">/ Spectrum Lab</span>
+  <a class="brand" href="/evidence/#spectra" title="See the evidence for this investigation">SPECTRUM LAB</a><span class="crumb">Investigation 02 · Starlight</span>
   <a class="about-link" href="#about"><i>?</i>How it works</a>
 </header>
 
@@ -363,7 +365,7 @@
     <li>Uploaded spectra are matched against 123 real stars, not this model. The library is thin on cool red dwarfs and has no old blue horizontal-branch stars, so those match less closely. Temperatures come from the matched star's type, so they are approximate (a few hundred kelvin), and metal content isn't measured.</li>
   </ul>
   <h2>Uploading a spectrum</h2>
-  <p>Your spectrum is compared with 123 real stellar spectra, mostly from the Indo-US library of stars observed at Kitt Peak, as packaged by the Sloan Digital Sky Survey for its own classifications. Each library star is gently reshaped by a smooth curve to allow for differences in flux calibration and dust, and the features astronomers classify by (hydrogen, helium, calcium, magnesium, sodium and molecular bands) count extra. Element lines are measured directly in your file against their surroundings. Tested on 11 SDSS stars from O to M: 7 matched SDSS's own type within one subclass, a K7 came out K5, a G2 came out F8, and two faint “A0” and “B9” stars (probably blue horizontal-branch stars) came out as B stars.</p>
+  <p>Your spectrum is compared with 123 real stellar spectra, mostly from the Indo-US library of stars observed at Kitt Peak, as packaged by the Sloan Digital Sky Survey for its own classifications. Each library star is gently reshaped by a smooth curve to allow for differences in flux calibration and dust, and the features astronomers classify by (hydrogen, helium, calcium, magnesium, sodium and molecular bands) count extra. Element lines are measured directly in your file against their surroundings. Tested on 11 SDSS stars from O to M: the median error is 1 subclass (6 within one subclass, 8 within three), against 5 for the lab's first, physics-model classifier; a G2 came out F8, and two faint “A0” and “B9” stars (probably blue horizontal-branch stars) came out as B stars. Full results and the script to rerun them are on the <a href="/evidence/#spectra">Evidence page</a>.</p>
   <p><b>Pictures</b> of a spectrum (a rainbow strip with dark lines, like the classic diagram of the Sun's Fraunhofer lines) are read too. The lab finds the colorful strip, guesses the wavelength scale from its colors, then slides and stretches that scale until the dark lines line up with well-known ones such as calcium H and K, hydrogen, sodium and the oxygen bands of Earth's air. Because drawings show where lines are but not how strong they are, pictures are matched on the pattern of lines only, and the answer is a good guess rather than a measurement. You can correct the wavelength scale by hand if your picture has one.</p>
   <p>Text files need a column of wavelengths and a column of brightness; headers, extra columns (errors, sky), quoted values and decimal commas are fine, and JSON or VOTable exports work too. Wavelengths can be in ångströms, nanometers, microns or log₁₀ ångströms; the lab works out which from their size. FITS files can be 1D images with a wavelength solution, LAMOST-style stacked images, or tables with wavelength and flux columns, such as SDSS spectra; .gz files are unzipped in the browser. Nothing is uploaded to a server.</p>
   <h2>References</h2>
@@ -957,5 +959,6 @@ try { saved = localStorage.getItem("spectra-pick"); } catch {}
 pick(saved === "asteroids" ? "asteroids" : "stars");
 route();
 </script>
+<script src="/shared/nav.js"></script>
 </body>
 </html>

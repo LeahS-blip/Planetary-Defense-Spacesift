@@ -248,23 +248,62 @@ def main():
         return (f'<div class="stat"><div class="v">{value}</div>'
                 f'<div class="l">{label}</div><div class="s">{sub}</div></div>')
 
+    ho = res.get("holdout") or {}
+    auc_m = (ho.get("roc_auc") or {}).get("model", test.get("roc_auc"))
+    auc_b = (ho.get("roc_auc") or {}).get("baseline", base.get("roc_auc"))
+    trained = res.get("trained_utc", "")[:10] or "2026-08-05"
     stats = "".join([
         stat("objects on NEOCP", len(vet), f"snapshot {latest_snap} UTC"),
-        stat("labeled training rows", len(all_lab), f"{n_pos} NEO / {n_neg} non-NEO"),
+        stat("model trained on", res.get("n", "?"),
+             f"labeled objects · retrained {trained} · {len(all_lab)} labeled now"),
         stat("outcomes archived", len(outcomes), "since 2026-05-16"),
-        stat("model ROC-AUC",
-             f'{res["cv_auc"]:.2f}' if res.get("cv_auc") else (f'{test.get("roc_auc", 0):.2f}' if test else "—"),
-             (f'±{res["cv_auc_std"]:.2f} · 30-fold CV · DART' if res.get("cv_auc")
-              else res.get("model", ""))),
-        stat("junk excluded @ 100% NEO recall",
+        stat("ROC-AUC on newer candidates",
+             f"{auc_m:.2f}" if auc_m is not None else "—",
+             (f"held out by date · digest2 alone {auc_b:.2f}" if auc_b is not None else "held out by date")
+             + (f" · random-fold CV {res['cv_auc']:.2f}" if res.get("cv_auc") else "")),
+        stat("junk excluded at ≥99% NEO recall",
              f'{100*op.get("non_neo_excluded_frac", 0):.0f}%' if op else "—",
-             f'baseline {100*op_b.get("non_neo_excluded_frac", 0):.0f}% · benchmark 80%'),
+             f'digest2 alone {100*op_b.get("non_neo_excluded_frac", 0):.0f}% · benchmark 80%'),
     ])
     _c = (res.get("conformal") or {}).get("0.05")
     if _c:
         stats += stat("junk excluded @ 95% NEO guarantee",
                       f'{100*_c["junk_excluded_mean"]:.0f}%',
                       "conformal — statistical promise, not estimate")
+
+    # Honest evaluation block: confusion matrices on candidates held out by date.
+    def _pct(x):
+        return "—" if x is None else f"{100 * x:.0f}%"
+    if ho.get("operating_points"):
+        sp = ho["split"]
+        op95 = ho["operating_points"]["95pct_recall"]
+        ci = ho.get("auc_bootstrap_95ci") or {}
+        cal = ho.get("calibration") or {}
+        def row(name, c):
+            return (f"<tr><td>{name}</td><td>{c['tp']}</td><td>{c['fn']}</td><td>{c['fp']}</td><td>{c['tn']}</td>"
+                    f"<td>{_pct(c['neo_recall'])}</td><td>{_pct(c['junk_excluded'])}</td></tr>")
+        rel = "".join(f"<tr><td>{b['bin'][0]:.1f}–{b['bin'][1]:.1f}</td><td>{b['n']}</td><td>{b['mean_predicted']:.2f}</td>"
+                      f"<td>{b['fraction_neo']:.2f}</td></tr>" for b in cal.get("reliability_model", []))
+        eval_html = f"""<h2>Is the model any good?</h2>
+<div class="evalcard">
+<p>Trained on candidates discovered {sp['train_dates'][0]}–{sp['train_dates'][1]} ({sp['train_n']}), tested once on the
+<strong>{sp['test_n']} later candidates</strong> ({sp['test_dates'][0]}–{sp['test_dates'][1]}, {sp['test_neo']} real NEOs).
+The cut-off score was chosen on the training period to keep 95% of real NEOs, then applied unchanged.</p>
+<table><tr><th></th><th>real NEOs kept</th><th>real NEOs missed</th><th>junk kept</th><th>junk excluded</th><th>NEO recall</th><th>junk excluded</th></tr>
+{row("Model", op95["model"])}{row("digest2 score alone", op95["baseline"])}</table>
+<p class="note">ROC-AUC {ho['roc_auc']['model']:.2f} (95% CI {ci.get('model', [0, 0])[0]:.2f}–{ci.get('model', [0, 0])[1]:.2f}) vs
+{ho['roc_auc']['baseline']:.2f} for digest2 alone (difference CI {ci.get('difference', [0, 0])[0]:+.2f} to {ci.get('difference', [0, 0])[1]:+.2f}).
+Calibration: Brier score {cal.get('brier_model', 0):.3f} (lower is better; always guessing the base rate scores
+{cal.get('brier_always_base_rate', 0):.3f}).</p>
+<details><summary>Does “0.8” mean 80%? (reliability table)</summary><table><tr><th>predicted</th><th>n</th><th>mean predicted</th><th>actually NEO</th></tr>{rel}</table></details>
+</div>"""
+    else:
+        eval_html = f"""<h2>Is the model any good?</h2>
+<div class="evalcard"><p>On the newest 25% of candidates, held out by discovery date (n={test.get('n', '?')}), the model's ROC-AUC is
+<strong>{test.get('roc_auc', 0):.2f}</strong> versus <strong>{base.get('roc_auc', 0):.2f}</strong> for the digest2 score alone, so it ranks
+candidates better. But at the strict setting that keeps ≥99% of real NEOs it excludes only {_pct(op.get('non_neo_excluded_frac'))} of junk,
+versus {_pct(op_b.get('non_neo_excluded_frac'))} for digest2 alone, far from the 80% benchmark. Confusion matrices and a calibration check
+appear here after the next weekly retrain.</p></div>"""
 
     # Queue table header with hoverable "?" help on every column.
     QUEUE_COLS = [
@@ -497,6 +536,10 @@ footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
 .tsearch::placeholder {{ color:var(--dim); }}
 .scount {{ color:var(--dim); font-size:12px; white-space:nowrap; }}
 @media (max-width:900px) {{ .cols {{ grid-template-columns:1fr; }} }}
+.meaning {{ border:1px solid #3a4570; background:#141a30; border-radius:10px; padding:12px 14px; margin:14px 0; font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif; line-height:1.6; }}
+.evalcard {{ border:1px solid #252d4a; background:#10162a; border-radius:10px; padding:12px 14px; margin-bottom:18px; }}
+.evalcard p {{ line-height:1.6; }}
+.evalcard td, .evalcard th {{ text-align:center; }}
 </style>
 <script>window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -505,8 +548,8 @@ footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
 {logo}
 <div>
 <h1>{brand}</h1>
-<div class="subtitle">NEOCP vetting — real-NEO probability for objects awaiting confirmation · generated {now}</div>
-<div class="subtitle"><a href="/" style="color:var(--acc)">← SpaceSift home</a> · <a href="/lab/" style="color:var(--acc)">Transit Lab (exoplanet detectability)</a></div>
+<div class="subtitle">SpaceSift · the science of detection · Investigation 03: new asteroids · generated {now}</div>
+<div class="subtitle"><a href="/" style="color:var(--acc)">← SpaceSift home</a> · <a href="/lab/" style="color:var(--acc)">01 Hidden planets</a> · <a href="/spectra/" style="color:var(--acc)">02 Starlight</a> · <a href="/evidence/#asteroids" style="color:var(--acc)">Evidence</a></div>
 </div>
 </div>
 <div class="intro">
@@ -521,7 +564,12 @@ each one is a real NEO</strong>, so follow-up effort goes to the objects that ma
 bars: observe first. Gray bars: probably junk. The model learns from every past candidate
 whose fate is now known, and it improves as the archive below it grows.</p>
 </div>
+<div class="meaning"><strong>What P(real NEO) means.</strong> The chance that a candidate is a genuine near-Earth
+object rather than junk (artifacts, satellites, stars, lost objects) or an ordinary main-belt asteroid.
+<strong>It is not the chance of hitting Earth.</strong> Impact probabilities for known objects come from NASA JPL's
+Sentry system (the impact-watch table further down), and no candidate here has an impact assessment.</div>
 <div class="statgrid">{stats}</div>
+{eval_html}
 <h2>Where they are right now</h2>
 <div class="skycard">{sky_html}
 <p class="note">Each dot is a candidate awaiting confirmation, plotted at its current sky position
@@ -546,7 +594,7 @@ and details.</p>
 </table>
 <p class="note">Model: {html.escape(str(res.get('model','feed-score fallback')))} trained on
 {res.get('n','?')} labeled objects. Probabilities are early-stage — treat as ranking,
-not calibrated risk. Green ≥0.8, amber ≥0.4.<br>
+not calibrated risk or impact risk. Green ≥0.8, amber ≥0.4.<br>
 Follow-up status: <b style="color:{STATUS['needs_followup']['color']}">Needs follow-up</b>
 = fresh single-night candidate, no one's tracked it yet ·
 <b style="color:{STATUS['tracked']['color']}">Being tracked</b> = multi-night arc, seen recently ·

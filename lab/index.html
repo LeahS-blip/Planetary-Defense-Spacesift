@@ -8,6 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/nav.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
 <style>
   :root { --bg:#0b1020; --card:#141a30; --card2:#10162a; --ink:#e8ecf8; --dim:#8b93ad; --line:#252d4a;
@@ -146,8 +147,9 @@
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
+<div id="ss-nav" data-active="transit"></div>
 <header>
-  <a class="brand" href="/">SPACESIFT</a><span class="crumb">/ Transit Lab</span>
+  <a class="brand" href="/evidence/#transit" title="See the evidence for this investigation">TRANSIT LAB</a><span class="crumb">Investigation 01 · Hidden planets</span>
   <nav><button id="tab-explore" class="on">Try it</button><button id="tab-results">Experiments</button><button id="tab-about"><i>?</i>How it works</button></nav>
 </header>
 
@@ -590,5 +592,6 @@ function openExperiment(id) {
 }
 syncVisibility();
 </script>
+<script src="/shared/nav.js"></script>
 </body>
 </html>

@@ -1,0 +1,268 @@
+{
+ "description": "Spectral type errors (in subclasses; one full class = 10) on 11 SDSS DR17 stars, O to M. Truth = SDSS pipeline subclass.",
+ "generated": "2026-10-11",
+ "methods": {
+  "templates": {
+   "within1": 6,
+   "within3": 8,
+   "n": 11,
+   "medianErr": 1,
+   "meanErr": 2.2,
+   "worst": 6.5
+  },
+  "baseline": {
+   "within1": 1,
+   "within3": 3,
+   "n": 11,
+   "medianErr": 5,
+   "meanErr": 8.5,
+   "worst": 23
+  },
+  "colors": {
+   "within1": 2,
+   "within3": 7,
+   "n": 11,
+   "medianErr": 2,
+   "meanErr": 3.6,
+   "worst": 10
+  },
+  "templatesTilted": {
+   "within1": 4,
+   "within3": 8,
+   "n": 11,
+   "medianErr": 2,
+   "meanErr": 2.6,
+   "worst": 8
+  },
+  "colorsTilted": {
+   "within1": 1,
+   "within3": 1,
+   "n": 11,
+   "medianErr": 12,
+   "meanErr": 11.5,
+   "worst": 21
+  }
+ },
+ "rows": [
+  {
+   "id": "2815-54414-630",
+   "truth": "O",
+   "templates": "O8",
+   "baseline": "O7",
+   "colors": "B0.5Ibe",
+   "tilted": [
+    "O8",
+    "O8"
+   ],
+   "colorsTilted": [
+    "A3Iae",
+    "O8e"
+   ],
+   "templatesErr": 3,
+   "baselineErr": 2,
+   "colorsErr": 5.5,
+   "tiltErr": 3,
+   "colorsTiltErr": 18
+  },
+  {
+   "id": "2904-54574-511",
+   "truth": "B6",
+   "templates": "B5V",
+   "baseline": "B5",
+   "colors": "B2.5V",
+   "tilted": [
+    "B5V",
+    "B5V"
+   ],
+   "colorsTilted": [
+    "A2Ia",
+    "O8"
+   ],
+   "templatesErr": 1,
+   "baselineErr": 1,
+   "colorsErr": 3.5,
+   "tiltErr": 1,
+   "colorsTiltErr": 8
+  },
+  {
+   "id": "2682-54401-569",
+   "truth": "B9",
+   "templates": "B2.5Ve",
+   "baseline": "B5",
+   "colors": "B1Ve",
+   "tilted": [
+    "B1Ve",
+    "B2.5Ve"
+   ],
+   "colorsTilted": [
+    "A2Ia",
+    "O8"
+   ],
+   "templatesErr": 6.5,
+   "baselineErr": 4,
+   "colorsErr": 8,
+   "tiltErr": 8,
+   "colorsTiltErr": 11
+  },
+  {
+   "id": "394-51913-246",
+   "truth": "A0",
+   "templates": "B5",
+   "baseline": "G3",
+   "colors": "sdF0",
+   "tilted": [
+    "B5",
+    "B5"
+   ],
+   "colorsTilted": [
+    "G1V",
+    "B8III"
+   ],
+   "templatesErr": 5,
+   "baselineErr": 23,
+   "colorsErr": 10,
+   "tiltErr": 5,
+   "colorsTiltErr": 21
+  },
+  {
+   "id": "2867-54479-271",
+   "truth": "F5",
+   "templates": "F6V",
+   "baseline": "G9",
+   "colors": "F6V",
+   "tilted": [
+    "F6V",
+    "F2V"
+   ],
+   "colorsTilted": [
+    "K1IVa",
+    "A5Ia"
+   ],
+   "templatesErr": 1,
+   "baselineErr": 14,
+   "colorsErr": 1,
+   "tiltErr": 3,
+   "colorsTiltErr": 16
+  },
+  {
+   "id": "2913-54526-298",
+   "truth": "F9",
+   "templates": "G0Va",
+   "baseline": "K8",
+   "colors": "G1V",
+   "tilted": [
+    "G1V",
+    "G0Va"
+   ],
+   "colorsTilted": [
+    "K2III",
+    "F5Ib"
+   ],
+   "templatesErr": 1,
+   "baselineErr": 19,
+   "colorsErr": 2,
+   "tiltErr": 2,
+   "colorsTiltErr": 13
+  },
+  {
+   "id": "2876-54581-579",
+   "truth": "G2",
+   "templates": "F8V",
+   "baseline": "K3",
+   "colors": "G0Va",
+   "tilted": [
+    "G0Va",
+    "F8V"
+   ],
+   "colorsTilted": [
+    "K2III",
+    "F0III"
+   ],
+   "templatesErr": 4,
+   "baselineErr": 11,
+   "colorsErr": 2,
+   "tiltErr": 4,
+   "colorsTiltErr": 12
+  },
+  {
+   "id": "2904-54574-109",
+   "truth": "K5",
+   "templates": "K5Ve",
+   "baseline": "K9",
+   "colors": "K3III",
+   "tilted": [
+    "K5Ve",
+    "K5Ve"
+   ],
+   "colorsTilted": [
+    "M0III",
+    "G3Ib"
+   ],
+   "templatesErr": 0,
+   "baselineErr": 4,
+   "colorsErr": 2,
+   "tiltErr": 0,
+   "colorsTiltErr": 12
+  },
+  {
+   "id": "2865-54503-157",
+   "truth": "K7",
+   "templates": "K5Ve",
+   "baseline": "K9",
+   "colors": "K4Iab",
+   "tilted": [
+    "K5Ve",
+    "K5Ve"
+   ],
+   "colorsTilted": [
+    "M2Iab",
+    "G9Ib"
+   ],
+   "templatesErr": 2,
+   "baselineErr": 2,
+   "colorsErr": 3,
+   "tiltErr": 2,
+   "colorsTiltErr": 8
+  },
+  {
+   "id": "2871-54536-245",
+   "truth": "M1",
+   "templates": "M1",
+   "baseline": "M9",
+   "colors": "M3III",
+   "tilted": [
+    "M1",
+    "M1"
+   ],
+   "colorsTilted": [
+    "M4.5:III",
+    "K5"
+   ],
+   "templatesErr": 0,
+   "baselineErr": 8,
+   "colorsErr": 2,
+   "tiltErr": 0,
+   "colorsTiltErr": 6
+  },
+  {
+   "id": "1637-52992-260",
+   "truth": "M4",
+   "templates": "M4.5:III",
+   "baseline": "M9",
+   "colors": "M4.5:III",
+   "tilted": [
+    "M4.5:III",
+    "M4.5:III"
+   ],
+   "colorsTilted": [
+    "M5III",
+    "M3III"
+   ],
+   "templatesErr": 0.5,
+   "baselineErr": 5,
+   "colorsErr": 0.5,
+   "tiltErr": 0.5,
+   "colorsTiltErr": 1
+  }
+ ]
+}

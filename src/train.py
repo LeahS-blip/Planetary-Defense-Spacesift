@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Train NEOCP vetting models and evaluate against the A&A 2025 benchmark protocol.
 
+What it predicts: P(a NEOCP candidate turns out to be a real near-Earth object) versus junk
+(artifacts, satellites, stars, lost objects) or an ordinary main-belt asteroid. NOT impact risk.
+
 Models:
   0. Baseline: feed Digest2 score threshold (status quo)
   1. Logistic regression (used automatically while the dataset is small)
-  2. LightGBM + isotonic calibration (activates at >=200 labeled rows)
+  2. LightGBM DART with class-balanced weights (activates at >=200 labeled rows).
+     Its probabilities are NOT calibrated (balanced weights shift them); the held-out
+     report (evaluate_holdout.py) measures calibration instead of assuming it.
 
 Split: time-based by discovery date (train on earlier, test on later) once
 n >= MIN_TIME_SPLIT rows; below that, stratified 5-fold CV is reported and the
@@ -123,7 +128,10 @@ def main(labeled_csv, models_dir, results_json, with_backfill=False):
 
     X, y, cols, disc, rows = load(labeled_csv, with_backfill=with_backfill)
     n = len(y)
-    results = {"n": n, "n_pos": int(y.sum()), "n_neg": int(n - y.sum()), "features": cols}
+    import datetime as _dt
+    results = {"n": n, "n_pos": int(y.sum()), "n_neg": int(n - y.sum()), "features": cols,
+               "trained_utc": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
+               "with_backfill": bool(with_backfill)}
 
     # Baseline: digest2 feed score alone
     score_idx = cols.index("feed_score")
@@ -154,6 +162,13 @@ def main(labeled_csv, models_dir, results_json, with_backfill=False):
         results["model"] = "lightgbm_dart_time_split_v3"
         results["test"] = evaluate(y[te], p, "lightgbm_dart")
         results["baseline_on_test"] = evaluate(y[te], p_base[te], "digest2_score_threshold")
+        # Full held-out report: thresholds chosen on the training period only, then confusion
+        # matrices, calibration and bootstrap AUC intervals on the later test period.
+        try:
+            from evaluate_holdout import holdout_report
+            results["holdout"] = holdout_report(make_model, Xa, y, disc, tr, te, p_base)
+        except Exception as e:
+            print("holdout report skipped:", e)
         # deployment refit on ALL data
         obs_freq_full = build_obs_freq(rows, np.arange(n))
         Xa_full, _ = augment(X, cols, rows, obs_freq_full)

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evidence · SpaceSift</title>
+<meta name="description" content="What SpaceSift found and how sure it is: data, methods, baselines, errors in both directions, limitations and how to rerun every investigation.">
+<meta name="theme-color" content="#04060d">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/nav.css">
+<style>
+  :root { --bg:#04060d; --panel:#0b1020; --card:#10162a; --ink:#eef2fc; --body:#c9d0e4; --dim:#7f88a6; --line:rgba(140,160,220,.16);
+          --acc:#7aa2ff; --good:#4ade80; --warn:#fbbf24; --bad:#f87171;
+          --c1:#5b86f0; --c2:#c47a38; --c3:#9a62d4; --c4:#36a48c;
+          --title:"Syncopate",ui-sans-serif,sans-serif; --sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:radial-gradient(1200px 600px at 70% -10%, #13204a 0%, rgba(4,6,13,0) 60%), var(--bg); color:var(--ink); font:16px/1.65 var(--sub); }
+  a { color:var(--acc); }
+  main { max-width:1120px; margin:0 auto; padding:110px clamp(16px,4vw,40px) 80px; }
+  .eyebrow { font:700 10.5px var(--title); letter-spacing:.36em; color:var(--acc); }
+  h1 { font:700 clamp(32px,5vw,62px)/1.08 var(--sub); margin:16px 0 18px; letter-spacing:-.015em; max-width:900px; }
+  .lead { color:var(--body); font-size:clamp(16px,1.6vw,19px); max-width:780px; margin:0; }
+  .glance { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px; margin:48px 0 26px; }
+  @media (max-width:900px) { .glance { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  @media (max-width:560px) { .glance { grid-template-columns:minmax(0,1fr); } }
+  .g { border:1px solid var(--line); border-radius:18px; padding:20px; background:linear-gradient(160deg, rgba(122,162,255,.08), rgba(255,255,255,.01)); }
+  .g h3 { margin:0 0 10px; font:700 9.5px var(--title); letter-spacing:.3em; color:var(--acc); }
+  .g p { margin:0; color:var(--body); font-size:14.5px; line-height:1.6; } .g b { color:var(--ink); }
+  .protocol { display:flex; flex-wrap:wrap; gap:8px; align-items:center; color:var(--dim); font-size:13px; margin-bottom:60px; }
+  .protocol span { border:1px solid var(--line); border-radius:999px; padding:4px 12px; color:var(--body); }
+
+  section.inv { border-top:1px solid var(--line); padding:56px 0 20px; scroll-margin-top:70px; }
+  .inv-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px 30px; align-items:flex-end; margin-bottom:26px; }
+  .inv-head .k { font:700 10px var(--title); letter-spacing:.32em; color:var(--acc); }
+  .inv-head h2 { margin:10px 0 0; font:700 clamp(26px,3.4vw,40px)/1.15 var(--sub); max-width:720px; }
+  .inv-head a.open { white-space:nowrap; text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:9px 16px; color:var(--ink); font-size:14px; }
+  .inv-head a.open:hover { border-color:var(--acc); }
+  .verdict { border-radius:16px; padding:16px 18px; margin:0 0 26px; border:1px solid var(--line); background:var(--card); font-size:16px; line-height:1.65; }
+  .verdict b { color:var(--ink); }
+  .verdict .tag { display:inline-block; font:700 9px var(--title); letter-spacing:.26em; padding:4px 8px; border-radius:6px; margin-right:10px; vertical-align:2px; }
+  .tag.good { background:rgba(74,222,128,.14); color:var(--good); } .tag.mixed { background:rgba(251,191,36,.14); color:var(--warn); }
+  .facts3 { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; margin-bottom:26px; }
+  @media (max-width:820px) { .facts3 { grid-template-columns:minmax(0,1fr); } }
+  .fact { border:1px solid var(--line); border-radius:14px; padding:16px; background:rgba(16,22,42,.6); }
+  .fact h4 { margin:0 0 8px; font:700 9px var(--title); letter-spacing:.28em; color:var(--dim); }
+  .fact p { margin:0; color:var(--body); font-size:14.5px; line-height:1.6; }
+  .charts { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; margin-bottom:22px; }
+  @media (max-width:860px) { .charts { grid-template-columns:minmax(0,1fr); } }
+  figure { margin:0; border:1px solid var(--line); border-radius:16px; padding:16px 16px 12px; background:var(--panel); min-width:0; }
+  figure h5 { margin:0 0 2px; font:700 15px var(--sub); }
+  figure .sub { color:var(--dim); font-size:12.5px; margin-bottom:10px; }
+  figure svg { width:100%; height:auto; display:block; overflow:visible; }
+  figcaption { color:var(--dim); font-size:12.5px; line-height:1.55; margin-top:8px; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:12.5px; color:var(--body); margin:4px 0 6px; }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+  .axis text, .lbl { fill:var(--dim); font:11px var(--sub); }
+  .vlbl { fill:var(--ink); font:600 11px var(--sub); }
+  .grid line { stroke:rgba(140,160,220,.12); }
+  .hit:hover { opacity:.85; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { color:var(--dim); font-weight:600; font-size:12px; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:14px; background:var(--panel); margin-bottom:22px; }
+  .two { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; margin-bottom:22px; }
+  @media (max-width:860px) { .two { grid-template-columns:minmax(0,1fr); } }
+  .box { border:1px solid var(--line); border-radius:14px; padding:16px 18px; background:rgba(16,22,42,.6); }
+  .box h4 { margin:0 0 10px; font:700 9.5px var(--title); letter-spacing:.28em; color:var(--acc); }
+  .box ul { margin:0; padding-left:18px; color:var(--body); font-size:14.5px; line-height:1.65; } .box li { margin-bottom:6px; } .box b { color:var(--ink); }
+  pre { margin:0; background:#060914; border:1px solid var(--line); border-radius:12px; padding:14px; overflow-x:auto; font:12.5px/1.6 ui-monospace,Consolas,monospace; color:#cfd8ff; }
+  details summary { cursor:pointer; color:var(--acc); font-size:14px; margin:6px 0 10px; }
+  .muted { color:var(--dim); font-size:13px; }
+  footer { border-top:1px solid var(--line); margin-top:50px; padding-top:20px; color:var(--dim); font-size:13px; }
+</style>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+<div id="ss-nav" data-active="evidence"></div>
+<main>
+  <div class="eyebrow">THE SCIENCE OF DETECTION · EVIDENCE</div>
+  <h1>What we found, and how sure we are.</h1>
+  <p class="lead">SpaceSift asks one question of three kinds of sky data: <b>when a search says “found it”, how often is it right, and what does it miss?</b> Each investigation below states its data, method and baseline, counts its errors in both directions, names its limits, and shows how to rerun it.</p>
+
+  <div class="glance">
+    <div class="g"><h3>WHAT WE BUILT</h3><p>An <b>injection-recovery pipeline</b> that has run <b id="n-searches">72,440</b> planet searches with known answers; a <b>star classifier</b> matched against 123 real spectra; a <b>live ranking</b> of new asteroid candidates.</p></div>
+    <div class="g"><h3>WHAT'S NEW</h3><p>Measuring <b>failure, not just success</b>: completeness maps across stellar variability, with each cleaning method's threshold calibrated on noise-only stars, and a <b>pre-registered</b> test on real Kepler variables (predictions committed before the run).</p></div>
+    <div class="g"><h3>THE EVIDENCE</h3><p>On pulsating stars the standard filter found <b>0 of 106</b> planets; removing the rhythm first found <b>105</b>. The star classifier's median error is <b>1 subclass</b> (old method: 5). The asteroid model ranks better than digest2 but <b>doesn't yet beat it</b> where it matters most.</p></div>
+    <div class="g"><h3>RERUN IT</h3><p>Every experiment records its code commit, configuration and random seed. Commands for each are below; the code is <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">on GitHub</a>.</p></div>
+  </div>
+  <div class="protocol">Every investigation reports: <span>Data</span><span>Method</span><span>Baseline</span><span>Errors both ways</span><span>Limits</span><span>Rerun it</span></div>
+
+  <!-- ====================================================================== 01 -->
+  <section class="inv" id="transit">
+    <div class="inv-head"><div><div class="k">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>When does a transit search miss a planet that is really there?</h2></div><a class="open" href="/lab/">Open the Transit Lab →</a></div>
+    <div class="verdict"><span class="tag good">CLEAR RESULT</span>On quiet stars the standard search behaves as published. On stars that pulsate at 100 ppm or more, <b>no amount of filtering finds the planets, but removing the star's rhythm first recovers 99% or more</b>, in all 24 pulsation settings tested. The reverse holds for fast-spinning spotted stars. No single cleaning method works on every star.</div>
+    <div class="facts3">
+      <div class="fact"><h4>DATA</h4><p>200 quiet Kepler stars (SS-0001; NASA MAST light curves) and 820 simulated stars spanning pulsation and starspot periods and amplitudes (SS-0002A). 316 real variable Kepler stars for the pre-registered test (SS-0002B, running).</p></div>
+      <div class="fact"><h4>METHOD</h4><p>Plant planets of known size and orbit, clean the light curve, run a box least-squares (BLS) search, and grade each trial: found, wrong period, the star's own signal, or below threshold. Completeness is fit against signal-to-noise.</p></div>
+      <div class="fact"><h4>BASELINE</h4><p>The standard pipeline: a 1-day sliding biweight filter, compared against shorter and longer windows, no cleaning, and prewhitening (subtracting the star's rhythms) before filtering.</p></div>
+    </div>
+    <div class="charts">
+      <figure><h5>Quiet stars: chance of finding a planet</h5><div class="sub">SS-0001 · 10,000 planted planets on 200 Kepler stars</div><div id="ch-completeness"></div>
+        <figcaption>Fitted completeness (gamma CDF) against signal-to-noise. Half are found at SNR 10.7 (10.85 at a calibrated 1% false-alarm threshold); the plateau is 96–97%.</figcaption></figure>
+      <figure><h5>Variable stars: what each cleaning method returns</h5><div class="sub">SS-0002A · 8,200 trials per method across all variability settings</div><div class="legend" id="lg-outcomes"></div><div id="ch-outcomes"></div>
+        <figcaption>Share of trials by outcome. “Star's own signal” means the search locked onto the star's variability instead of the planet. Prewhitening almost eliminates it.</figcaption></figure>
+    </div>
+    <div class="two">
+      <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul>
+        <li><b>False alarms (false positives):</b> each method's detection threshold is set so only <b>1%</b> of searches on noise-only stars beat it (1,800 and 10,800 null searches). But on variable stars where cleaning fails, <b>60–100% of planet-free searches beat the threshold</b>: the false-alarm rate is only valid on quiet stars.</li>
+        <li><b>Misses (false negatives):</b> half of planets at SNR 10.85 are missed on quiet stars, and <b>4% of strong signals (SNR &gt; 16)</b> are still missed. On two pulsating Kepler stars in SS-0001, all 100 planted planets were missed.</li>
+      </ul></div>
+      <div class="box"><h4>LIMITATIONS</h4><ul>
+        <li>Simulated pulsators are two constant sine waves, the ideal case for prewhitening; noise is white. <b>SS-0002B tests real stars</b>, with predictions committed before the run.</li>
+        <li>BLS measures a box-shaped depth, so recovered transits are ~15% shallower than injected (explained in SS-0001-depth).</li>
+        <li>The in-browser Transit Lab is a JavaScript port checked against the Python pipeline; one demo run is an example, not a result.</li>
+      </ul></div>
+    </div>
+    <details><summary>Rerun these experiments</summary><pre>cd spacesift
+pip install -e . -c constraints-ci.txt
+spacesift run configs/SS-0001.yaml              # 10,000 injections on 200 quiet Kepler stars
+spacesift run configs/SS-0001-null.yaml         # noise-only searches that set the 1% threshold
+spacesift analyze experiments/SS-0001 --null experiments/SS-0001-null --far 0.01
+spacesift run configs/SS-0002A.yaml && spacesift run configs/SS-0002A-null.yaml
+spacesift analyze-grid experiments/SS-0002A --null experiments/SS-0002A-null --name far1pct
+spacesift replay experiments/SS-0001 --star 1868918 --trial 3   # re-run and plot one trial</pre>
+      <p class="muted">Each record stores its git commit, package versions, configuration and seed. Full records: <a href="/lab/#results">Transit Lab → Experiments</a>.</p></details>
+  </section>
+
+  <!-- ====================================================================== 02 -->
+  <section class="inv" id="spectra">
+    <div class="inv-head"><div><div class="k">INVESTIGATION 02 · STARLIGHT</div><h2>Can a star's type be read reliably from any spectrum someone uploads?</h2></div><a class="open" href="/spectra/">Open the Spectrum Lab →</a></div>
+    <div class="verdict" id="sp-verdict"><span class="tag good">WORKS, WITH KNOWN GAPS</span>Loading…</div>
+    <div class="facts3">
+      <div class="fact"><h4>DATA</h4><p>Templates: 123 real stellar spectra (SDSS <i>spEigenStar-55734</i>, mostly the Indo-US library). Test set: the highest signal-to-noise SDSS DR17 star of each class, O to M (11 stars), chosen by a fixed query before tuning.</p></div>
+      <div class="fact"><h4>METHOD</h4><p>Fit every template times a smooth curve (absorbing flux calibration and dust), weighting the features astronomers classify by. Errors are counted in subclasses against SDSS's own pipeline type (10 subclasses = one class).</p></div>
+      <div class="fact"><h4>BASELINES</h4><p>(1) The lab's first classifier: a simplified physics model (blackbody plus ~40 lines). (2) “Temperature from color”: the same templates using only the overall continuum shape.</p></div>
+    </div>
+    <div class="charts">
+      <figure><h5>Error per star</h5><div class="sub">Distance from SDSS's type, in subclasses (lower is better)</div><div class="legend"><span><i style="background:var(--c1)"></i>Template matcher</span><span><i style="background:var(--c2)"></i>Physics-model baseline</span></div><div id="ch-sp-stars"></div>
+        <figcaption>Each row is one SDSS star. A full class (e.g. A0 to F0) is 10 subclasses.</figcaption></figure>
+      <figure><h5>Robustness to bad calibration</h5><div class="sub">Median error when each spectrum is tilted as dust or a bad flux calibration would</div><div class="legend"><span><i style="background:var(--c1)"></i>As observed</span><span><i style="background:var(--c2)"></i>Tilted</span></div><div id="ch-sp-tilt"></div>
+        <figcaption>Color alone does well on SDSS's well-calibrated spectra but collapses when the slope is wrong; the template matcher barely moves.</figcaption></figure>
+    </div>
+    <div class="tablewrap"><table id="tb-sp"></table></div>
+    <div class="two">
+      <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul id="sp-errors">
+        <li><b>Too hot:</b> faint SDSS “A0” and “B9” stars come out as B stars (5 and 6.5 subclasses off). They are probably blue horizontal-branch stars, old and metal-poor, which the library lacks.</li>
+        <li><b>Too cool:</b> rare here; the G2 star comes out F8 (too hot by 4) and K7 comes out K5.</li>
+      </ul></div>
+      <div class="box"><h4>LIMITATIONS</h4><ul>
+        <li><b>Small test set (11 stars)</b>, one per class; “truth” is itself SDSS's template fit, not an independent measurement.</li>
+        <li>The library is thin on red dwarfs and has no blue horizontal-branch stars. Temperatures come from the matched type (±a few hundred K); metal content is not measured.</li>
+        <li>Pictures of spectra are matched on line positions only, since drawings don't show true line strengths.</li>
+      </ul></div>
+    </div>
+    <details><summary>Rerun this evaluation</summary><pre>node spectra/eval/eval_sdss.mjs     # downloads 11 SDSS spectra (~2 MB) on first run
+node --test spectra/test/            # parsers, template library, picture reader, known stars</pre>
+      <p class="muted">Results file: <a href="/spectra/eval/results.json">spectra/eval/results.json</a>. Templates are rebuilt from the SDSS file with <code>spectra/tools/build_templates.mjs</code>.</p></details>
+  </section>
+
+  <!-- ====================================================================== 03 -->
+  <section class="inv" id="asteroids">
+    <div class="inv-head"><div><div class="k">INVESTIGATION 03 · NEW ASTEROIDS</div><h2>Which unconfirmed candidates are real near-Earth objects?</h2></div><a class="open" href="/outputs/dashboard.html">Open the live dashboard →</a></div>
+    <div class="verdict" id="ast-verdict"><span class="tag mixed">PROMISING, NOT YET PROVEN</span>Loading…</div>
+    <div class="box" style="margin-bottom:22px"><h4>WHAT THE PROBABILITY MEANS, AND DOESN'T</h4><ul>
+      <li><b>P(real NEO)</b> is the chance that a candidate on the Minor Planet Center's confirmation page turns out to be a genuine near-Earth object, rather than junk (artifacts, satellites, stars, lost objects) or an ordinary main-belt asteroid.</li>
+      <li><b>It is not an impact probability.</b> Nothing in this model estimates whether anything will hit Earth. Impact probabilities for known objects come from NASA JPL's Sentry system and are shown separately on the dashboard.</li>
+    </ul></div>
+    <div class="facts3">
+      <div class="fact"><h4>DATA</h4><p>Twice-daily captures of the MPC confirmation page since July 2026 (<span id="ast-outcomes">3,326</span> resolved outcomes). Labels from the MPC's Previous-NEOCP list: designated NEO = 1; not confirmed, not real, artificial, star or main-belt = 0.</p></div>
+      <div class="fact"><h4>METHOD</h4><p>Gradient-boosted trees (LightGBM DART, 67 features: digest2 orbit-class scores, motion, brightness, sky position, observatory, and changes across snapshots). Tested on a <b>time split</b>: trained on older candidates, scored once on newer ones.</p></div>
+      <div class="fact"><h4>BASELINE</h4><p>The digest2 score alone, the standard tool observers already use to judge whether a candidate looks like a near-Earth object.</p></div>
+    </div>
+    <div class="charts">
+      <figure><h5>Ranking quality on newer candidates</h5><div class="sub" id="ast-split-sub">ROC-AUC on the held-out time split (0.5 = coin flip)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span></div><div id="ch-ast-auc"></div>
+        <figcaption id="ast-auc-cap">Random-fold cross-validation gives a higher AUC, but it mixes old and new candidates, so the time split is the honest number.</figcaption></figure>
+      <figure><h5>Junk excluded while keeping real NEOs</h5><div class="sub">Share of non-NEOs dropped at a strict setting (≥99% of real NEOs kept)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span><span><i style="background:transparent;border:1px dashed var(--dim)"></i>A&amp;A 2025 benchmark</span></div><div id="ch-ast-excl"></div>
+        <figcaption>This is the operating point that matters for observers: drop as much junk as possible without losing real objects. The model does not meet it yet.</figcaption></figure>
+    </div>
+    <div class="tablewrap" id="ast-cm-wrap"></div>
+    <div class="two">
+      <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul id="ast-errors"></ul></div>
+      <div class="box"><h4>LIMITATIONS</h4><ul>
+        <li><b>Labels are noisy:</b> “not confirmed” includes some real NEOs that were simply lost; “designated other” is assumed not to be an NEO.</li>
+        <li><b>Few junk examples:</b> most negatives are ordinary main-belt asteroids, and the MPC deletes tracklets of unconfirmed objects, so the hardest junk can't be backfilled.</li>
+        <li><b>Small test set</b> (about a hundred candidates per split), so differences have wide error bars.</li>
+        <li><b>Probabilities are not calibrated</b> (class-balanced training); treat them as a ranking.</li>
+      </ul></div>
+    </div>
+    <details><summary>Rerun training and evaluation</summary><pre># needs digest2 (github.com/Smithsonian/digest2) built into ./d2
+pip install numpy scikit-learn lightgbm
+python src/features.py ./d2 && python src/dataset.py
+python src/train.py          # time-split test, held-out report, model -> models/vetting_model.pkl
+python src/predict.py ./d2 && python src/make_dashboard.py</pre>
+      <p class="muted">Runs automatically every Monday (GitHub Actions: <code>neocp-retrain</code>); results in <a href="/outputs/training_results.json">outputs/training_results.json</a>.</p></details>
+  </section>
+
+  <footer>SpaceSift · the science of detection · open code and data on <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">GitHub</a>. Data: NASA Kepler (MAST), Sloan Digital Sky Survey, Minor Planet Center, NASA JPL Sentry.</footer>
+</main>
+<script src="/shared/nav.js"></script>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const C = { c1: "#5b86f0", c2: "#c47a38", c3: "#9a62d4", c4: "#36a48c" };
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const pct = (x, d = 0) => (x == null ? "—" : `${(100 * x).toFixed(d)}%`);
+
+// ---- regularized lower incomplete gamma P(k, x), for the completeness fit
+function lgamma(z) { const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+  let x = z, y = z, tmp = x + 5.5; tmp -= (x + 0.5) * Math.log(tmp); let s = 1.000000000190015; for (const c of g) s += c / ++y; return -tmp + Math.log(2.5066282746310005 * s / x); }
+function gammaP(a, x) {
+  if (x <= 0) return 0;
+  if (x < a + 1) { let sum = 1 / a, del = sum, ap = a; for (let n = 0; n < 200; n++) { ap++; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-12) break; } return sum * Math.exp(-x + a * Math.log(x) - lgamma(a)); }
+  let b = x + 1 - a, c = 1e300, d = 1 / b, h = d;
+  for (let i = 1; i < 200; i++) { const an = -i * (i - a); b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300; c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300; d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 1e-12) break; }
+  return 1 - Math.exp(-x + a * Math.log(x) - lgamma(a)) * h;
+}
+
+// ---- tiny SVG helpers
+const W = 520;
+function frame(h, { x0 = 46, y0 = 14, x1 = W - 12, y1 } = {}) { return { x0, y0, x1, y1: y1 ?? h - 34, h }; }
+function svg(h, inner, label) { return `<svg viewBox="0 0 ${W} ${h}" role="img" aria-label="${esc(label)}">${inner}</svg>`; }
+
+// ======================================================================= transit
+const exps = await fetch("/lab/data/experiments.json").then((r) => r.json()).catch(() => []);
+const byId = Object.fromEntries(exps.map((e) => [e.id, e]));
+$("n-searches").textContent = exps.reduce((s, e) => s + (e.n_trials || 0), 0).toLocaleString("en-US");
+{ // completeness curve
+  const g = byId["SS-0001"]?.summary?.["biweight-1.0"]?.gamma_cdf_fit || { a: 0.962, k: 20.85, theta: 0.514, snr_50pct: 10.67 };
+  const f = frame(260), sx = (s) => f.x0 + ((s - 0) / 25) * (f.x1 - f.x0), sy = (v) => f.y1 - v * (f.y1 - f.y0);
+  let path = ""; for (let s = 0; s <= 25; s += 0.25) path += `${s ? "L" : "M"}${sx(s).toFixed(1)},${sy(g.a * gammaP(g.k, s / g.theta)).toFixed(1)}`;
+  let grid = ""; for (const v of [0, 0.25, 0.5, 0.75, 1]) grid += `<line x1="${f.x0}" x2="${f.x1}" y1="${sy(v)}" y2="${sy(v)}"/><text class="lbl" x="${f.x0 - 8}" y="${sy(v) + 4}" text-anchor="end">${v * 100}%</text>`;
+  let ax = ""; for (const s of [0, 5, 10, 15, 20, 25]) ax += `<text class="lbl" x="${sx(s)}" y="${f.y1 + 16}" text-anchor="middle">${s}</text>`;
+  const s50 = g.snr_50pct;
+  $("ch-completeness").innerHTML = svg(f.h, `<g class="grid">${grid}</g>${ax}<text class="lbl" x="${(f.x0 + f.x1) / 2}" y="${f.h - 2}" text-anchor="middle">signal-to-noise (SNR)</text>
+    <line x1="${sx(s50)}" x2="${sx(s50)}" y1="${sy(0.5)}" y2="${f.y1}" stroke="rgba(238,242,252,.35)" stroke-dasharray="3 4"/>
+    <path d="${path}" fill="none" stroke="${C.c1}" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="${sx(s50)}" cy="${sy(0.5)}" r="5" fill="${C.c1}" stroke="#0b1020" stroke-width="2"><title>50% found at SNR ${s50.toFixed(1)}</title></circle>
+    <text class="vlbl" x="${sx(s50) + 10}" y="${sy(0.5) + 4}">half found at SNR ${s50.toFixed(1)}</text>`, "Completeness rises from 0 to about 96% as signal-to-noise increases; half are found at SNR 10.7");
+}
+{ // outcome breakdown per method
+  const S = byId["SS-0002A"]?.summary || {};
+  const methods = [["biweight-1.0", "1-day filter (standard)"], ["biweight-0.25", "6-hour filter"], ["biweight-2.0", "2-day filter"], ["none", "no cleaning"], ["prewhiten+biweight-1.0", "rhythm removed, then 1-day"]];
+  const cats = [["recovered", "Found the planet", C.c1], ["star_signal", "Star's own signal", C.c2], ["below_threshold", "Too faint", C.c3], ["other", "Wrong period or alias", C.c4]];
+  $("lg-outcomes").innerHTML = cats.map(([, n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join("");
+  const rowH = 34, f = { x0: 170, x1: W - 46, y0: 6 }, h = f.y0 + methods.length * rowH + 22;
+  let body = "";
+  methods.forEach(([m, name], i) => {
+    const sc = S[m]?.status_counts || {};
+    const v = { recovered: sc.recovered || 0, star_signal: sc.star_signal || 0, below_threshold: sc.below_threshold || 0,
+                other: (sc.wrong_period || 0) + (sc.alias_half || 0) + (sc.alias_double || 0) + (sc.not_observable || 0) };
+    const tot = Object.values(v).reduce((a, b) => a + b, 0) || 1, y = f.y0 + i * rowH;
+    body += `<text class="lbl" x="${f.x0 - 10}" y="${y + 17}" text-anchor="end" style="fill:${m.startsWith("prewhiten") ? "#eef2fc" : ""}">${name}</text>`;
+    let x = f.x0;
+    for (const [k, n, c] of cats) {
+      const w = (v[k] / tot) * (f.x1 - f.x0);
+      if (w > 0.5) body += `<rect class="hit" x="${(x + 1).toFixed(1)}" y="${y + 4}" width="${Math.max(0, w - 2).toFixed(1)}" height="20" rx="3" fill="${c}"><title>${name}: ${n} ${pct(v[k] / tot, 1)} (${v[k].toLocaleString()} of ${tot.toLocaleString()})</title></rect>`;
+      x += w;
+    }
+    body += `<text class="vlbl" x="${f.x1 + 6}" y="${y + 18}">${pct(v.recovered / tot)}</text>`;
+  });
+  $("ch-outcomes").innerHTML = svg(h, body, "Stacked bars of outcomes per cleaning method; prewhitening finds the planet in 86% of trials, the standard filter in 37%");
+}
+
+// ======================================================================= spectra
+const sp = await fetch("/spectra/eval/results.json").then((r) => r.json()).catch(() => null);
+if (sp) {
+  const M = sp.methods;
+  $("sp-verdict").innerHTML = `<span class="tag good">WORKS, WITH KNOWN GAPS</span>On ${M.templates.n} real SDSS stars, the template matcher's <b>median error is ${M.templates.medianErr} subclass</b> (${M.templates.within1} within one subclass, ${M.templates.within3} within three), against ${M.baseline.medianErr} for the old physics-model classifier. When spectra are mis-calibrated, “temperature from color” collapses to a median error of ${M.colorsTilted.medianErr}; the template matcher stays at ${M.templatesTilted.medianErr}.`;
+  // per-star dumbbell
+  const rows = sp.rows, rowH = 26, f = { x0: 112, x1: W - 30, y0: 8 }, h = f.y0 + rows.length * rowH + 30, max = 25;
+  const sx = (e) => f.x0 + (Math.min(e, max) / max) * (f.x1 - f.x0);
+  let body = "";
+  for (const t of [0, 5, 10, 15, 20, 25]) body += `<line x1="${sx(t)}" x2="${sx(t)}" y1="${f.y0}" y2="${h - 26}" stroke="rgba(140,160,220,.12)"/><text class="lbl" x="${sx(t)}" y="${h - 10}" text-anchor="middle">${t}</text>`;
+  rows.forEach((r, i) => {
+    const y = f.y0 + i * rowH + 13;
+    body += `<text class="lbl" x="${f.x0 - 10}" y="${y + 4}" text-anchor="end">SDSS ${esc(r.truth)}</text>
+      <line x1="${sx(r.templatesErr)}" x2="${sx(r.baselineErr)}" y1="${y}" y2="${y}" stroke="rgba(140,160,220,.3)" stroke-width="2"/>
+      <circle class="hit" cx="${sx(r.baselineErr)}" cy="${y}" r="5.5" fill="${C.c2}" stroke="#0b1020" stroke-width="2"><title>Physics baseline: ${esc(r.baseline)} (${r.baselineErr} off)</title></circle>
+      <circle class="hit" cx="${sx(r.templatesErr)}" cy="${y}" r="5.5" fill="${C.c1}" stroke="#0b1020" stroke-width="2"><title>Template matcher: ${esc(r.templates)} (${r.templatesErr} off)</title></circle>`;
+  });
+  $("ch-sp-stars").innerHTML = svg(h, body, "Per-star error: template matcher mostly near 0 to 6 subclasses, physics baseline up to 23");
+  // tilt robustness grouped bars
+  const groups = [["Template matcher", M.templates.medianErr, M.templatesTilted.medianErr], ["Color only", M.colors.medianErr, M.colorsTilted.medianErr]];
+  const g2 = { x0: 120, x1: W - 40, y0: 10 }, gh = 2 * 62 + 30, smax = Math.max(14, ...groups.flatMap((g) => g.slice(1)));
+  const gx = (v) => g2.x0 + (v / smax) * (g2.x1 - g2.x0);
+  let gb = "";
+  groups.forEach(([n, a, b], i) => {
+    const y = g2.y0 + i * 62;
+    gb += `<text class="lbl" x="${g2.x0 - 10}" y="${y + 26}" text-anchor="end">${n}</text>
+      <rect class="hit" x="${g2.x0}" y="${y + 4}" width="${Math.max(3, gx(a) - g2.x0)}" height="18" rx="4" fill="${C.c1}"><title>${n}, as observed: median ${a}</title></rect><text class="vlbl" x="${gx(a) + 6}" y="${y + 17}">${a}</text>
+      <rect class="hit" x="${g2.x0}" y="${y + 26}" width="${Math.max(3, gx(b) - g2.x0)}" height="18" rx="4" fill="${C.c2}"><title>${n}, tilted: median ${b}</title></rect><text class="vlbl" x="${gx(b) + 6}" y="${y + 39}">${b}</text>`;
+  });
+  gb += `<text class="lbl" x="${(g2.x0 + g2.x1) / 2}" y="${gh - 4}" text-anchor="middle">median error (subclasses)</text>`;
+  $("ch-sp-tilt").innerHTML = svg(gh, gb, "Median error as observed versus tilted, for the template matcher and color-only baseline");
+  $("tb-sp").innerHTML = `<tr><th>SDSS spectrum (plate-MJD-fiber)</th><th>SDSS type</th><th>Template matcher</th><th class="num">error</th><th>Physics baseline</th><th class="num">error</th><th>Color only</th><th class="num">error</th></tr>` +
+    rows.map((r) => `<tr><td>${esc(r.id)}</td><td>${esc(r.truth)}</td><td>${esc(r.templates)}</td><td class="num">${r.templatesErr}</td><td>${esc(r.baseline)}</td><td class="num">${r.baselineErr}</td><td>${esc(r.colors)}</td><td class="num">${r.colorsErr}</td></tr>`).join("");
+}
+
+// ======================================================================= asteroids
+const tr = await fetch("/outputs/training_results.json").then((r) => r.json()).catch(() => null);
+if (tr) {
+  const ho = tr.holdout, test = tr.test || {}, base = tr.baseline_on_test || {};
+  const aucM = ho?.roc_auc?.model ?? test.roc_auc, aucB = ho?.roc_auc?.baseline ?? base.roc_auc;
+  const exM = test.at_99pct_neo_recall?.non_neo_excluded_frac, exB = base.at_99pct_neo_recall?.non_neo_excluded_frac;
+  const ci = ho?.auc_bootstrap_95ci;
+  $("ast-verdict").innerHTML = `<span class="tag mixed">PROMISING, NOT YET PROVEN</span>On newer candidates held out by date, the model <b>ranks better than digest2 alone</b> (ROC-AUC ${aucM?.toFixed(2)} vs ${aucB?.toFixed(2)}${ci ? `; difference ${ci.difference[0].toFixed(2)} to ${ci.difference[1].toFixed(2)} at 95%` : ""}). But at the strict setting that keeps ≥99% of real NEOs it <b>drops only ${pct(exM)} of junk, versus ${pct(exB)} for digest2 alone</b>, far from the 80% a published benchmark reaches. The committed model was trained on ${tr.n} candidates${tr.trained_utc ? ` (${tr.trained_utc.slice(0, 10)})` : ""}; it now retrains weekly on all labeled data.`;
+  $("ast-split-sub").textContent = `ROC-AUC on the ${ho?.split?.test_n ?? test.n} newest candidates, held out by date (0.5 = coin flip)`;
+  if (tr.cv_auc) $("ast-auc-cap").textContent = `Random-fold cross-validation gives ${tr.cv_auc.toFixed(2)}, but it mixes old and new candidates, so the time split is the honest number.`;
+  const bars = (items, max, fmt, bench) => {
+    const f = { x0: 110, x1: W - 50, y0: 8 }, h = f.y0 + items.length * 40 + 26, sx = (v) => f.x0 + (v / max) * (f.x1 - f.x0);
+    let b = "";
+    for (const t of [0, 0.25, 0.5, 0.75, 1].map((q) => q * max)) b += `<line x1="${sx(t)}" x2="${sx(t)}" y1="${f.y0}" y2="${h - 22}" stroke="rgba(140,160,220,.12)"/><text class="lbl" x="${sx(t)}" y="${h - 6}" text-anchor="middle">${fmt(t)}</text>`;
+    items.forEach(([n, v, c], i) => { const y = f.y0 + i * 40; b += `<text class="lbl" x="${f.x0 - 10}" y="${y + 19}" text-anchor="end">${n}</text>${v == null ? "" : `<rect class="hit" x="${f.x0}" y="${y + 5}" width="${Math.max(3, sx(v) - f.x0)}" height="22" rx="4" fill="${c}"><title>${n}: ${fmt(v)}</title></rect><text class="vlbl" x="${sx(v) + 6}" y="${y + 20}">${fmt(v)}</text>`}`; });
+    if (bench != null) b += `<line x1="${sx(bench)}" x2="${sx(bench)}" y1="${f.y0}" y2="${h - 22}" stroke="#eef2fc" stroke-dasharray="4 4" opacity=".6"/><text class="lbl" x="${sx(bench) - 4}" y="${f.y0 + 8}" text-anchor="end">benchmark</text>`;
+    return svg(h, b, items.map(([n, v]) => `${n} ${fmt(v)}`).join(", "));
+  };
+  $("ch-ast-auc").innerHTML = bars([["Model", aucM, C.c1], ["digest2 alone", aucB, C.c2]], 1, (v) => v.toFixed(2));
+  $("ch-ast-excl").innerHTML = bars([["Model", exM, C.c1], ["digest2 alone", exB, C.c2]], 1, (v) => pct(v), 0.8);
+  const errs = [];
+  if (ho?.operating_points) {
+    const o = ho.operating_points["95pct_recall"], cell = (c) => `<td class="num">${c.tp}</td><td class="num">${c.fn}</td><td class="num">${c.fp}</td><td class="num">${c.tn}</td><td class="num">${pct(c.neo_recall)}</td><td class="num">${pct(c.junk_excluded)}</td>`;
+    $("ast-cm-wrap").innerHTML = `<table><tr><th>Held-out candidates, cut-off chosen on older data to keep 95% of NEOs</th><th class="num">real NEOs kept</th><th class="num">real NEOs missed</th><th class="num">junk kept</th><th class="num">junk excluded</th><th class="num">NEO recall</th><th class="num">junk excluded</th></tr>
+      <tr><td>Model</td>${cell(o.model)}</tr><tr><td>digest2 alone</td>${cell(o.baseline)}</tr></table>`;
+    errs.push(`<li><b>Missed real NEOs (false negatives):</b> ${o.model.fn} of ${o.model.tp + o.model.fn} on the held-out set at the 95% setting (digest2 alone: ${o.baseline.fn}).</li>`,
+              `<li><b>Junk kept for follow-up (false positives):</b> ${o.model.fp} of ${o.model.fp + o.model.tn} (digest2 alone: ${o.baseline.fp}), each one wasted telescope time.</li>`,
+              `<li><b>Calibration:</b> Brier score ${ho.calibration.brier_model.toFixed(3)} vs ${ho.calibration.brier_always_base_rate.toFixed(3)} for always guessing the base rate.</li>`);
+  } else {
+    $("ast-cm-wrap").innerHTML = `<p class="muted" style="padding:14px 16px;margin:0">A full confusion matrix (real NEOs kept and missed, junk kept and excluded) and a calibration check are produced by the weekly retrain and will appear here after its first run.</p>`;
+    errs.push(`<li><b>Missed real NEOs (false negatives):</b> by construction the strict setting keeps ≥99% of real NEOs on the test set; the cost is paid in junk kept.</li>`,
+              `<li><b>Junk kept for follow-up (false positives):</b> ${pct(exM == null ? null : 1 - exM)} of non-NEOs still pass at that setting (digest2 alone: ${pct(exB == null ? null : 1 - exB)}).</li>`,
+              `<li><b>Calibration:</b> not yet measured; the model trains with balanced class weights, so treat its numbers as a ranking.</li>`);
+  }
+  $("ast-errors").innerHTML = errs.join("");
+}
+</script>
+</body>
+</html>

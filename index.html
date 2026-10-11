@@ -83,6 +83,28 @@
   /* Numbers */
   .numbers { max-width:1200px; margin:0 auto; padding:22vh clamp(16px,5vw,60px) 12vh; }
   .numbers h2 { font:700 clamp(28px,4vw,52px)/1.15 var(--sub); margin:0 0 8vh; max-width:820px; }
+  /* What we found */
+  .hero-cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:30px; opacity:0; animation:fade 1.2s 1.9s forwards; }
+  .hero-cta a { text-decoration:none; padding:11px 20px; border-radius:999px; font-size:14px; border:1px solid var(--line); background:rgba(4,6,13,.5); backdrop-filter:blur(6px); }
+  .hero-cta a:first-child { background:var(--ink); color:var(--bg); border-color:var(--ink); font-weight:700; }
+  .hero-cta a:hover { border-color:var(--acc); }
+  .bar nav a.ev { border:1px solid rgba(122,162,255,.55); padding:6px 14px; border-radius:999px; color:var(--ink); }
+  .bar nav a.ev::after { display:none; }
+  .found { max-width:1200px; margin:0 auto; padding:16vh clamp(16px,5vw,60px) 4vh; }
+  .found-head h2 { font:700 clamp(26px,3.6vw,46px)/1.15 var(--sub); margin:0 0 6vh; max-width:900px; }
+  .found .kicker { margin-bottom:18px; }
+  .found-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; }
+  @media (max-width:900px) { .found-grid { grid-template-columns:minmax(0,1fr); } }
+  .fcard { display:flex; flex-direction:column; gap:12px; text-decoration:none; padding:26px; border-radius:22px; border:1px solid var(--line);
+           background:linear-gradient(160deg, rgba(122,162,255,.08), rgba(255,255,255,.015) 50%, rgba(4,6,13,.5)); backdrop-filter:blur(4px); transition:border-color .3s, transform .3s; }
+  .fcard:hover { border-color:rgba(122,162,255,.5); transform:translateY(-3px); }
+  .ftag { align-self:flex-start; font:700 9px var(--title); letter-spacing:.24em; padding:5px 9px; border-radius:6px; }
+  .ftag.good { background:rgba(74,222,128,.14); color:var(--hi); } .ftag.mixed { background:rgba(251,191,36,.14); color:#fbbf24; }
+  .fk { font:700 10px var(--title); letter-spacing:.28em; color:var(--acc); }
+  .fcard b { font:700 clamp(17px,1.5vw,20px)/1.45 var(--sub); color:var(--ink); }
+  .fs { color:var(--dim); font-size:13.5px; line-height:1.55; }
+  .fgo { margin-top:auto; color:var(--acc); font-size:14px; font-weight:700; }
+  .found .protocol { color:var(--body); font-size:15px; margin:30px 0 0; } .found .protocol b { color:var(--ink); }
   /* Stats bento */
   .bento { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); grid-auto-rows:minmax(220px, auto); gap:16px; }
   .tile { position:relative; overflow:hidden; border:1px solid var(--line); border-radius:22px; padding:clamp(22px,2.4vw,34px);
@@ -166,15 +188,32 @@
 
 <header class="bar">
   <a class="logo" href="#top"><svg width="22" height="22" viewBox="0 0 100 100" aria-hidden="true"><g stroke-linecap="round"><line x1="10" y1="82" x2="44" y2="66" stroke="#3d4a75" stroke-width="8"/><line x1="18" y1="66" x2="52" y2="50" stroke="#5b6b9e" stroke-width="8"/><line x1="30" y1="52" x2="58" y2="39" stroke="#8b9cc7" stroke-width="8"/><circle cx="70" cy="38" r="20" fill="#eef2fc"/></g></svg><span>SPACESIFT</span></a>
-  <nav><a href="/lab/">Transit Lab</a><a href="/spectra/">Spectrum Lab</a><a class="opt" href="/outputs/dashboard.html">Asteroid watch</a></nav>
+  <nav><a class="opt" href="/lab/">Hidden planets</a><a class="opt" href="/spectra/">Starlight</a><a class="opt" href="/outputs/dashboard.html">New asteroids</a><a class="ev" href="/evidence/">Evidence</a></nav>
 </header>
 
 <main id="top">
   <section class="hero">
-    <div class="eyebrow">AN OPEN SKY EXPERIMENT</div>
+    <div class="eyebrow">THE SCIENCE OF DETECTION</div>
     <h1 class="mega" aria-label="SpaceSift">SPACESIFT</h1>
     <p class="tagline">What can telescopes find, <em>and what do they miss?</em></p>
+    <div class="hero-cta"><a href="#found">See what we found ↓</a><a href="/evidence/">The evidence</a></div>
     <div class="cue">SCROLL<i></i></div>
+  </section>
+
+  <section class="found" id="found" aria-label="What we found">
+    <div class="found-head reveal"><div class="kicker">WHAT WE FOUND</div><h2>Three investigations, one question: how often is a search right, and what does it miss?</h2></div>
+    <div class="found-grid">
+      <a class="fcard reveal" href="/evidence/#transit"><span class="ftag good">CLEAR RESULT</span><span class="fk">01 · HIDDEN PLANETS</span>
+        <b>A pulsating star hides its planets from the standard search: 0 of 106 found. Removing the star's rhythm first: 105.</b>
+        <span class="fs">72,440 searches with known answers · thresholds calibrated to 1% false alarms · a pre-registered test on real stars</span><span class="fgo">See the evidence →</span></a>
+      <a class="fcard reveal" href="/evidence/#spectra"><span class="ftag good">WORKS, KNOWN GAPS</span><span class="fk">02 · STARLIGHT</span>
+        <b>Reads a star's type from its spectrum to within 1 subclass (median) on real SDSS stars, versus 5 for our first model, and survives bad calibration that breaks color-only methods.</b>
+        <span class="fs">11-star test set fixed before tuning · two baselines · one script to rerun</span><span class="fgo">See the evidence →</span></a>
+      <a class="fcard reveal" href="/evidence/#asteroids"><span class="ftag mixed">NOT YET PROVEN</span><span class="fk">03 · NEW ASTEROIDS</span>
+        <b id="ast-claim">Ranks new candidates better than the standard digest2 score (ROC-AUC 0.70 vs 0.57 on newer candidates), but doesn't yet drop more junk where it matters most.</b>
+        <span class="fs">Probability of being a real near-Earth object, not of hitting Earth · time-split test · retrained weekly</span><span class="fgo">See the evidence →</span></a>
+    </div>
+    <p class="protocol reveal">Every result shows its <b>data</b>, <b>method</b> and <b>baseline</b>, counts its <b>errors in both directions</b>, names its <b>limits</b>, and can be <b>rerun</b>.</p>
   </section>
 
   <section class="statement" aria-label="What SpaceSift is">
@@ -185,9 +224,9 @@
   <section class="scrolly" data-scene="transit">
     <div class="stage">
       <div class="beats">
-        <div class="beat"><div class="kicker">01 · TRANSIT LAB</div><h2>Worlds hide in starlight.</h2><p>When a planet crosses in front of its star, the starlight dips. For an Earth passing a Sun-like star, by <b>less than 0.01%</b>.</p></div>
-        <div class="beat"><div class="kicker">01 · TRANSIT LAB</div><h2>Searches hunt for the repeat.</h2><p>Planet-hunting software scans months of brightness for a dip that comes back, orbit after orbit.</p></div>
-        <div class="beat"><div class="kicker">01 · TRANSIT LAB</div><h2>But stars flicker.</h2><p>Pulsations and starspots can drown the signal. In our tests the standard search found <b>0 of 106</b> planets hidden around a pulsating star, and <b>105</b> once its rhythm was removed.</p><a class="cta" href="/lab/">Hide a planet yourself <i>→</i></a></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>Worlds hide in starlight.</h2><p>When a planet crosses in front of its star, the starlight dips. For an Earth passing a Sun-like star, by <b>less than 0.01%</b>.</p></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>Searches hunt for the repeat.</h2><p>Planet-hunting software scans months of brightness for a dip that comes back, orbit after orbit.</p></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>But stars flicker.</h2><p>Pulsations and starspots can drown the signal. In our tests the standard search found <b>0 of 106</b> planets hidden around a pulsating star, and <b>105</b> once its rhythm was removed.</p><a class="cta" href="/lab/">Hide a planet yourself <i>→</i></a></div>
         <div class="progress"><b><i></i></b><b><i></i></b><b><i></i></b></div>
       </div>
       <canvas aria-hidden="true"></canvas>
@@ -198,9 +237,9 @@
   <section class="scrolly" data-scene="spectrum">
     <div class="stage">
       <div class="beats">
-        <div class="beat"><div class="kicker">02 · SPECTRUM LAB</div><h2>Light is a fingerprint.</h2><p>Spread starlight into a rainbow and dark lines appear: atoms in the star soaking up exact colors.</p></div>
-        <div class="beat"><div class="kicker">02 · SPECTRUM LAB</div><h2>Every line names an element.</h2><p>Calcium, hydrogen, sodium, iron. Their pattern reveals how hot a star is and what it is made of, and the same trick tells rock from metal on an asteroid.</p></div>
-        <div class="beat"><div class="kicker">02 · SPECTRUM LAB</div><h2>Read any star.</h2><p>Upload a spectrum, even a picture of one, and it is matched against <b>123 real stars</b>. Or test yourself on a mystery star.</p><a class="cta" href="/spectra/">Read a star <i>→</i></a></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 02 · STARLIGHT</div><h2>Light is a fingerprint.</h2><p>Spread starlight into a rainbow and dark lines appear: atoms in the star soaking up exact colors.</p></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 02 · STARLIGHT</div><h2>Every line names an element.</h2><p>Calcium, hydrogen, sodium, iron. Their pattern reveals how hot a star is and what it is made of, and the same trick tells rock from metal on an asteroid.</p></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 02 · STARLIGHT</div><h2>Read any star.</h2><p>Upload a spectrum, even a picture of one, and it is matched against <b>123 real stars</b>. Or test yourself on a mystery star.</p><a class="cta" href="/spectra/">Read a star <i>→</i></a></div>
         <div class="progress"><b><i></i></b><b><i></i></b><b><i></i></b></div>
       </div>
       <canvas aria-hidden="true"></canvas>
@@ -211,9 +250,9 @@
   <section class="scrolly" data-scene="asteroid">
     <div class="stage">
       <div class="beats">
-        <div class="beat"><div class="kicker">03 · ASTEROID WATCH</div><h2>New dots, every night.</h2><p>Survey telescopes report moving objects they can't identify to the Minor Planet Center's confirmation page.</p></div>
-        <div class="beat"><div class="kicker">03 · ASTEROID WATCH</div><h2>Which ones come close?</h2><p>A machine-learned ranking scores every candidate <b>twice a day</b>, so follow-up telescopes chase the ones that could be near-Earth objects.</p></div>
-        <div class="beat"><div class="kicker">03 · ASTEROID WATCH</div><h2>Catch them before they're gone.</h2><p>A candidate nobody follows up can be lost within days. Ranking them is a small, real piece of planetary defense.</p><a class="cta" href="/outputs/dashboard.html">Open the live dashboard <i>→</i></a></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 03 · NEW ASTEROIDS</div><h2>New dots, every night.</h2><p>Survey telescopes report moving objects they can't identify to the Minor Planet Center's confirmation page.</p></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 03 · NEW ASTEROIDS</div><h2>Which ones are real?</h2><p>A machine-learned ranking scores every candidate <b>twice a day</b> by how likely it is to be a genuine near-Earth object, not junk or an ordinary asteroid. <b>That is not the chance of hitting Earth.</b></p></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 03 · NEW ASTEROIDS</div><h2>Catch them before they're gone.</h2><p>A candidate nobody follows up can be lost within days. Ranking them is a small, real piece of planetary defense.</p><a class="cta" href="/outputs/dashboard.html">Open the live dashboard <i>→</i></a></div>
         <div class="progress"><b><i></i></b><b><i></i></b><b><i></i></b></div>
       </div>
       <canvas aria-hidden="true"></canvas>
@@ -567,6 +606,15 @@ function drawFinale(t) {
   const box = document.getElementById("dots123"), cols = ["#9db4ff", "#aabfff", "#cad8ff", "#f8f7ff", "#fff4ea", "#ffe4c4", "#ffd2a1", "#ffb07a", "#ff9a5c"];
   box.innerHTML = Array.from({ length: 123 }, (_, i) => `<i style="background:${cols[Math.floor((i / 123) * cols.length)]};transition-delay:${(0.3 + i * 0.012).toFixed(2)}s"></i>`).join("");
 }
+
+// ------------------------------------------------------------ live asteroid claim (stays true after each retrain)
+fetch("/outputs/training_results.json").then((r) => r.json()).then((tr) => {
+  const m = tr.holdout?.roc_auc?.model ?? tr.test?.roc_auc, b = tr.holdout?.roc_auc?.baseline ?? tr.baseline_on_test?.roc_auc;
+  const em = tr.test?.at_99pct_neo_recall?.non_neo_excluded_frac, eb = tr.baseline_on_test?.at_99pct_neo_recall?.non_neo_excluded_frac;
+  if (m == null || b == null) return;
+  const beats = em != null && eb != null && em > eb;
+  document.getElementById("ast-claim").textContent = `${m > b ? "Ranks new candidates better than" : "Does not yet rank candidates better than"} the standard digest2 score (ROC-AUC ${m.toFixed(2)} vs ${b.toFixed(2)} on newer candidates)${beats ? ", and drops more junk while keeping 99% of real ones." : ", but doesn't yet drop more junk where it matters most."}`;
+}).catch(() => {});
 
 // ------------------------------------------------------------ reveals and counters
 const io = new IntersectionObserver((es) => es.forEach((e) => {

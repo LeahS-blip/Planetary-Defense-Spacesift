@@ -1,0 +1,70 @@
+name: neocp-retrain
+
+# Retrains the NEOCP vetting model on every labeled candidate captured so far, writes the
+# held-out evaluation (time split: confusion matrices, calibration, baseline comparison) to
+# outputs/training_results.json, rescores current objects and refreshes the dashboard.
+# capture-and-deploy (every 12 h) only rescores with the committed model; this keeps it current.
+# Weekly on Mondays, or manually: repo -> Actions -> neocp-retrain -> Run workflow.
+# Backfilled discovery tracklets (src/backfill_designated.py) are local-only, so CI trains on
+# captured candidates alone, which also matches what the model sees in deployment.
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: neocp-data
+  cancel-in-progress: false
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: pip install numpy scikit-learn lightgbm
+
+      - name: Build digest2
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libxml2-dev
+          git clone --depth 1 https://github.com/Smithsonian/digest2 /tmp/digest2
+          make -C /tmp/digest2/digest2
+          mkdir -p /tmp/d2
+          cp /tmp/digest2/digest2/digest2 /tmp/digest2/population/digest2.model \
+             /tmp/digest2/population/digest2.obscodes /tmp/d2/
+
+      - name: Build features and labels
+        run: |
+          mkdir -p data/processed
+          python src/features.py /tmp/d2
+          python src/dataset.py
+
+      - name: Train and evaluate (time split)
+        run: python src/train.py
+
+      - name: Rescore and refresh dashboard
+        run: |
+          python src/predict.py /tmp/d2
+          python src/make_dashboard.py
+
+      - name: Commit model and results
+        run: |
+          git config user.name "LeahS-blip"
+          git config user.email "LeahS-blip@users.noreply.github.com"
+          git add models outputs
+          if git diff --cached --quiet; then
+            echo "no changes"
+          else
+            git commit -m "auto: weekly retrain $(date -u +%Y-%m-%d) — model, held-out evaluation, dashboard"
+            git pull --rebase origin main || true
+            git push origin HEAD:main
+          fi
