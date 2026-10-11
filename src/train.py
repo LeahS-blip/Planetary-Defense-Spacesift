@@ -32,11 +32,14 @@ NUMERIC_COLS = ["feed_score", "V", "H", "arc_feed", "nobs_feed", "not_seen_dys",
                 "nobs_tracklet", "arc_days_tracklet", "sky_rate_deg_day", "motion_pa_deg",
                 "ecl_lat_deg", "solar_elong_deg", "opposition_dist_deg", "gc_rms_arcsec",
                 "mag_mean", "mag_range", "multi_night",
-                "ts_n_snapshots", "ts_span_days", "ts_score_delta", "ts_score_slope",
-                "ts_arc_growth", "ts_nobs_growth", "ts_nobs_rate", "ts_unseen_max",
-                "ts_unseen_trend", "ts_v_faded",
                 "ztf_has_cutout", "ztf_snr", "ztf_pos_flux", "ztf_compactness",
                 "ztf_neg_frac", "ztf_masked_frac", "ztf_bkg_mad"]
+
+# ts_* features (ts_features.py) are deliberately NOT model inputs. They summarize every snapshot
+# until the object leaves the NEOCP, and leaving the page (confirmed, or dropped) is the outcome
+# itself: lookahead leakage. With them the 2026-10-11 retrain scored a time-split AUC of 0.97;
+# the model must score a candidate from what is known when it is first posted.
+LEAKY_COLS = ("ts_",)
 
 def load(labeled_csv, with_backfill=False):
     with open(labeled_csv) as f:
@@ -60,7 +63,8 @@ def load(labeled_csv, with_backfill=False):
         else:
             print(f"SKIPPED {len(brows)} backfill rows: digest2-featured subset has classes {classes} — "
                   "would leak provenance. Capture more junk-class tracklets first.")
-    cols = sorted({c for r in rows for c in r if c in NUMERIC_COLS or c.startswith(NUMERIC_PREFIXES)})
+    cols = sorted({c for r in rows for c in r
+                   if (c in NUMERIC_COLS or c.startswith(NUMERIC_PREFIXES)) and not c.startswith(LEAKY_COLS)})
     X = np.array([[float(r[c]) if r.get(c) not in (None, "", "None") else np.nan for c in cols]
                   for r in rows], dtype=float)
     y = np.array([int(r["y"]) for r in rows])
@@ -131,7 +135,8 @@ def main(labeled_csv, models_dir, results_json, with_backfill=False):
     import datetime as _dt
     results = {"n": n, "n_pos": int(y.sum()), "n_neg": int(n - y.sum()), "features": cols,
                "trained_utc": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
-               "with_backfill": bool(with_backfill)}
+               "with_backfill": bool(with_backfill),
+               "inputs": "first-posting only (no lookahead ts_* features)"}
 
     # Baseline: digest2 feed score alone
     score_idx = cols.index("feed_score")
@@ -159,7 +164,7 @@ def main(labeled_csv, models_dir, results_json, with_backfill=False):
         model = make_model()
         model.fit(Xa[tr], y[tr])
         p = model.predict_proba(Xa[te])[:, 1]
-        results["model"] = "lightgbm_dart_time_split_v3"
+        results["model"] = "lightgbm_dart_time_split_v4_first_posting"
         results["test"] = evaluate(y[te], p, "lightgbm_dart")
         results["baseline_on_test"] = evaluate(y[te], p_base[te], "digest2_score_threshold")
         # Full held-out report: thresholds chosen on the training period only, then confusion

@@ -176,6 +176,10 @@ def main():
     rj = ROOT / "outputs" / "training_results.json"
     if rj.exists():
         res = json.loads(rj.read_text())
+    # Results written before the leakage fix carry no "inputs" field: keep ranking, but withdraw their scores.
+    withdrawn = bool(res) and not res.get("inputs")
+    if withdrawn:
+        res = {k: v for k, v in res.items() if k in ("n", "model", "trained_utc", "features")}
 
     all_lab = lab + [b for b in bf if b["trksub"] not in {r["trksub"] for r in lab}]
     n_pos = sum(1 for r in all_lab if r.get("y") == "1")
@@ -252,29 +256,32 @@ def main():
     auc_m = (ho.get("roc_auc") or {}).get("model", test.get("roc_auc"))
     auc_b = (ho.get("roc_auc") or {}).get("baseline", base.get("roc_auc"))
     trained = res.get("trained_utc", "")[:10] or "2026-08-05"
+    sp_ = ho.get("split") or {}
+    # Every page quotes the same evaluation: trained on earlier candidates, tested once on later ones.
+    split_txt = (f"tested on {sp_['test_n']} candidates posted after {sp_['test_dates'][0][:10]}, "
+                 f"trained on {sp_['train_n']} earlier ones" if sp_ else "tested on the newest 25% of candidates")
     stats = "".join([
-        stat("objects on NEOCP", len(vet), f"snapshot {latest_snap} UTC"),
-        stat("model trained on", res.get("n", "?"),
-             f"labeled objects · retrained {trained} · {len(all_lab)} labeled now"),
-        stat("outcomes archived", len(outcomes), "since 2026-05-16"),
-        stat("ROC-AUC on newer candidates",
+        stat("candidates on the page now", len(vet), f"snapshot {latest_snap} UTC"),
+        stat("ROC-AUC on later candidates",
              f"{auc_m:.2f}" if auc_m is not None else "—",
-             (f"held out by date · digest2 alone {auc_b:.2f}" if auc_b is not None else "held out by date")
-             + (f" · random-fold CV {res['cv_auc']:.2f}" if res.get("cv_auc") else "")),
+             (f"digest2 alone {auc_b:.2f} · " if auc_b is not None else "") + split_txt),
         stat("junk excluded at ≥99% NEO recall",
              f'{100*op.get("non_neo_excluded_frac", 0):.0f}%' if op else "—",
-             f'digest2 alone {100*op_b.get("non_neo_excluded_frac", 0):.0f}% · benchmark 80%'),
+             f'same test · digest2 alone {100*op_b.get("non_neo_excluded_frac", 0):.0f}% · benchmark 80%'),
+        stat("model trained on", res.get("n", "?"),
+             f"labeled candidates · retrained {trained} · {len(all_lab)} labeled now"),
+        stat("outcomes archived", len(outcomes), "since 2026-05-16"),
     ])
-    _c = (res.get("conformal") or {}).get("0.05")
-    if _c:
-        stats += stat("junk excluded @ 95% NEO guarantee",
-                      f'{100*_c["junk_excluded_mean"]:.0f}%',
-                      "conformal — statistical promise, not estimate")
 
     # Honest evaluation block: confusion matrices on candidates held out by date.
     def _pct(x):
         return "—" if x is None else f"{100 * x:.0f}%"
-    if ho.get("operating_points"):
+    if withdrawn:
+        eval_html = """<h2 id="eval">Is the model any good?</h2>
+<div class="evalcard"><p><b>Being re-evaluated.</b> The previous evaluation was withdrawn: some inputs described how each candidate changed
+on the page until it left, which leaks the outcome. The model is being retrained on first-posting information only, and the corrected
+evaluation appears here when that finishes. Until then, treat the ranking with extra caution.</p></div>"""
+    elif ho.get("operating_points"):
         sp = ho["split"]
         op95 = ho["operating_points"]["95pct_recall"]
         ci = ho.get("auc_bootstrap_95ci") or {}
@@ -284,7 +291,11 @@ def main():
                     f"<td>{_pct(c['neo_recall'])}</td><td>{_pct(c['junk_excluded'])}</td></tr>")
         rel = "".join(f"<tr><td>{b['bin'][0]:.1f}–{b['bin'][1]:.1f}</td><td>{b['n']}</td><td>{b['mean_predicted']:.2f}</td>"
                       f"<td>{b['fraction_neo']:.2f}</td></tr>" for b in cal.get("reliability_model", []))
-        eval_html = f"""<h2>Is the model any good?</h2>
+        eval_html = f"""<h2 id="eval">Is the model any good?</h2>
+<p class="lede">{"Yes, at ranking: " if (auc_m or 0) > (auc_b or 0) else "Not yet: "}on candidates it had never seen, posted after it was trained, it ranked real near-Earth objects
+above junk better than the digest2 score alone (ROC-AUC {ho['roc_auc']['model']:.2f} vs {ho['roc_auc']['baseline']:.2f}).
+At a cut-off that keeps 95% of real ones, it threw out {_pct(op95['model']['junk_excluded'])} of the junk; digest2 alone threw out {_pct(op95['baseline']['junk_excluded'])}.</p>
+<details class="deep"><summary>Full held-out evaluation: confusion matrices, confidence intervals, calibration</summary>
 <div class="evalcard">
 <p>Trained on candidates discovered {sp['train_dates'][0]}–{sp['train_dates'][1]} ({sp['train_n']}), tested once on the
 <strong>{sp['test_n']} later candidates</strong> ({sp['test_dates'][0]}–{sp['test_dates'][1]}, {sp['test_neo']} real NEOs).
@@ -296,9 +307,12 @@ The cut-off score was chosen on the training period to keep 95% of real NEOs, th
 Calibration: Brier score {cal.get('brier_model', 0):.3f} (lower is better; always guessing the base rate scores
 {cal.get('brier_always_base_rate', 0):.3f}).</p>
 <details><summary>Does “0.8” mean 80%? (reliability table)</summary><table><tr><th>predicted</th><th>n</th><th>mean predicted</th><th>actually NEO</th></tr>{rel}</table></details>
-</div>"""
+<p class="note">Inputs are only what is known when a candidate is first posted. An earlier version also used how each candidate
+evolved on the page until it left, which leaks the outcome and inflated the score; see the
+<a href="/evidence/#asteroids" style="color:var(--acc)">evidence page</a>.</p>
+</div></details>"""
     else:
-        eval_html = f"""<h2>Is the model any good?</h2>
+        eval_html = f"""<h2 id="eval">Is the model any good?</h2>
 <div class="evalcard"><p>On the newest 25% of candidates, held out by discovery date (n={test.get('n', '?')}), the model's ROC-AUC is
 <strong>{test.get('roc_auc', 0):.2f}</strong> versus <strong>{base.get('roc_auc', 0):.2f}</strong> for the digest2 score alone, so it ranks
 candidates better. But at the strict setting that keeps ≥99% of real NEOs it excludes only {_pct(op.get('non_neo_excluded_frac'))} of junk,
@@ -306,7 +320,7 @@ versus {_pct(op_b.get('non_neo_excluded_frac'))} for digest2 alone, far from the
 appear here after the next weekly retrain.</p></div>"""
 
     # Limitations shown where people act on the ranking, not buried in documentation.
-    lim = [f"It ranks better than the digest2 score alone (ROC-AUC {auc_m:.2f} vs {auc_b:.2f} on newer candidates), "
+    lim = [f"It ranks better than the digest2 score alone (ROC-AUC {auc_m:.2f} vs {auc_b:.2f}, {split_txt}), "
            f"but at the strict setting that keeps ≥99% of real NEOs it drops only {_pct(op.get('non_neo_excluded_frac'))} of junk "
            f"(digest2 alone: {_pct(op_b.get('non_neo_excluded_frac'))})." if auc_m is not None and auc_b is not None else
            "Its advantage over the digest2 score alone is not yet established.",
@@ -450,178 +464,154 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
                 f'<td>{html.escape(str(r.get("nobs","")))}</td><td>{html.escape(str(r.get("arc_days","")))}</td>'
                 f'<td>{html.escape(str(r.get("not_seen_dys","")))}</td></tr>')
         tracked_html = (
-            '<h2>Tracked objects &mdash; archive</h2>\n'
+            f'<details class="deep"><summary>Tracked objects archive ({len(tracked)})</summary>\n'
             '<div class="searchwrap"><input id="trackedSearch" class="tsearch" type="search" '
             'placeholder="Search designation…" autocomplete="off" '
             'aria-label="Search the tracked archive by designation">'
             '<span id="trackedSearch-count" class="scount"></span></div>\n'
-            '<table id="trackedTable">\n'
-            + thead + '\n' + "".join(trows) + '\n</table>\n'
+            '<div class="tablewrap"><table id="trackedTable">\n'
+            + thead + '\n' + "".join(trows) + '\n</table></div>\n'
             '<p class="note">Every candidate our capture has ever seen reach '
             f'<b style="color:{STATUS["tracked"]["color"]}">being tracked</b> (a multi-night arc with recent '
             'follow-up), kept here so they aren&#x27;t lost when they roll off the live NEO Confirmation Page '
             f'and out of the queue above. {len(tracked)} objects, ranked by model P(real NEO). Sourced from '
-            '<span class="mono">outputs/daily_vetting.csv</span>; unseen-d is days since last observation.</p>')
+            '<span class="mono">outputs/daily_vetting.csv</span>; unseen-d is days since last observation.</p></details>')
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    logo = comet_svg(54)
-    brand = BRAND
+    def _p(r):
+        try:
+            return float(r.get("p_real_neo") or 0)
+        except ValueError:
+            return 0.0
+    at_risk = sum(1 for r in vet if (r.get("followup_status") or classify_row(r)) in ("needs_followup", "going_stale"))
+    top_txt = ", ".join(f'<span class="mono">{html.escape(r["trksub"])}</span> ({_p(r):.2f})' for r in vet[:3]) or "none right now"
+    start_html = f"""<div class="ss-start-head"><h2>START HERE</h2><span>The live queue in three questions.</span></div>
+<div class="ss-starts">
+<a class="ss-start primary" href="#queue"><span class="n">01 · RIGHT NOW</span><b>Which candidates are most likely real?</b><span class="d">Top of the ranking: {top_txt}.</span><span class="go">See the ranked queue →</span></a>
+<a class="ss-start" href="#map"><span class="n">02 · WHERE</span><b>Where are they in the sky?</b><span class="d">{len(vet)} candidates on the confirmation page; {at_risk} still need follow-up observations.</span><span class="go">Open the sky map →</span></a>
+<a class="ss-start" href="#eval"><span class="n">03 · HOW SURE</span><b>Can this ranking be trusted?</b><span class="d">Tested on candidates it had never seen, with its errors counted and its limits stated.</span><span class="go">Read the evaluation →</span></a>
+</div>"""
     from urllib.parse import quote
     favicon = quote(comet_svg(64))
     doc = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NEOCP Vetting — Planetary Defense</title>
+<title>Asteroid Watch · SpaceSift</title>
 <link rel="icon" href="data:image/svg+xml,{favicon}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/shared/nav.css">
 <style>
-:root {{ --bg:#0b1020; --card:#141a30; --ink:#e8ecf8; --dim:#8b93ad;
+:root {{ --bg:#04060d; --card:rgba(16,22,42,.72); --ink:#eef2fc; --dim:#7f88a6; --body:#c9d0e4; --line:rgba(140,160,220,.16);
         --hi:#4ade80; --mid:#fbbf24; --lo:#64748b; --acc:#7aa2ff; }}
 * {{ box-sizing:border-box; margin:0; }}
-body {{ background:var(--bg); color:var(--ink);
-       font:14px/1.55 "Comfortaa",ui-sans-serif,system-ui,sans-serif; padding:28px; }}
+html {{ background:var(--bg); }}
+body {{ color:var(--ink); font:14px/1.55 "Comfortaa",ui-sans-serif,system-ui,sans-serif; }}
 svg text {{ font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }}
-h1 {{ font:700 30px "Syncopate",sans-serif; letter-spacing:.14em; }}
-.topbar {{ display:flex; justify-content:flex-start; align-items:center; gap:18px; }}
-.topbar svg {{ flex:0 0 auto; }}
-.subtitle {{ color:var(--dim); font:13px/1.6 "Comfortaa",ui-sans-serif,system-ui,sans-serif; margin-top:4px; }}
-.brand {{ text-align:center; flex:0 0 auto; }}
-.brand svg {{ display:block; margin:0 auto; }}
-.brandname {{ font-size:12px; font-weight:700; letter-spacing:.38em; color:var(--ink);
-             margin-top:2px; padding-left:.38em; }}
-h1 small {{ color:var(--dim); font-weight:400; font-size:13px; margin-left:10px; }}
-h2 {{ font-size:15px; color:var(--acc); margin:28px 0 10px; text-transform:uppercase;
-     letter-spacing:.12em; }}
-.intro {{ background:var(--card); border-left:3px solid var(--acc); border-radius:10px;
-         padding:14px 18px; margin-top:16px; max-width:900px; }}
-.intro p {{ color:var(--dim); font-size:13.5px; }}
-.intro p + p {{ margin-top:8px; }}
-.intro strong {{ color:var(--ink); }} .intro em {{ color:var(--acc); font-style:normal; }}
-.intro a {{ color:var(--acc); text-decoration:underline; text-underline-offset:3px; }}
-.statgrid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
-            gap:12px; margin-top:18px; }}
-.stat {{ background:var(--card); border-radius:12px; padding:16px 18px; }}
-.stat .v {{ font-size:26px; font-weight:650; }}
-.stat .l {{ color:var(--dim); font-size:12.5px; margin-top:2px; }}
-.stat .s {{ color:var(--dim); font-size:11px; margin-top:6px; opacity:.8; }}
-table {{ width:100%; border-collapse:collapse; background:var(--card);
-        border-radius:12px; overflow:hidden; font-size:13.5px; }}
-th {{ text-align:left; color:var(--dim); font-weight:500; font-size:11.5px;
-     text-transform:uppercase; letter-spacing:.08em; padding:10px 12px;
-     border-bottom:1px solid #232b4a; }}
-td {{ padding:8px 12px; border-bottom:1px solid #1b2340; }}
+.wrap {{ max-width:1180px; margin:0 auto; padding:0 clamp(16px,3vw,28px); }}
+main.wrap {{ padding-bottom:30px; }}
+h2 {{ font:700 clamp(19px,2vw,24px)/1.25 "Comfortaa",ui-sans-serif,sans-serif; color:var(--ink); margin:46px 0 14px; scroll-margin-top:64px; }}
+.lede {{ color:var(--body); font-size:15.5px; line-height:1.7; max-width:860px; margin:0 0 12px; }}
+.plainbox {{ margin-top:18px; }}
+.plainbox p {{ font-size:14.5px; }}
+.statgrid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr)); gap:12px; margin-top:16px; }}
+.stat {{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px 18px; }}
+.stat .v {{ font:700 28px "Syncopate",sans-serif; letter-spacing:.02em; }}
+.stat .l {{ color:var(--body); font-size:13px; margin-top:4px; }}
+.stat .s {{ color:var(--dim); font-size:11.5px; margin-top:6px; line-height:1.5; }}
+table {{ width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; font-size:13.5px; }}
+.tablewrap {{ overflow-x:auto; border-radius:14px; }}
+th {{ text-align:left; color:var(--dim); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.08em; padding:10px 12px; border-bottom:1px solid var(--line); }}
+td {{ padding:8px 12px; border-bottom:1px solid rgba(140,160,220,.09); }}
 tr:last-child td {{ border-bottom:none; }}
 .mono {{ color:var(--acc); }}
 .pcell {{ display:flex; align-items:center; gap:10px; min-width:170px; }}
-.bar {{ flex:1; height:7px; background:#20294a; border-radius:4px; overflow:hidden; }}
+.bar {{ flex:1; height:7px; background:rgba(140,160,220,.16); border-radius:4px; overflow:hidden; }}
 .fill {{ height:100%; border-radius:4px; }}
 .fill.hi {{ background:var(--hi); }} .fill.mid {{ background:var(--mid); }}
 .fill.lo {{ background:var(--lo); }}
-.skycard {{ background:var(--card); border-radius:12px; padding:14px; }}
+.skycard {{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; }}
 .skycard svg {{ width:100%; height:auto; display:block; }}
-.fu {{ display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px;
-       font-weight:600; white-space:nowrap; color:var(--c);
-       border:1px solid var(--c); background:rgba(255,255,255,.04); }}
+.fu {{ display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; white-space:nowrap; color:var(--c); border:1px solid var(--c); background:rgba(255,255,255,.04); }}
 .big {{ color:#f87171; font-size:10px; }}
 .bigrow td {{ background:rgba(248,113,113,.05); }}
 th {{ position:relative; }}
-.hint {{ display:inline-block; margin-left:4px; width:13px; height:13px; border-radius:50%;
-         border:1px solid var(--dim); color:var(--dim); font-size:9px; line-height:12px;
+.hint {{ display:inline-block; margin-left:4px; width:13px; height:13px; border-radius:50%; border:1px solid var(--dim); color:var(--dim); font-size:9px; line-height:12px;
          text-align:center; font-weight:700; cursor:help; vertical-align:middle; }}
 .hint:hover {{ color:var(--acc); border-color:var(--acc); }}
-.hint:hover::after {{ content:attr(data-tip); position:absolute; left:0; top:130%; z-index:20;
-         width:210px; padding:8px 10px; background:#0e1430; color:#cdd5ee;
-         border:1px solid #2a3358; border-radius:7px; font-size:11px; font-weight:400;
-         line-height:1.45; text-align:left; white-space:normal; letter-spacing:normal;
-         text-transform:none; font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif;
-         box-shadow:0 6px 18px rgba(0,0,0,.45); }}
+.hint:hover::after {{ content:attr(data-tip); position:absolute; left:0; top:130%; z-index:20; width:210px; padding:8px 10px; background:#0e1430; color:#cdd5ee;
+         border:1px solid #2a3358; border-radius:7px; font-size:11px; font-weight:400; line-height:1.45; text-align:left; white-space:normal; letter-spacing:normal;
+         text-transform:none; font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif; box-shadow:0 6px 18px rgba(0,0,0,.45); }}
 /* right-half columns: grow the tooltip leftward so the table's overflow:hidden can't clip it */
 .hint.r:hover::after {{ left:auto; right:0; }}
-.cols {{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:20px; align-items:start; }}
+.cols {{ display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:24px; align-items:start; }}
 .cols > div {{ min-width:0; overflow-x:auto; }}
-.note {{ color:var(--dim); font-size:12px; margin-top:10px; }}
-footer {{ color:var(--dim); font-size:11.5px; margin-top:30px; }}
+.note {{ color:var(--dim); font-size:12px; margin-top:10px; line-height:1.6; }}
+footer {{ color:var(--dim); font-size:11.5px; padding-top:20px; padding-bottom:30px; border-top:1px solid var(--line); }}
 .searchwrap {{ display:flex; align-items:center; gap:10px; margin:0 0 10px; }}
-.tsearch {{ background:#0e1430; border:1px solid #2a3358; color:var(--ink); border-radius:8px;
-           padding:7px 12px; font:13px "Comfortaa",ui-sans-serif,sans-serif; width:230px; max-width:60vw; }}
+.tsearch {{ background:rgba(11,16,32,.8); border:1px solid var(--line); color:var(--ink); border-radius:999px; padding:8px 14px; font:13px "Comfortaa",ui-sans-serif,sans-serif; width:240px; max-width:60vw; }}
 .tsearch:focus {{ outline:none; border-color:var(--acc); }}
 .tsearch::placeholder {{ color:var(--dim); }}
 .scount {{ color:var(--dim); font-size:12px; white-space:nowrap; }}
-@media (max-width:900px) {{ .cols {{ grid-template-columns:minmax(0,1fr); }} table {{ display:block; overflow-x:auto; max-width:100%; }} }}
-.ss-strip {{ margin:-28px -28px 0; }}
-.ss-mode {{ margin:0 -28px 22px; }}
-.meaning {{ border:1px solid #3a4570; background:#141a30; border-radius:10px; padding:12px 14px; margin:14px 0; font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif; line-height:1.6; }}
-.evalcard {{ border:1px solid #252d4a; background:#10162a; border-radius:10px; padding:12px 14px; margin-bottom:18px; }}
-.evalcard p {{ line-height:1.6; }}
+@media (max-width:900px) {{ .cols {{ grid-template-columns:minmax(0,1fr); }} .cols table {{ display:block; overflow-x:auto; max-width:100%; }} }}
+.evalcard {{ border:1px solid var(--line); background:var(--card); border-radius:14px; padding:14px 16px; margin-top:10px; }}
+.evalcard p {{ line-height:1.6; }} .evalcard p + table, .evalcard table + p {{ margin-top:12px; }}
 .evalcard td, .evalcard th {{ text-align:center; }}
+.evalcard table {{ display:block; overflow-x:auto; }}
+details.deep {{ margin-top:14px; border:1px solid var(--line); border-radius:14px; background:rgba(11,16,32,.55); }}
+details.deep > summary {{ cursor:pointer; padding:14px 16px; font:600 14px "Comfortaa",sans-serif; color:var(--body); list-style:none; display:flex; justify-content:space-between; gap:12px; }}
+details.deep > summary::-webkit-details-marker {{ display:none; }}
+details.deep > summary::after {{ content:"+"; color:var(--dim); font-size:18px; line-height:1; }}
+details.deep[open] > summary::after {{ content:"−"; }}
+details.deep > :not(summary) {{ margin-left:16px; margin-right:16px; }}
+details.deep > :last-child {{ margin-bottom:16px; }}
+details.deep .evalcard {{ margin-top:0; }}
 </style>
 <script>window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </head><body>
 <div id="ss-nav" data-active="asteroids"></div>
-<div class="topbar">
-{logo}
-<div>
-<h1>{brand}</h1>
-<div class="subtitle">SpaceSift · the science of detection · Investigation 03: new asteroids · generated {now}</div>
-<div class="subtitle"><a href="/" style="color:var(--acc)">← SpaceSift home</a> · <a href="/lab/" style="color:var(--acc)">01 Hidden planets</a> · <a href="/spectra/" style="color:var(--acc)">02 Starlight</a> · <a href="/evidence/#asteroids" style="color:var(--acc)">Evidence</a></div>
-</div>
-</div>
-<div class="intro">
-<p><strong>What is this?</strong> Every night, survey telescopes flag possible new near-Earth
-asteroids. Candidates land on the Minor Planet Center's <a href="https://www.minorplanetcenter.net/iau/NEO/toconfirm_tabular.html" target="_blank"><em>NEO (Near-Earth Object) Confirmation Page</em></a> — the source of every object listed below — where
-volunteer astronomers must re-observe them within days — before their orbits become too
-uncertain and they are lost. But only about half of the candidates turn out to be real NEOs;
-the rest are camera artifacts, satellites, stars, or ordinary main-belt asteroids that waste
-scarce telescope time.</p>
-<p>This dashboard ranks the current candidates by a machine-learned <strong>probability that
-each one is a real NEO</strong>, so follow-up effort goes to the objects that matter. Green
-bars: observe first. Gray bars: probably junk. The model learns from every past candidate
-whose fate is now known, and it improves as the archive below it grows.</p>
-</div>
-<div class="meaning"><strong>What P(real NEO) means.</strong> The chance that a candidate is a genuine near-Earth
-object rather than junk (artifacts, satellites, stars, lost objects) or an ordinary main-belt asteroid.
-<strong>It is not the chance of hitting Earth.</strong> Impact probabilities for known objects come from NASA JPL's
-Sentry system (the impact-watch table further down), and no candidate here has an impact assessment.</div>
+<header class="ss-head"><div class="ss-kicker">INVESTIGATION 03 · NEW ASTEROIDS</div>
+<div class="ss-head-row"><h1>Asteroid Watch</h1><nav class="ss-tabs"><a href="#queue">Queue</a><a href="#map">Sky map</a><a href="#eval">Evaluation</a><a href="/evidence/#asteroids">Evidence</a></nav></div>
+<p class="ss-q">Which of the new candidates on the Minor Planet Center's confirmation page are <b>real near-Earth objects</b>? A ranking, updated twice a day. Last update {now}.</p></header>
+<main class="wrap">
+{start_html}
+<div class="ss-plain plainbox"><h4>IN PLAIN WORDS</h4>
+<p>Every night, survey telescopes flag possible new near-Earth asteroids and post them to the
+<a href="https://www.minorplanetcenter.net/iau/NEO/toconfirm_tabular.html" target="_blank" style="color:var(--acc)">NEO Confirmation Page</a>.
+Astronomers must observe them again within days, or their orbits become too uncertain and they are lost. Only about half turn out to be real;
+the rest are camera artifacts, satellites, stars or ordinary main-belt asteroids.</p>
+<p>The ranking puts the likeliest real ones first, so scarce telescope time goes where it matters. <b>P(real NEO) is the chance a candidate
+is a genuine near-Earth object, not the chance of hitting Earth.</b> No candidate here has an impact assessment; known impact risks are
+in NASA's Sentry table further down.</p></div>
 <div class="statgrid">{stats}</div>
-{eval_html}
-<h2>Where they are right now</h2>
-<div class="skycard">{sky_html}
-<p class="note">Each dot is a candidate awaiting confirmation, plotted at its current sky position
-(right ascension &amp; declination — celestial longitude/latitude). Bigger + greener = more likely a
-real NEO; labels mark the top targets. The dashed line is the <span style="color:#f9a8d4">ecliptic</span>,
-the plane of the solar system — ordinary main-belt asteroids hug it, so candidates far off it are
-more interesting. Hover any dot for details. The solid faint line is each object's
-<strong>measured history</strong> across our snapshots; the dot sits at its <strong>estimated position
-right now</strong>, extrapolated live (updated every 30s) from its last measured motion — the dashed
-segment covers the stretch since its last actual measurement. The estimate assumes straight-line motion,
-so the longer since measurement, the less certain it is; dots fade when >7 days stale. That growing
-uncertainty is precisely why unconfirmed objects get lost. Hover a dot to see its designation
-and details.</p>
-</div>
-<div class="cols">
-<div>
-<h2>Current confirmation queue — ranked</h2>
+<h2 id="queue">The confirmation queue, ranked</h2>
 {limits_html}
 <div class="searchwrap"><input id="queueSearch" class="tsearch" type="search" placeholder="Search designation…" autocomplete="off" aria-label="Search the confirmation queue by designation"><span id="queueSearch-count" class="scount"></span></div>
-<table id="queueTable">
+<div class="tablewrap"><table id="queueTable">
 {queue_header}
 {''.join(rows_html)}
-</table>
+</table></div>
 <p class="note">Model: {html.escape(str(res.get('model','feed-score fallback')))} trained on
-{res.get('n','?')} labeled objects. Probabilities are early-stage — treat as ranking,
-not calibrated risk or impact risk. Green ≥0.8, amber ≥0.4.<br>
+{res.get('n','?')} labeled objects. Use the scores to order follow-up, not as calibrated odds or impact risk. Green ≥0.8, amber ≥0.4.<br>
 Follow-up status: <b style="color:{STATUS['needs_followup']['color']}">Needs follow-up</b>
 = fresh single-night candidate, no one's tracked it yet ·
 <b style="color:{STATUS['tracked']['color']}">Being tracked</b> = multi-night arc, seen recently ·
 <b style="color:{STATUS['going_stale']['color']}">Going stale</b> = not seen in
 &gt;{int(STALE_DAYS)} days, at risk of loss.</p>
+<h2 id="map">Where they are right now</h2>
+<div class="skycard">{sky_html}
+<p class="note">Each dot is a candidate at its estimated position right now (right ascension and declination, the sky's longitude and latitude).
+Bigger and greener means more likely real; labels mark the top targets. The dashed pink line is the <span style="color:#f9a8d4">ecliptic</span>,
+where ordinary main-belt asteroids cluster, so candidates far from it are more interesting. The faint solid line is each object's measured
+path across our snapshots; the dashed stretch is extrapolated from its last measured motion, assuming a straight line, so it grows less
+certain with time (dots fade after 7 days). That growing uncertainty is exactly how unconfirmed objects get lost. Hover a dot for details.</p>
 </div>
+{eval_html}
+<div class="cols">
+<div>{sentry_html}</div>
 <div>
-{sentry_html}
 <h2>Outcome archive</h2>
 <table><tr><th>class</th><th>n</th></tr>{oc_rows}</table>
 <p class="note">"neo" = confirmed via discovery MPEC. Negatives accrue from live capture;
@@ -629,7 +619,8 @@ designated_other are mostly main-belt identifications.</p>
 </div>
 </div>
 {tracked_html}
-<footer>planetary-defense-neocp-vetting · data: MPC NEOCP / Previous-NEOCP / MPECs ·
+</main>
+<footer class="wrap">planetary-defense-neocp-vetting · data: MPC NEOCP / Previous-NEOCP / MPECs ·
 regenerate with <span class="mono">python3 src/make_dashboard.py</span></footer>
 <script>
 (function(){{

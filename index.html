@@ -9,6 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/nav.css">
 <style>
   :root { --bg:#04060d; --ink:#eef2fc; --body:#c9d0e4; --dim:#7f88a6; --line:rgba(140,160,220,.16); --acc:#7aa2ff; --warm:#ffb45e; --hi:#4ade80;
           /* Two fonts: Syncopate for titles and labels, Comfortaa for everything else. */
@@ -19,33 +20,38 @@
   a { color:inherit; }
   ::selection { background:var(--acc); color:var(--bg); }
   #sky { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
-  main, header.bar, footer { position:relative; z-index:1; }
-
-  /* Top bar */
-  header.bar { position:fixed; top:0; left:0; right:0; z-index:20; display:flex; align-items:center; gap:24px; padding:18px clamp(16px,4vw,48px);
-               background:linear-gradient(rgba(4,6,13,.85), rgba(4,6,13,0)); transition:background .3s; }
-  .bar .logo { display:flex; align-items:center; gap:10px; text-decoration:none; font:700 13px var(--title); letter-spacing:.2em; }
-  .bar nav { margin-left:auto; display:flex; gap:clamp(12px,2.4vw,30px); }
-  .bar nav a { text-decoration:none; color:var(--body); font-size:14px; position:relative; white-space:nowrap; }
-  .bar nav a::after { content:""; position:absolute; left:0; right:100%; bottom:-4px; height:1px; background:var(--acc); transition:right .3s; }
-  .bar nav a:hover { color:var(--ink); } .bar nav a:hover::after { right:0; }
-  @media (max-width:640px) { .bar nav a.opt { display:none; } .bar nav a { font-size:13px; } }
-  @media (max-width:420px) { .bar .logo span { display:none; } }
+  main, footer { position:relative; z-index:1; }
 
   /* Hero */
-  .hero { position:relative; min-height:100vh; min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 16px; }
-  .eyebrow { font:700 11px var(--title); letter-spacing:.42em; color:var(--acc); margin-bottom:28px; opacity:0; animation:fade 1.2s .3s forwards; }
-  h1.mega { margin:0; font:700 clamp(40px, 11.5vw, 190px)/0.95 var(--title); letter-spacing:.06em; padding-left:.06em; white-space:nowrap; }
+  .hero { position:relative; min-height:100vh; min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:86px 16px 64px; }
+  .eyebrow { font:700 11px var(--title); letter-spacing:.42em; color:var(--acc); margin-bottom:22px; opacity:0; animation:fade 1.2s .3s forwards; }
+  h1.mega { margin:0; font:700 clamp(38px, 9vw, 136px)/0.95 var(--title); letter-spacing:.06em; padding-left:.06em; white-space:nowrap; }
   h1.mega span { display:inline-block; opacity:0; filter:blur(14px); transform:translateY(.35em) scale(1.08);
                  animation:letter 1.4s cubic-bezier(.2,.7,.1,1) forwards; background:linear-gradient(180deg,#fff 30%,#a9b8e8); -webkit-background-clip:text; background-clip:text; color:transparent; }
   @keyframes letter { to { opacity:1; filter:blur(0); transform:none; } }
   @keyframes fade { to { opacity:1; } }
-  .tagline { margin:30px auto 0; max-width:640px; font-size:clamp(17px,2.2vw,22px); color:var(--body); opacity:0; animation:fade 1.4s 1.5s forwards; }
+  .tagline { margin:20px auto 0; max-width:640px; font-size:clamp(16px,2vw,21px); color:var(--body); opacity:0; animation:fade 1.4s 1.2s forwards; }
   .tagline em { font-style:normal; color:var(--ink); }
-  .cue { position:absolute; bottom:34px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:10px;
-         font:700 9px var(--title); letter-spacing:.3em; color:var(--dim); opacity:0; animation:fade 1s 2.2s forwards; }
-  .cue i { width:1px; height:54px; background:linear-gradient(var(--acc), transparent); transform-origin:top; animation:cue 2.2s ease-in-out infinite; }
+  /* The signature moment: a planet buried in a star's flicker, found by the same two steps the experiments use. */
+  .sift { width:min(1180px, 100%); margin:clamp(18px,3.5vh,34px) auto 0; opacity:0; animation:fade 1.2s 1.5s forwards; }
+  .sift canvas { width:100%; height:clamp(190px, 31vh, 350px); display:block; touch-action:pan-y; }
+  .sift-ui { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:12px 22px; margin-top:12px; text-align:left; }
+  .sift-steps { display:flex; gap:6px; padding:4px; border:1px solid var(--line); border-radius:999px; background:rgba(4,6,13,.55); backdrop-filter:blur(6px); }
+  .sift-steps button { display:inline-flex; align-items:center; gap:8px; border:none; background:none; color:var(--dim); padding:8px 14px; border-radius:999px; cursor:pointer; font:600 13px var(--sub); white-space:nowrap; transition:background .25s, color .25s; }
+  .sift-steps button i { font:700 9px var(--title); font-style:normal; letter-spacing:.1em; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; border:1px solid currentColor; }
+  .sift-steps button:hover { color:var(--ink); }
+  .sift-steps button[aria-pressed="true"] { background:rgba(122,162,255,.2); color:var(--ink); }
+  .sift-steps button:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .sift-cap { margin:0; color:var(--body); font-size:15px; line-height:1.6; min-height:3.2em; }
+  .sift-cap b { color:var(--ink); }
+  .sift-note { margin:8px 0 0; color:var(--dim); font-size:12px; text-align:left; }
+  .sift-note a { color:var(--body); }
+  @media (max-width:760px) { .sift-ui { grid-template-columns:minmax(0,1fr); } .sift-steps { justify-self:center; } .sift-steps button { padding:7px 10px; font-size:12px; } .sift-steps button span { display:none; } .sift-steps button[aria-pressed="true"] span { display:inline; } .sift-cap { text-align:center; } .sift-note { text-align:center; } }
+  .cue { position:absolute; bottom:22px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:8px;
+         font:700 9px var(--title); letter-spacing:.3em; color:var(--dim); opacity:0; animation:fade 1s 2.6s forwards; }
+  .cue i { width:1px; height:34px; background:linear-gradient(var(--acc), transparent); transform-origin:top; animation:cue 2.2s ease-in-out infinite; }
   @keyframes cue { 0% { transform:scaleY(0); } 50% { transform:scaleY(1); } 100% { transform:scaleY(1); opacity:0; } }
+  @media (max-height:760px), (max-width:760px) { .cue { display:none; } }
 
   /* Statement */
   .statement { max-width:1100px; margin:0 auto; padding:24vh clamp(16px,5vw,60px); }
@@ -84,12 +90,10 @@
   .numbers { max-width:1200px; margin:0 auto; padding:22vh clamp(16px,5vw,60px) 12vh; }
   .numbers h2 { font:700 clamp(28px,4vw,52px)/1.15 var(--sub); margin:0 0 8vh; max-width:820px; }
   /* What we found */
-  .hero-cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:30px; opacity:0; animation:fade 1.2s 1.9s forwards; }
+  .hero-cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:22px; opacity:0; animation:fade 1.2s 2s forwards; }
   .hero-cta a { text-decoration:none; padding:11px 20px; border-radius:999px; font-size:14px; border:1px solid var(--line); background:rgba(4,6,13,.5); backdrop-filter:blur(6px); }
   .hero-cta a:first-child { background:var(--ink); color:var(--bg); border-color:var(--ink); font-weight:700; }
   .hero-cta a:hover { border-color:var(--acc); }
-  .bar nav a.ev { border:1px solid rgba(122,162,255,.55); padding:6px 14px; border-radius:999px; color:var(--ink); }
-  .bar nav a.ev::after { display:none; }
   .found { max-width:1200px; margin:0 auto; padding:16vh clamp(16px,5vw,60px) 4vh; }
   .found-head h2 { font:700 clamp(26px,3.6vw,46px)/1.15 var(--sub); margin:0 0 6vh; max-width:900px; }
   .found .kicker { margin-bottom:18px; }
@@ -169,7 +173,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior:auto; }
-    h1.mega span, .eyebrow, .tagline, .cue { animation:none; opacity:1; filter:none; transform:none; }
+    h1.mega span, .eyebrow, .tagline, .cue, .sift, .hero-cta { animation:none; opacity:1; filter:none; transform:none; }
     .reveal { opacity:1; transform:none; transition:none; }
     .statement .w { opacity:1; }
     .scrolly { height:auto; }
@@ -186,17 +190,26 @@
 <canvas id="sky" aria-hidden="true"></canvas>
 <div class="cursor" aria-hidden="true"></div><div class="cursor-dot" aria-hidden="true"></div>
 
-<header class="bar">
-  <a class="logo" href="#top"><svg width="22" height="22" viewBox="0 0 100 100" aria-hidden="true"><g stroke-linecap="round"><line x1="10" y1="82" x2="44" y2="66" stroke="#3d4a75" stroke-width="8"/><line x1="18" y1="66" x2="52" y2="50" stroke="#5b6b9e" stroke-width="8"/><line x1="30" y1="52" x2="58" y2="39" stroke="#8b9cc7" stroke-width="8"/><circle cx="70" cy="38" r="20" fill="#eef2fc"/></g></svg><span>SPACESIFT</span></a>
-  <nav><a class="opt" href="/lab/">Hidden planets</a><a class="opt" href="/spectra/">Starlight</a><a class="opt" href="/outputs/dashboard.html">New asteroids</a><a class="ev" href="/evidence/">Evidence</a></nav>
-</header>
+<div id="ss-nav" data-active="home"></div>
 
 <main id="top">
   <section class="hero">
     <div class="eyebrow">THE SCIENCE OF DETECTION</div>
     <h1 class="mega" aria-label="SpaceSift">SPACESIFT</h1>
     <p class="tagline">What can telescopes find, <em>and what do they miss?</em></p>
-    <div class="hero-cta"><a href="#found">See what we found ↓</a><a href="/evidence/">The evidence</a></div>
+    <figure class="sift" aria-label="A star's brightness over 90 days with a planet hidden in it, revealed in three steps">
+      <canvas id="sift" role="img" aria-label="Light curve of a flickering star with a hidden planet"></canvas>
+      <div class="sift-ui">
+        <div class="sift-steps" role="group" aria-label="Steps of the search">
+          <button data-s="1" aria-pressed="false"><i>1</i><span>Raw starlight</span></button>
+          <button data-s="2" aria-pressed="false"><i>2</i><span>Remove the flicker</span></button>
+          <button data-s="3" aria-pressed="false"><i>3</i><span>Stack the orbits</span></button>
+        </div>
+        <p class="sift-cap" id="sift-cap" aria-live="polite">Ninety days of a star's brightness. <b>A planet is hiding in here.</b></p>
+      </div>
+      <figcaption class="sift-note">A simulated star, with the dip enlarged so you can see it. Our experiments ran these steps in 72,440 searches with known answers: <a href="/evidence/#transit">what they found</a>.</figcaption>
+    </figure>
+    <div class="hero-cta"><a href="/lab/">Hide a planet yourself →</a><a href="#found">See what we found ↓</a></div>
     <div class="cue">SCROLL<i></i></div>
   </section>
 
@@ -210,8 +223,8 @@
         <b>Reads a star's type from its spectrum to within 1 subclass (median) on real SDSS stars, versus 5 for our first model, and survives bad calibration that breaks color-only methods.</b>
         <span class="fs">11-star test set fixed before tuning · two baselines · one script to rerun</span><span class="fgo">See the evidence →</span></a>
       <a class="fcard reveal" href="/evidence/#asteroids"><span class="ftag mixed">NOT YET PROVEN</span><span class="fk">03 · NEW ASTEROIDS</span>
-        <b id="ast-claim">Ranks new candidates better than the standard digest2 score (ROC-AUC 0.70 vs 0.57 on newer candidates), but doesn't yet drop more junk where it matters most.</b>
-        <span class="fs">Probability of being a real near-Earth object, not of hitting Earth · time-split test · retrained weekly</span><span class="fgo">See the evidence →</span></a>
+        <b id="ast-claim">Ranks new asteroid candidates by how likely each is real, tested on later candidates it never saw.</b>
+        <span class="fs" id="ast-fs">Probability of being a real near-Earth object, not of hitting Earth · time-split test · retrained weekly</span><span class="fgo">See the evidence →</span></a>
     </div>
     <p class="protocol reveal">Every result shows its <b>data</b>, <b>method</b> and <b>baseline</b>, counts its <b>errors in both directions</b>, names its <b>limits</b>, and can be <b>rerun</b>.</p>
   </section>
@@ -314,6 +327,7 @@
   <div class="fine"><span>SpaceSift · open code and data on <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">GitHub</a></span><span>Data: NASA Kepler (MAST), Minor Planet Center, Sloan Digital Sky Survey</span></div>
 </footer>
 
+<script src="/shared/nav.js"></script>
 <script type="module">
 import { wavelengthRGB } from "/spectra/spectra.js";
 
@@ -334,6 +348,116 @@ addEventListener("pointermove", (e) => { mouse.x = e.clientX; mouse.y = e.client
 // ------------------------------------------------------------ hero letters
 const h1 = document.querySelector("h1.mega");
 h1.innerHTML = [...h1.textContent].map((ch, i) => `<span aria-hidden="true" style="animation-delay:${0.5 + i * 0.08}s">${ch}</span>`).join("");
+
+// ------------------------------------------------------------ the sift: a planet buried in a star's flicker
+// Simulated photometry: the star's own variability (several slow rhythms) + white noise + a planet's transits.
+// Step 1 draws the raw light curve, step 2 subtracts the variability (and zooms in), step 3 folds every point
+// on the planet's orbit so the transits stack into one dip. Units are the noise level (sigma).
+const sift = (() => {
+  const c = document.getElementById("sift"), cap = document.getElementById("sift-cap");
+  const btns = [...document.querySelectorAll(".sift-steps button")];
+  let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(6.2832 * rnd());
+  const N = innerWidth < 700 ? 1100 : 1900, DAYS = 90, P = 6.3, T0 = 2.1, DUR = 0.24, DEPTH = 1.15;
+  const RH = [[2.7, 2.6, 0.4], [4.1, 2.2, 2.0], [1.35, 1.3, 4.1], [11, 1.4, 1.1]]; // period (d), amplitude (sigma), phase
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    let t = (i / N) * DAYS; if (t > 41 && t < 44.5) continue; // a data gap, like a real mission's downlink
+    t += (rnd() - 0.5) * (DAYS / N);
+    const v = RH.reduce((a, [per, amp, ph]) => a + amp * Math.sin((6.2832 * t) / per + ph), 0);
+    let ph = ((t - T0) / P) % 1; if (ph < 0) ph += 1; ph = ph > 0.5 ? ph - 1 : ph; // -0.5..0.5, transit at 0
+    const inT = Math.abs(ph * P) < DUR / 2;
+    pts.push({ t, v, n: gauss(), ph, inT, d: inT ? -DEPTH : 0 });
+  }
+  // Binned mean of the folded data (what the search's box model "sees").
+  const NB = 90, bins = Array.from({ length: NB }, () => [0, 0]);
+  for (const q of pts) { const b = Math.min(NB - 1, Math.floor((q.ph + 0.5) * NB)); bins[b][0] += q.n + q.d; bins[b][1]++; }
+  const binY = bins.map(([s, k]) => (k ? s / k : 0));
+  // The box model a transit search fits: flat outside the transit, one depth inside.
+  const inMean = (() => { let a = 0, k = 0; for (const q of pts) if (q.inT) { a += q.n + q.d; k++; } return a / k; })();
+  const outMean = (() => { let a = 0, k = 0; for (const q of pts) if (!q.inT) { a += q.n; k++; } return a / k; })();
+  const HALF = DUR / 2 / P;
+  const CAPS = [
+    'Ninety days of a star\'s brightness. <b>A planet is hiding in here.</b>',
+    'The star\'s own flicker swings <b>about ten times deeper than the planet\'s dip.</b>',
+    'Remove the flicker and zoom in. <b>To the eye, still just noise.</b>',
+    'Stack every orbit on top of each other: <b>the dips line up. A planet, found.</b>',
+  ];
+  let s = reduce ? 3 : 0, target = reduce ? 3 : 1, auto = !reduce, lastT = 0, holdUntil = 0, dirty = true, started = false;
+  const ease = (x) => x * x * (3 - 2 * x);
+  function setTarget(k, user) {
+    if (user) auto = false;
+    target = k; dirty = true;
+    btns.forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.s === Math.round(k))));
+  }
+  btns.forEach((b) => b.addEventListener("click", () => { const k = +b.dataset.s; if (k < s) s = k - 1; setTarget(k, true); if (reduce) { s = k; } }));
+  function caption() {
+    const i = s < 1.4 ? (s < 0.98 ? 0 : 1) : s < 2.95 ? 2 : 3;
+    if (cap.dataset.i !== String(i)) { cap.dataset.i = i; cap.innerHTML = CAPS[i]; }
+  }
+  function draw(t) {
+    const r = c.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > innerHeight) return;
+    if (!started) { started = true; lastT = t; holdUntil = t + (reduce ? 0 : 1700); setTarget(target); }
+    const dt = Math.min(250, t - lastT); lastT = t;
+    if (t > holdUntil && s !== target) {
+      const speed = s < 1 ? 1 / 2400 : 1 / 2000; // the first sweep draws a little slower
+      s = s < target ? Math.min(target, s + dt * speed) : Math.max(target, s - dt * speed * 2);
+      dirty = true;
+      if (s === target && auto && target < 3) { holdUntil = t + (target === 1 ? 2600 : 2200); setTarget(target + 1); }
+    }
+    if (!dirty) return; dirty = s !== target;
+    caption();
+    const { ctx, w, h } = fit(c);
+    ctx.clearRect(0, 0, w, h);
+    const reveal = clamp(s), kD = ease(clamp(s - 1)), kF = ease(clamp(s - 2));
+    const padX = 8, x0 = padX, x1 = w - padX, mid = h * 0.5;
+    const unit = lerp(h * 0.86 / 15, h * 0.86 / 7.5, kD); // pixels per sigma: zooms in once the flicker is gone
+    // axis hints
+    ctx.font = "11px Comfortaa, sans-serif"; ctx.fillStyle = "#7f88a6"; ctx.textAlign = "left";
+    ctx.fillText("brightness", x0, 12);
+    ctx.textAlign = "right";
+    ctx.globalAlpha = 1 - kF; ctx.fillText("time · 90 days →", x1, h - 4);
+    ctx.globalAlpha = kF; ctx.fillText("every orbit stacked: 6.3 days →", x1, h - 4);
+    ctx.globalAlpha = 1; ctx.textAlign = "left";
+    // the star's flicker as a smooth line, fading as it is removed
+    if (kD < 1) {
+      ctx.strokeStyle = `rgba(255,180,94,${0.5 * (1 - kD) * reveal})`; ctx.lineWidth = 1.5; ctx.beginPath();
+      const upto = x0 + (x1 - x0) * reveal;
+      for (let x = x0; x <= upto; x += 2) {
+        const tt = ((x - x0) / (x1 - x0)) * DAYS, v = RH.reduce((a, [per, amp, ph]) => a + amp * Math.sin((6.2832 * tt) / per + ph), 0);
+        const y = mid - v * unit * (1 - kD); x === x0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    // the measurements
+    const lit = smooth(0.55, 1, kF);
+    for (const q of pts) {
+      const xt = x0 + (q.t / DAYS) * (x1 - x0);
+      if (xt > x0 + (x1 - x0) * reveal + 1) continue;
+      const xf = x0 + (q.ph + 0.5) * (x1 - x0);
+      const x = lerp(xt, xf, kF), y = mid - (q.v * (1 - kD) + q.n + q.d) * unit;
+      if (q.inT && lit > 0) { ctx.fillStyle = `rgba(255,180,94,${0.35 + 0.6 * lit})`; ctx.fillRect(x - 1.3, y - 1.3, 2.6, 2.6); }
+      else { ctx.fillStyle = "rgba(201,208,228,.5)"; ctx.fillRect(x - 0.8, y - 0.8, 1.6, 1.6); }
+    }
+    // the stacked dip
+    if (kF > 0.6) {
+      const a = smooth(0.6, 1, kF);
+      ctx.globalAlpha = a * 0.85; ctx.fillStyle = "#9fb6ff";
+      binY.forEach((v, i) => { ctx.beginPath(); ctx.arc(x0 + ((i + 0.5) / NB) * (x1 - x0), mid - v * unit, 2.2, 0, 6.283); ctx.fill(); });
+      const X = (ph) => x0 + (ph + 0.5) * (x1 - x0), yo = mid - outMean * unit, yi = mid - inMean * unit;
+      ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = "#cfdcff"; ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.shadowColor = "#7aa2ff"; ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.moveTo(x0, yo); ctx.lineTo(X(-HALF), yo); ctx.lineTo(X(-HALF), yi); ctx.lineTo(X(HALF), yi); ctx.lineTo(X(HALF), yo); ctx.lineTo(x1, yo); ctx.stroke(); ctx.restore();
+      const dx = x0 + 0.5 * (x1 - x0), dy = mid - inMean * unit;
+      ctx.globalAlpha = a; ctx.strokeStyle = "rgba(255,207,148,.7)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(dx, dy + 12); ctx.lineTo(dx, h - 34); ctx.stroke();
+      ctx.fillStyle = "#ffcf94"; ctx.font = "700 13px Comfortaa, sans-serif"; ctx.textAlign = "center";
+      ctx.fillText("the planet", dx, h - 20); ctx.textAlign = "left"; ctx.globalAlpha = 1;
+    }
+  }
+  addEventListener("resize", () => { dirty = true; });
+  return { draw };
+})();
 
 // ------------------------------------------------------------ starfield
 // Star colors follow real temperatures: mostly white and yellow-white, some orange and red, a few blue.
@@ -611,9 +735,11 @@ function drawFinale(t) {
 fetch("/outputs/training_results.json").then((r) => r.json()).then((tr) => {
   const m = tr.holdout?.roc_auc?.model ?? tr.test?.roc_auc, b = tr.holdout?.roc_auc?.baseline ?? tr.baseline_on_test?.roc_auc;
   const em = tr.test?.at_99pct_neo_recall?.non_neo_excluded_frac, eb = tr.baseline_on_test?.at_99pct_neo_recall?.non_neo_excluded_frac;
-  if (m == null || b == null) return;
-  const beats = em != null && eb != null && em > eb;
-  document.getElementById("ast-claim").textContent = `${m > b ? "Ranks new candidates better than" : "Does not yet rank candidates better than"} the standard digest2 score (ROC-AUC ${m.toFixed(2)} vs ${b.toFixed(2)} on newer candidates)${beats ? ", and drops more junk while keeping 99% of real ones." : ", but doesn't yet drop more junk where it matters most."}`;
+  if (m == null || b == null || !tr.inputs) return; // pre-fix (leaky) results are not quoted
+  const beats = em != null && eb != null && em > eb, sp = tr.holdout?.split;
+  document.getElementById("ast-claim").textContent = `${m > b ? "Ranks new candidates better than" : "Does not yet rank candidates better than"} the standard digest2 score (ROC-AUC ${m.toFixed(2)} vs ${b.toFixed(2)})${beats ? ", and drops more junk while keeping 99% of real ones." : ", but doesn't yet drop more junk where it matters most."}`;
+  // Say exactly which evaluation this is, so it matches the dashboard and the evidence page.
+  if (sp) document.getElementById("ast-fs").textContent = `Tested on ${sp.test_n} candidates posted after ${String(sp.test_dates[0]).slice(0, 10)}, trained on ${sp.train_n} earlier ones · probability of being real, not of hitting Earth · retrained weekly`;
 }).catch(() => {});
 
 // ------------------------------------------------------------ reveals and counters
@@ -638,6 +764,7 @@ document.addEventListener("pointerover", (e) => cur.classList.toggle("big", !!e.
 // ------------------------------------------------------------ main loop
 function frame(t) {
   drawSky(t);
+  sift.draw(t);
   // statement words
   const sr = st.getBoundingClientRect(), sp = clamp((innerHeight * 0.85 - sr.top) / (sr.height + innerHeight * 0.3));
   if (!reduce) words.forEach((wd, i) => wd.classList.toggle("lit", i / words.length < sp));

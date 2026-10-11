@@ -85,6 +85,7 @@
   .rerun h4 { margin:14px 0 10px; font:700 9.5px var(--title); letter-spacing:.28em; color:var(--acc); }
   .two .ss-limits { border-radius:14px; }
   footer { border-top:1px solid var(--line); margin-top:50px; padding-top:20px; color:var(--dim); font-size:13px; }
+  .correction { margin:0 0 22px; } .correction p { margin:0; }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -177,24 +178,22 @@ node --test spectra/test/            # parsers, template library, picture reader
       <li><b>P(real NEO)</b> is the chance that a candidate on the Minor Planet Center's confirmation page turns out to be a genuine near-Earth object, rather than junk (artifacts, satellites, stars, lost objects) or an ordinary main-belt asteroid.</li>
       <li><b>It is not an impact probability.</b> Nothing in this model estimates whether anything will hit Earth. Impact probabilities for known objects come from NASA JPL's Sentry system and are shown separately on the dashboard.</li>
     </ul></div>
-    
-    
-    
+    <div class="ss-limits correction"><h4>CORRECTION · 11 OCTOBER 2026</h4><p>The first weekly retrain reported a ROC-AUC of 0.97. That number was wrong: some inputs described how each candidate changed on the confirmation page <b>until it left</b>, and leaving the page is the outcome itself, so the model was partly reading the answer. Those inputs are now excluded, and the model only sees what is known when a candidate is first posted. Every number on this page and the dashboard comes from the corrected evaluation.</p></div>
     <div class="results"><div class="rrow"><figure><h5>Ranking quality on newer candidates</h5><div class="sub" id="ast-split-sub">ROC-AUC on the held-out time split (0.5 = coin flip)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span></div><div id="ch-ast-auc"></div>
-        <figcaption id="ast-auc-cap">Random-fold cross-validation gives a higher AUC, but it mixes old and new candidates, so the time split is the honest number.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="pl-auc">Pick one real NEO and one non-NEO at random: how often does the model score the real one higher? 0.5 is a coin flip, 1.0 is perfect.</p></aside></div><div class="rrow"><figure><h5>Junk excluded while keeping real NEOs</h5><div class="sub">Share of non-NEOs dropped at a strict setting (≥99% of real NEOs kept)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span><span><i style="background:transparent;border:1px dashed var(--dim)"></i>A&amp;A 2025 benchmark</span></div><div id="ch-ast-excl"></div>
-        <figcaption>This is the operating point that matters for observers: drop as much junk as possible without losing real objects. The model does not meet it yet.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="pl-excl">Observers need to drop as much junk as possible without losing real NEOs.</p></aside></div></div><div class="two">
+        <figcaption id="ast-auc-cap">The one evaluation quoted everywhere on SpaceSift: trained on older candidates, tested once on newer ones it never saw.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="pl-auc">Pick one real NEO and one non-NEO at random: how often does the model score the real one higher? 0.5 is a coin flip, 1.0 is perfect.</p></aside></div><div class="rrow"><figure><h5>Junk excluded while keeping real NEOs</h5><div class="sub">Share of non-NEOs dropped at a strict setting (≥99% of real NEOs kept)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span><span><i style="background:transparent;border:1px dashed var(--dim)"></i>A&amp;A 2025 benchmark</span></div><div id="ch-ast-excl"></div>
+        <figcaption id="ast-excl-cap">This is the operating point that matters for observers: drop as much junk as possible without losing real objects.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="pl-excl">Observers need to drop as much junk as possible without losing real NEOs.</p></aside></div></div><div class="two">
       <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul id="ast-errors"></ul></div>
       <div class="ss-limits"><h4>LIMITATIONS</h4><ul>
         <li><b>Labels are noisy:</b> “not confirmed” includes some real NEOs that were simply lost; “designated other” is assumed not to be an NEO.</li>
         <li><b>Few junk examples:</b> most negatives are ordinary main-belt asteroids, and the MPC deletes tracklets of unconfirmed objects, so the hardest junk can't be backfilled.</li>
-        <li><b>Small test set</b> (about a hundred candidates per split), so differences have wide error bars.</li>
+        <li><b>One test period</b> (<span id="ast-test-n">a few hundred</span> candidates over a few weeks), so numbers carry real error bars and may shift as the sky and the surveys change.</li>
         <li><b>Probabilities are not calibrated</b> (class-balanced training); treat them as a ranking.</li>
       </ul></div>
     </div>
     
   <details class="method"><summary>Full methodology: data, method, baselines, detailed results and how to rerun</summary><div class="facts3">
       <div class="fact"><h4>DATA</h4><p>Twice-daily captures of the MPC confirmation page since July 2026 (<span id="ast-outcomes">3,326</span> resolved outcomes). Labels from the MPC's Previous-NEOCP list: designated NEO = 1; not confirmed, not real, artificial, star or main-belt = 0.</p></div>
-      <div class="fact"><h4>METHOD</h4><p>Gradient-boosted trees (LightGBM DART, 67 features: digest2 orbit-class scores, motion, brightness, sky position, observatory, and changes across snapshots). Tested on a <b>time split</b>: trained on older candidates, scored once on newer ones.</p></div>
+      <div class="fact"><h4>METHOD</h4><p>Gradient-boosted trees (LightGBM DART, <span id="ast-nfeat">about 60</span> inputs: digest2 orbit-class scores, motion, brightness, sky position and observatory, all as known at first posting). Tested on a <b>time split</b>: trained on older candidates, scored once on newer ones. Random-fold cross-validation is computed too but not quoted, because it mixes old and new candidates and flatters the model.</p></div>
       <div class="fact"><h4>BASELINE</h4><p>The digest2 score alone, the standard tool observers already use to judge whether a candidate looks like a near-Earth object.</p></div>
     </div><div class="tablewrap" id="ast-cm-wrap"></div><div class="rerun"><h4>Rerun training and evaluation</h4><pre># needs digest2 (github.com/Smithsonian/digest2) built into ./d2
 pip install numpy scikit-learn lightgbm
@@ -307,14 +306,27 @@ if (sp) {
 
 // ======================================================================= asteroids
 const tr = await fetch("/outputs/training_results.json").then((r) => r.json()).catch(() => null);
-if (tr) {
+// Results written before the leakage fix carry no "inputs" field: withdraw them rather than show them.
+if (tr && !tr.inputs) {
+  $("ast-verdict").innerHTML = `<span class="tag mixed">BEING RE-EVALUATED</span>The latest asteroid numbers were withdrawn (see the correction below). Corrected results from the retrained model appear here automatically when the retrain finishes.`;
+  for (const id of ["ch-ast-auc", "ch-ast-excl"]) $(id).innerHTML = `<p class="muted" style="margin:14px 0">Withdrawn pending the corrected retrain.</p>`;
+  $("pl-auc").textContent = "Pick one real NEO and one non-NEO at random: how often does the model score the real one higher? 0.5 is a coin flip, 1.0 is perfect. The corrected number appears after the retrain.";
+  $("pl-excl").textContent = "Observers need to drop as much junk as possible without losing real NEOs. The corrected number appears after the retrain.";
+  $("ast-errors").innerHTML = "<li>Error counts appear with the corrected evaluation.</li>";
+} else if (tr) {
   const ho = tr.holdout, test = tr.test || {}, base = tr.baseline_on_test || {};
   const aucM = ho?.roc_auc?.model ?? test.roc_auc, aucB = ho?.roc_auc?.baseline ?? base.roc_auc;
   const exM = test.at_99pct_neo_recall?.non_neo_excluded_frac, exB = base.at_99pct_neo_recall?.non_neo_excluded_frac;
   const ci = ho?.auc_bootstrap_95ci;
-  $("ast-verdict").innerHTML = `<span class="tag mixed">PROMISING, NOT YET PROVEN</span>On newer candidates held out by date, the model <b>ranks better than digest2 alone</b> (ROC-AUC ${aucM?.toFixed(2)} vs ${aucB?.toFixed(2)}${ci ? `; difference ${ci.difference[0].toFixed(2)} to ${ci.difference[1].toFixed(2)} at 95%` : ""}). But at the strict setting that keeps ≥99% of real NEOs it <b>drops only ${pct(exM)} of junk, versus ${pct(exB)} for digest2 alone</b>, far from the 80% a published benchmark reaches. The committed model was trained on ${tr.n} candidates${tr.trained_utc ? ` (${tr.trained_utc.slice(0, 10)})` : ""}; it now retrains weekly on all labeled data.`;
-  $("ast-split-sub").textContent = `ROC-AUC on the ${ho?.split?.test_n ?? test.n} newest candidates, held out by date (0.5 = coin flip)`;
-  if (tr.cv_auc) $("ast-auc-cap").textContent = `Random-fold cross-validation gives ${tr.cv_auc.toFixed(2)}, but it mixes old and new candidates, so the time split is the honest number.`;
+  const sp = ho?.split, d0 = (x) => String(x).slice(0, 10);
+  const splitTxt = sp ? `trained on ${sp.train_n} candidates posted before ${d0(sp.test_dates[0])}, tested once on the ${sp.test_n} posted after` : "tested on the newest 25% of candidates";
+  const sure = ci ? ci.difference[0] > 0 : aucM > aucB, filter = exM != null && exB != null && exM > exB, bench = exM != null && exM >= 0.8;
+  const tag = sure && bench ? '<span class="tag good">MEETS THE BENCHMARK</span>' : sure && filter ? '<span class="tag good">BETTER THAN THE STANDARD SCORE</span>' : '<span class="tag mixed">PROMISING, NOT YET PROVEN</span>';
+  $("ast-verdict").innerHTML = `${tag}The model was ${splitTxt}. It <b>${aucM > aucB ? "ranks better than digest2 alone" : "does not yet rank better than digest2 alone"}</b> (ROC-AUC ${aucM?.toFixed(2)} vs ${aucB?.toFixed(2)}${ci ? `; difference ${ci.difference[0].toFixed(2)} to ${ci.difference[1].toFixed(2)} at 95%` : ""}). At the strict setting that keeps ≥99% of real NEOs it drops <b>${pct(exM)} of junk, versus ${pct(exB)} for digest2 alone</b>${bench ? ", meeting" : ", short of"} the 80% a published benchmark reaches. Retrained weekly; this model saw ${tr.n} labeled candidates${tr.trained_utc ? ` (${tr.trained_utc.slice(0, 10)})` : ""}.`;
+  $("ast-split-sub").textContent = `ROC-AUC on the ${sp?.test_n ?? test.n} newest candidates, held out by date (0.5 = coin flip)`;
+  if (sp) $("ast-test-n").textContent = sp.test_n;
+  if (tr.features) $("ast-nfeat").textContent = tr.features.length;
+  $("ast-excl-cap").textContent = `This is the operating point that matters for observers: drop as much junk as possible without losing real objects. ${bench ? "The model reaches the benchmark on this test." : "Neither method reaches the benchmark yet."}`;
   const bars = (items, max, fmt, bench) => {
     const f = { x0: 110, x1: W - 50, y0: 8 }, h = f.y0 + items.length * 40 + 26, sx = (v) => f.x0 + (v / max) * (f.x1 - f.x0);
     let b = "";
@@ -324,7 +336,7 @@ if (tr) {
     return svg(h, b, items.map(([n, v]) => `${n} ${fmt(v)}`).join(", "));
   };
   if (aucM != null && aucB != null) $("pl-auc").innerHTML = `Pick one real NEO and one non-NEO at random: how often does the model score the real one higher? 0.5 is a coin flip, 1.0 is perfect. On candidates it never saw, the model scores <b>${aucM.toFixed(2)}</b> against <b>${aucB.toFixed(2)}</b> for the standard digest2 score, so it <b>${aucM > aucB ? "ranks better" : "does not rank better"}</b>.`;
-  if (exM != null && exB != null) $("pl-excl").innerHTML = `Observers need to drop as much junk as possible <b>without losing real NEOs</b>. At that strict setting the model drops ${pct(exM)} of junk and digest2 ${pct(exB)}, against a published 80%. ${exM > exB ? "The model is ahead here too." : "So the model ranks better overall but <b>isn't yet useful as a filter</b>, which is why the dashboard presents it only as a ranking."}`;
+  if (exM != null && exB != null) $("pl-excl").innerHTML = `Observers need to drop as much junk as possible <b>without losing real NEOs</b>. At that strict setting the model drops ${pct(exM)} of junk and digest2 ${pct(exB)}, against a published 80%. ${exM > exB ? "The model is ahead here too, though the dashboard still presents it as a ranking, not a filter." : "So the model ranks better overall but <b>isn't yet useful as a filter</b>, which is why the dashboard presents it only as a ranking."}`;
   $("ch-ast-auc").innerHTML = bars([["Model", aucM, C.c1], ["digest2 alone", aucB, C.c2]], 1, (v) => v.toFixed(2));
   $("ch-ast-excl").innerHTML = bars([["Model", exM, C.c1], ["digest2 alone", exB, C.c2]], 1, (v) => pct(v), 0.8);
   const errs = [];

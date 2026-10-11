@@ -11,29 +11,32 @@
 <link rel="stylesheet" href="/shared/nav.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
 <style>
-  :root { --bg:#0b1020; --card:#141a30; --card2:#10162a; --ink:#e8ecf8; --body:#cfd5e6; --dim:#8b93ad; --line:#252d4a;
-          --acc:#7aa2ff; --hi:#4ade80; --mid:#fbbf24; --bad:#f87171;
+  /* Matches /shared/nav.css; cards are translucent so the shared sky shows through. */
+  :root { --bg:#04060d; --card:rgba(16,22,42,.72); --card2:rgba(11,16,32,.72); --ink:#eef2fc; --body:#c9d0e4; --dim:#7f88a6; --line:rgba(140,160,220,.16);
+          --acc:#7aa2ff; --on:rgba(122,162,255,.14); --hi:#4ade80; --mid:#fbbf24; --bad:#f87171;
           /* Two fonts: Syncopate for titles and small section labels, Comfortaa for everything else. */
           --title:"Syncopate",ui-sans-serif,sans-serif; --sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 var(--sub); }
+  body { margin:0; background:transparent; color:var(--ink); font:15px/1.6 var(--sub); } /* sky comes from body.ss-page */
   a { color:var(--acc); }
-  header { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-  header .brand { font:700 16px var(--title); letter-spacing:.14em; color:var(--ink); text-decoration:none; }
-  header .crumb { color:var(--dim); font-size:15px; }
-  header .about-link { margin-left:auto; display:inline-flex; align-items:center; gap:8px; color:#0b1020; background:var(--acc); font:700 13.5px var(--sub);
-                       text-decoration:none; padding:8px 16px; border-radius:999px; box-shadow:0 0 0 3px rgba(122,162,255,.18), 0 4px 18px rgba(122,162,255,.25); transition:transform .15s, box-shadow .15s; }
-  header .about-link i { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:#0b1020; color:var(--acc); font:700 12px var(--sub); font-style:normal; }
-  header .about-link:hover { transform:translateY(-1px); box-shadow:0 0 0 4px rgba(122,162,255,.28), 0 6px 22px rgba(122,162,255,.35); }
-  main { max-width:920px; margin:0 auto; padding:28px 20px 60px; }
+  .ss-head { max-width:920px; padding-left:20px; padding-right:20px; } /* align with main */
+  .about-link i { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; margin-right:6px; border-radius:50%; border:1px solid currentColor; font:700 10.5px var(--sub); font-style:normal; vertical-align:1px; }
+  main { max-width:920px; margin:0 auto; padding:4px 20px 60px; }
+  .step, #star-upload, .strip-box { scroll-margin-top:64px; } /* clear the sticky platform strip */
+
+  /* Start here: one-click first experiments */
+  .ss-start-head { margin-top:18px; }
+  .ss-start svg { max-width:220px; }
+  .start-alt { margin:12px 0 26px; color:var(--dim); font-size:13.5px; }
+  .start-alt a { font-weight:700; }
 
   /* Big choice between stars and asteroids */
   .pick { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:22px; }
   .pick button { display:flex; gap:14px; align-items:center; text-align:left; padding:14px 16px; border-radius:14px; cursor:pointer;
                  background:var(--card); border:1.5px solid var(--line); color:var(--ink); font:inherit; transition:border-color .15s; }
   .pick button:hover { border-color:#3a4570; }
-  .pick button.on { border-color:var(--acc); background:#18203d; }
+  .pick button.on { border-color:var(--acc); background:var(--on); }
   .pick .ico { width:42px; height:42px; border-radius:50%; flex:0 0 auto; }
   .pick b { display:block; font:700 13px var(--title); letter-spacing:.1em; }
   .pick span { color:var(--dim); font-size:13px; line-height:1.4; }
@@ -50,7 +53,7 @@
                   border-radius:999px; padding:7px 14px 7px 9px; cursor:pointer; font:14px var(--sub); }
   .chips button i { width:14px; height:14px; border-radius:50%; display:inline-block; }
   .chips button:hover { border-color:#3a4570; }
-  .chips button.on { border-color:var(--acc); background:#18203d; }
+  .chips button.on { border-color:var(--acc); background:var(--on); }
 
   /* Temperature slider with a star-color track */
   .temp { margin-top:16px; }
@@ -96,7 +99,7 @@
   .ing .bar i { display:block; height:100%; border-radius:3px; }
   .ing p { margin:0; font-size:12.5px; color:var(--dim); line-height:1.55; }
   .muted { color:var(--dim); font-size:13px; margin-top:10px; line-height:1.6; }
-  .tip { margin-top:14px; padding:12px 14px; border-radius:12px; background:linear-gradient(90deg, #1a2346, var(--card)); border:1px solid var(--line); color:var(--body); font-size:14px; line-height:1.65; }
+  .tip { margin-top:14px; padding:12px 14px; border-radius:12px; background:linear-gradient(90deg, rgba(122,162,255,.12), var(--card)); border:1px solid var(--line); color:var(--body); font-size:14px; line-height:1.65; }
   .tip b { color:var(--ink); }
 
   /* Clue cards (asteroids) */
@@ -139,6 +142,7 @@
   .adv input[type=range] { height:6px; }
   .adv input[type=range]::-webkit-slider-thumb { width:18px; height:18px; border-width:2px; }
   input[type=number], select { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font:inherit; }
+  select option { background:#10162a; } /* dropdown lists can't be translucent */
   .row { display:flex; gap:12px; } .row > * { flex:1; min-width:0; }
   .ranks { display:grid; gap:6px; margin-top:6px; }
   .rank { display:grid; grid-template-columns:minmax(0,210px) 1fr 74px; gap:8px; align-items:center; font-size:13px; }
@@ -148,7 +152,7 @@
   /* Upload */
   .drop { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding:26px 18px; border:2px dashed #34406a;
           border-radius:16px; background:var(--card); cursor:pointer; transition:border-color .15s, background .15s; }
-  .drop:hover, .drop.over { border-color:var(--acc); background:#18203d; }
+  .drop:hover, .drop.over { border-color:var(--acc); background:var(--on); }
   .drop input { display:none; }
   .drop .drop-ico { width:44px; height:44px; border-radius:50%; background:#1f2a52; color:var(--acc); display:flex; align-items:center; justify-content:center; font:700 22px var(--sub); }
   .drop b { font-size:15px; } .drop u { color:var(--acc); }
@@ -178,13 +182,33 @@
 </head>
 <body>
 <div id="ss-nav" data-active="spectra"></div>
-<header>
-  <a class="brand" href="/evidence/#spectra" title="See the evidence for this investigation">SPECTRUM LAB</a><span class="crumb">Investigation 02 · Starlight</span>
-  <a class="about-link" href="#about"><i>?</i>How it works</a>
+<header class="ss-head">
+  <div class="ss-kicker">INVESTIGATION 02 · STARLIGHT</div>
+  <div class="ss-head-row"><h1>Spectrum Lab</h1><nav class="ss-tabs"><a class="about-link" href="#about"><i>?</i>How it works</a></nav></div>
+  <p class="ss-q">Light carries a fingerprint. <b>Find out how hot a star is and what it's made of, or what kind of rock an asteroid is</b>, from its spectrum alone.</p>
 </header>
 
 <main>
 <div id="app">
+  <!-- Start here: three one-click experiments for first-time visitors -->
+  <div class="ss-start-head"><h2>START HERE</h2><span>Pick one. No science background needed.</span></div>
+  <div class="ss-starts" id="starts">
+    <button class="ss-start primary" data-go="sun"><span class="n">01</span>
+      <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><defs><linearGradient id="sg-sun" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset=".2" stop-color="#3b6cff"/><stop offset=".4" stop-color="#2fd0c8"/><stop offset=".56" stop-color="#5be35b"/><stop offset=".72" stop-color="#ffe14a"/><stop offset=".86" stop-color="#ff9a3c"/><stop offset="1" stop-color="#e8423a"/></linearGradient></defs>
+        <rect y="7" width="200" height="20" rx="5" fill="url(#sg-sun)"/><g fill="#04060d"><rect x="22" y="7" width="3" height="20"/><rect x="106" y="7" width="2" height="20"/><rect x="171" y="7" width="3.5" height="20"/></g></svg>
+      <b>Read the Sun's fingerprint</b><span class="d">See the dark lines in sunlight and which element makes each one.</span><span class="go">Try it →</span></button>
+    <button class="ss-start" data-go="quiz"><span class="n">02</span>
+      <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><defs><linearGradient id="sg-quiz" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset=".25" stop-color="#3b6cff"/><stop offset=".5" stop-color="#5be35b"/><stop offset=".75" stop-color="#ffb43c"/><stop offset="1" stop-color="#e8423a"/></linearGradient></defs>
+        <circle cx="17" cy="17" r="14" fill="#1d2440" stroke="#7aa2ff" stroke-width="1.2"/><text x="17" y="22.5" text-anchor="middle" fill="#eef2fc" font-family="Comfortaa,sans-serif" font-weight="700" font-size="16">?</text>
+        <rect x="40" y="9" width="160" height="16" rx="4" fill="url(#sg-quiz)" opacity=".85"/><g fill="#04060d"><rect x="62" y="9" width="2.5" height="16"/><rect x="98" y="9" width="2" height="16"/><rect x="141" y="9" width="2.5" height="16"/><rect x="180" y="9" width="2" height="16"/></g></svg>
+      <b>Guess the mystery star</b><span class="d">Look at a star's rainbow and guess how hot it is. Try three rounds.</span><span class="go">Try it →</span></button>
+    <button class="ss-start" data-go="ast"><span class="n">03</span>
+      <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><rect x="62" y="1" width="44" height="32" rx="4" fill="rgba(122,162,255,.12)"/>
+        <path d="M2 30 H198" stroke="rgba(140,160,220,.3)" stroke-width="1"/><path d="M4 26 C24 16 44 9 64 10 S84 26 90 26 S108 13 130 10 S170 6 196 4" fill="none" stroke="#c9b38a" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <b>Is this asteroid rock or metal?</b><span class="d">Its reflected light gives it away.</span><span class="go">Try it →</span></button>
+  </div>
+  <p class="start-alt">Have your own spectrum? <a href="#" id="go-upload">Upload it</a> (data file or a picture).</p>
+
   <div class="pick">
     <button id="pick-stars" class="on"><span class="ico" style="background:radial-gradient(circle at 35% 35%,#fff,#ffd27a 50%,#ff9d3c)"></span>
       <div><b>STARS</b><span>How hot is it, and what's in it?</span></div></button>
@@ -195,7 +219,7 @@
   <!-- ============================================================ STARS -->
   <section id="view-stars">
     <div class="mode">
-      <div class="seg" id="star-mode"><button data-m="explore" class="on">Explore</button><button data-m="quiz">Quiz me</button><button data-m="upload">Upload</button></div>
+      <div class="seg" id="star-mode"><button data-m="explore" class="on">Explore</button><button data-m="quiz">Quiz me</button><button data-m="upload" title="For experts: analyze your own spectrum file or picture">Upload yours</button></div>
       <span class="score" id="star-score"></span>
     </div>
 
@@ -434,6 +458,7 @@ $("pick-asteroids").onclick = () => pick("asteroids");
 function route() {
   const about = location.hash === "#about";
   $("app").hidden = about; $("view-about").hidden = !about;
+  document.querySelector(".about-link").classList.toggle("on", about);
   window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", route);
@@ -958,6 +983,26 @@ $("ast-guess").onclick = (e) => {
   $("again-ast").onclick = newAstQuiz;
   drawAst();
 };
+
+// ---------------------------------------------------------------- start here cards
+const goTo = (el, block = "start") => el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block });
+const setMode = (seg, m) => $(seg).querySelector(`[data-m="${m}"]`).click(); // same path as a user tap
+const STARTS = {
+  sun: () => { pick("stars"); setMode("star-mode", "explore"); $("star-presets").querySelector('[data-name="Sun"]')?.click(); goTo($("star-step2")); },
+  quiz: () => { pick("stars"); setMode("star-mode", "quiz"); goTo($("star-step2")); },
+  ast: () => { pick("asteroids"); setMode("ast-mode", "explore"); goTo($("ast-step2")); },
+};
+$("starts").onclick = (e) => {
+  const card = e.target.closest(".ss-start");
+  if (!card) return;
+  STARTS[card.dataset.go]();
+  card.classList.add("done");
+  // Recommend the next card not yet tried (wrapping around).
+  const cards = [...$("starts").children], i = cards.indexOf(card);
+  const next = [...cards.slice(i + 1), ...cards.slice(0, i)].find((c) => !c.classList.contains("done"));
+  for (const c of cards) c.classList.toggle("primary", c === next);
+};
+$("go-upload").onclick = (e) => { e.preventDefault(); pick("stars"); setMode("star-mode", "upload"); goTo($("star-upload")); };
 
 // ---------------------------------------------------------------- start
 $("t").value = tToSlider(star.T);
