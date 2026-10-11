@@ -1,7 +1,7 @@
 {
-  "n": 1362,
-  "n_pos": 694,
-  "n_neg": 668,
+  "n": 1375,
+  "n_pos": 697,
+  "n_neg": 678,
   "features": [
     "H",
     "V",
@@ -47,16 +47,6 @@
     "opposition_dist_deg",
     "sky_rate_deg_day",
     "solar_elong_deg",
-    "ts_arc_growth",
-    "ts_n_snapshots",
-    "ts_nobs_growth",
-    "ts_nobs_rate",
-    "ts_score_delta",
-    "ts_score_slope",
-    "ts_span_days",
-    "ts_unseen_max",
-    "ts_unseen_trend",
-    "ts_v_faded",
     "neo_minus_mba",
     "sum_mba_noid",
     "neo_noid_minus_raw",
@@ -71,235 +61,236 @@
     "obs_T08",
     "obs_M22"
   ],
-  "trained_utc": "2026-10-11T21:05Z",
+  "trained_utc": "2026-10-11T23:02Z",
   "with_backfill": false,
+  "inputs": "first-posting only (no lookahead ts_* features)",
   "baseline_digest2_score": {
     "model": "digest2_score_threshold",
-    "n": 1362,
-    "n_pos": 694,
-    "roc_auc": 0.6517239296622893,
-    "pr_auc": 0.5983908944922051,
+    "n": 1375,
+    "n_pos": 697,
+    "roc_auc": 0.6516370200141356,
+    "pr_auc": 0.5958925973844954,
     "at_99pct_neo_recall": {
       "threshold": 0.8,
-      "neo_recall": 0.9913544668587896,
-      "non_neo_excluded_frac": 0.22005988023952097,
-      "precision": 0.5690653432588917
+      "neo_recall": 0.9913916786226685,
+      "non_neo_excluded_frac": 0.2153392330383481,
+      "precision": 0.5650040883074408
     }
   },
-  "model": "lightgbm_dart_time_split_v3",
+  "model": "lightgbm_dart_time_split_v4_first_posting",
   "test": {
     "model": "lightgbm_dart",
-    "n": 341,
-    "n_pos": 210,
-    "roc_auc": 0.9661941112322792,
-    "pr_auc": 0.971606571740664,
+    "n": 344,
+    "n_pos": 212,
+    "roc_auc": 0.9246355060034305,
+    "pr_auc": 0.9430293251787537,
     "at_99pct_neo_recall": {
-      "threshold": 0.19399336208396303,
-      "neo_recall": 0.9904761904761905,
-      "non_neo_excluded_frac": 0.6946564885496184,
-      "precision": 0.8387096774193549
+      "threshold": 0.07983783232651634,
+      "neo_recall": 0.9905660377358491,
+      "non_neo_excluded_frac": 0.30303030303030304,
+      "precision": 0.695364238410596
     }
   },
   "baseline_on_test": {
     "model": "digest2_score_threshold",
-    "n": 341,
-    "n_pos": 210,
-    "roc_auc": 0.7024718284260268,
-    "pr_auc": 0.7308444144949162,
+    "n": 344,
+    "n_pos": 212,
+    "roc_auc": 0.6972913093196111,
+    "pr_auc": 0.7283131582481057,
     "at_99pct_neo_recall": {
       "threshold": 0.8,
-      "neo_recall": 0.9904761904761905,
-      "non_neo_excluded_frac": 0.2595419847328244,
-      "precision": 0.6819672131147541
+      "neo_recall": 0.9905660377358491,
+      "non_neo_excluded_frac": 0.25,
+      "precision": 0.6796116504854369
     }
   },
   "holdout": {
     "what_is_predicted": "probability that a NEOCP candidate is a real near-Earth object (not an impact probability)",
     "split": {
-      "train_n": 1021,
-      "test_n": 341,
-      "test_neo": 210,
+      "train_n": 1031,
+      "test_n": 344,
+      "test_neo": 212,
       "train_dates": [
         "2026-06-20.4",
-        "2026-09-18.4"
+        "2026-09-19.2"
       ],
       "test_dates": [
-        "2026-09-18.4",
-        "2026-10-10.4"
+        "2026-09-19.2",
+        "2026-10-11.4"
       ]
     },
     "roc_auc": {
-      "model": 0.9661941112322792,
-      "baseline": 0.7024718284260268
+      "model": 0.9246355060034305,
+      "baseline": 0.6972913093196111
     },
     "pr_auc": {
-      "model": 0.971606571740664,
-      "baseline": 0.7308444144949162
+      "model": 0.9430293251787537,
+      "baseline": 0.7283131582481057
     },
     "auc_bootstrap_95ci": {
       "model": [
-        0.9452235687914611,
-        0.9833183994680165
+        0.8924937114052974,
+        0.9521599961671193
       ],
       "baseline": [
-        0.6389646880354631,
-        0.760259879539734
+        0.6399469498623512,
+        0.7526586312949526
       ],
       "difference": [
-        0.207823053773258,
-        0.32095820068814707
+        0.16978747271074698,
+        0.2838596097659624
       ],
       "p_model_not_better": 0.0
     },
     "operating_points": {
       "95pct_recall": {
         "model": {
-          "threshold": 0.2837262311276445,
+          "threshold": 0.27656039333797067,
           "tp": 202,
-          "fn": 8,
-          "fp": 33,
-          "tn": 98,
-          "neo_recall": 0.9619047619047619,
-          "junk_excluded": 0.7480916030534351,
-          "precision": 0.8595744680851064
+          "fn": 10,
+          "fp": 44,
+          "tn": 88,
+          "neo_recall": 0.9528301886792453,
+          "junk_excluded": 0.6666666666666666,
+          "precision": 0.8211382113821138
         },
         "baseline": {
           "threshold": 0.9,
-          "tp": 200,
+          "tp": 202,
           "fn": 10,
-          "fp": 78,
-          "tn": 53,
-          "neo_recall": 0.9523809523809523,
-          "junk_excluded": 0.40458015267175573,
-          "precision": 0.7194244604316546
+          "fp": 83,
+          "tn": 49,
+          "neo_recall": 0.9528301886792453,
+          "junk_excluded": 0.3712121212121212,
+          "precision": 0.7087719298245614
         }
       },
       "99pct_recall": {
         "model": {
-          "threshold": 0.06566258715952229,
-          "tp": 210,
-          "fn": 0,
-          "fp": 86,
-          "tn": 45,
-          "neo_recall": 1.0,
-          "junk_excluded": 0.3435114503816794,
-          "precision": 0.7094594594594594
+          "threshold": 0.05383661713883133,
+          "tp": 211,
+          "fn": 1,
+          "fp": 109,
+          "tn": 23,
+          "neo_recall": 0.9952830188679245,
+          "junk_excluded": 0.17424242424242425,
+          "precision": 0.659375
         },
         "baseline": {
           "threshold": 0.76,
-          "tp": 209,
+          "tp": 211,
           "fn": 1,
-          "fp": 106,
-          "tn": 25,
-          "neo_recall": 0.9952380952380953,
-          "junk_excluded": 0.19083969465648856,
-          "precision": 0.6634920634920635
+          "fp": 108,
+          "tn": 24,
+          "neo_recall": 0.9952830188679245,
+          "junk_excluded": 0.18181818181818182,
+          "precision": 0.6614420062695925
         }
       },
       "p_0.5": {
         "model": {
           "threshold": 0.5,
-          "tp": 198,
-          "fn": 12,
-          "fp": 21,
-          "tn": 110,
-          "neo_recall": 0.9428571428571428,
-          "junk_excluded": 0.8396946564885496,
-          "precision": 0.9041095890410958
+          "tp": 186,
+          "fn": 26,
+          "fp": 24,
+          "tn": 108,
+          "neo_recall": 0.8773584905660378,
+          "junk_excluded": 0.8181818181818182,
+          "precision": 0.8857142857142857
         },
         "baseline": {
           "threshold": 0.5,
-          "tp": 210,
+          "tp": 212,
           "fn": 0,
-          "fp": 123,
+          "fp": 124,
           "tn": 8,
           "neo_recall": 1.0,
-          "junk_excluded": 0.061068702290076333,
-          "precision": 0.6306306306306306
+          "junk_excluded": 0.06060606060606061,
+          "precision": 0.6309523809523809
         }
       }
     },
     "calibration": {
-      "brier_model": 0.07038016963587224,
-      "brier_baseline": 0.3044920821114369,
-      "brier_always_base_rate": 0.25668668193943317,
+      "brier_model": 0.10764807341163964,
+      "brier_baseline": 0.30840755813953485,
+      "brier_always_base_rate": 0.2577549006753251,
       "reliability_model": [
         {
           "bin": [
             0.0,
             0.2
           ],
-          "n": 95,
-          "mean_predicted": 0.07691739807892362,
-          "fraction_neo": 0.031578947368421054
+          "n": 84,
+          "mean_predicted": 0.09011091769557703,
+          "fraction_neo": 0.10714285714285714
         },
         {
           "bin": [
             0.2,
             0.4
           ],
-          "n": 22,
-          "mean_predicted": 0.29278539868782655,
-          "fraction_neo": 0.36363636363636365
+          "n": 37,
+          "mean_predicted": 0.3089317550670114,
+          "fraction_neo": 0.24324324324324326
         },
         {
           "bin": [
             0.4,
             0.6000000000000001
           ],
-          "n": 13,
-          "mean_predicted": 0.5188861166402191,
-          "fraction_neo": 0.38461538461538464
+          "n": 26,
+          "mean_predicted": 0.5044607536915263,
+          "fraction_neo": 0.6538461538461539
         },
         {
           "bin": [
             0.6000000000000001,
             0.8
           ],
-          "n": 23,
-          "mean_predicted": 0.723722641622534,
-          "fraction_neo": 0.5217391304347826
+          "n": 64,
+          "mean_predicted": 0.7144746210258295,
+          "fraction_neo": 0.75
         },
         {
           "bin": [
             0.8,
             1.0
           ],
-          "n": 188,
-          "mean_predicted": 0.9314942950163341,
-          "fraction_neo": 0.9680851063829787
+          "n": 133,
+          "mean_predicted": 0.8775291075530519,
+          "fraction_neo": 0.9699248120300752
         }
       ]
     }
   },
-  "cv_auc": 0.9734499010892139,
-  "cv_auc_std": 0.006239774834810635,
+  "cv_auc": 0.9098753400640831,
+  "cv_auc_std": 0.015063795220162945,
   "conformal": {
     "0.01": {
       "alpha": 0.01,
       "target_neo_recall": 0.99,
-      "achieved_neo_recall_mean": 0.9928674351585014,
-      "junk_excluded_mean": 0.6205089820359281,
-      "junk_excluded_std": 0.04775308315458931,
-      "threshold_mean": 0.07914353922315767,
+      "achieved_neo_recall_mean": 0.9918338108882523,
+      "junk_excluded_mean": 0.19882005899705016,
+      "junk_excluded_std": 0.06622336755704217,
+      "threshold_mean": 0.05823568939128798,
       "n_splits_used": 40
     },
     "0.05": {
       "alpha": 0.05,
       "target_neo_recall": 0.95,
-      "achieved_neo_recall_mean": 0.954971181556196,
-      "junk_excluded_mean": 0.8786676646706587,
-      "junk_excluded_std": 0.020095458439424518,
-      "threshold_mean": 0.3764993492974901,
+      "achieved_neo_recall_mean": 0.9558022922636102,
+      "junk_excluded_mean": 0.6558259587020648,
+      "junk_excluded_std": 0.06427493561937221,
+      "threshold_mean": 0.26575092948897466,
       "n_splits_used": 40
     },
     "0.1": {
       "alpha": 0.1,
       "target_neo_recall": 0.9,
-      "achieved_neo_recall_mean": 0.9036743515850144,
-      "junk_excluded_mean": 0.9380239520958085,
-      "junk_excluded_std": 0.016153797557145154,
-      "threshold_mean": 0.6320160542828186,
+      "achieved_neo_recall_mean": 0.9083094555873925,
+      "junk_excluded_mean": 0.7517699115044247,
+      "junk_excluded_std": 0.02043238714545728,
+      "threshold_mean": 0.3853635254456595,
       "n_splits_used": 40
     }
   }
