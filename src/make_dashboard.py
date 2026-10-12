@@ -55,15 +55,15 @@ def sky_map(objects, replay_label=""):
         y = T + PH * (1 - (dec + 90) / 180.0)
         return x, y
     parts = [f'<svg id="skymap" viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="sky map">']
-    parts.append(f'<rect x="{L}" y="{T}" width="{PW}" height="{PH}" fill="#0e1430" rx="8"/>')
+    parts.append(f'<rect x="{L}" y="{T}" width="{PW}" height="{PH}" fill="rgba(11,16,32,.65)" stroke="rgba(140,160,220,.16)" rx="10"/>')
     for hh in range(0, 25, 4):                   # RA grid
         x, _ = xy(hh, 0)
-        parts.append(f'<line x1="{x:.0f}" y1="{T}" x2="{x:.0f}" y2="{T+PH}" stroke="#1d2547" stroke-width="1"/>')
-        parts.append(f'<text x="{x:.0f}" y="{T+PH+16}" fill="#8b93ad" font-size="10" text-anchor="middle">{hh}h</text>')
+        parts.append(f'<line x1="{x:.0f}" y1="{T}" x2="{x:.0f}" y2="{T+PH}" stroke="rgba(140,160,220,.10)" stroke-width="1"/>')
+        parts.append(f'<text x="{x:.0f}" y="{T+PH+16}" fill="#7f88a6" font-size="10" text-anchor="middle">{hh}h</text>')
     for dd in range(-60, 61, 30):                # Dec grid
         _, y = xy(0, dd)
-        parts.append(f'<line x1="{L}" y1="{y:.0f}" x2="{L+PW}" y2="{y:.0f}" stroke="#1d2547" stroke-width="1"/>')
-        parts.append(f'<text x="{L-6}" y="{y:.0f}" fill="#8b93ad" font-size="10" text-anchor="end" dominant-baseline="middle">{dd:+d}&#176;</text>')
+        parts.append(f'<line x1="{L}" y1="{y:.0f}" x2="{L+PW}" y2="{y:.0f}" stroke="rgba(140,160,220,.10)" stroke-width="1"/>')
+        parts.append(f'<text x="{L-6}" y="{y:.0f}" fill="#7f88a6" font-size="10" text-anchor="end" dominant-baseline="middle">{dd:+d}&#176;</text>')
     # ecliptic: equatorial coords of ecliptic latitude 0
     eps = math.radians(23.4393)
     pts = []
@@ -84,7 +84,6 @@ def sky_map(objects, replay_label=""):
     parts.append('<polyline points="' + " ".join(f"{x:.0f},{y:.0f}" for x, y in seg)
                  + '" fill="none" stroke="#f9a8d4" stroke-width="1.2" stroke-dasharray="5 4" opacity=".55"/>')
     parts.append(f'<text x="{L+PW-8}" y="{T+14}" fill="#f9a8d4" font-size="10" text-anchor="end" opacity=".8">ecliptic</text>')
-    parts.append(f'<text id="liveclock" x="{L+8}" y="{T+16}" fill="#4ade80" font-size="11" opacity=".9">LIVE</text>')
     colors = {"hi": "#4ade80", "mid": "#fbbf24", "lo": "#64748b"}
     payload = []
     for o in sorted(objects, key=lambda o: o["p"]):
@@ -124,17 +123,17 @@ def sky_map(objects, replay_label=""):
     g.appendChild(seg);
     var dot = document.createElementNS(NS, 'circle');
     dot.setAttribute('r', o.r); dot.setAttribute('fill', o.c);
-    dot.setAttribute('stroke', '#0b1020'); dot.setAttribute('stroke-width', '1');
+    dot.setAttribute('stroke', '#04060d'); dot.setAttribute('stroke-width', '1');
     var ti = document.createElementNS(NS, 'title'); dot.appendChild(ti);
     g.appendChild(dot);
     var txt = document.createElementNS(NS, 'text');
-    txt.setAttribute('fill', '#e8ecf8'); txt.setAttribute('font-size', '10');
-    txt.setAttribute('paint-order', 'stroke'); txt.setAttribute('stroke', '#0b1020');
+    txt.setAttribute('fill', '#eef2fc'); txt.setAttribute('font-size', '10');
+    txt.setAttribute('paint-order', 'stroke'); txt.setAttribute('stroke', '#04060d');
     txt.setAttribute('stroke-width', '3'); txt.style.display = 'none';
     txt.style.pointerEvents = 'none'; txt.textContent = o.desig;
     g.appendChild(txt);
-    dot.addEventListener('mouseenter', function() { txt.style.display = ''; dot.setAttribute('stroke', '#e8ecf8'); });
-    dot.addEventListener('mouseleave', function() { txt.style.display = 'none'; dot.setAttribute('stroke', '#0b1020'); });
+    dot.addEventListener('mouseenter', function() { txt.style.display = ''; dot.setAttribute('stroke', '#eef2fc'); });
+    dot.addEventListener('mouseleave', function() { txt.style.display = 'none'; dot.setAttribute('stroke', '#04060d'); });
     nodes[o.id] = {seg: seg, dot: dot, ti: ti, txt: txt};
   });
   function update() {
@@ -156,10 +155,9 @@ def sky_map(objects, replay_label=""):
       if (n.txt) { n.txt.setAttribute('x', np_[0] + o.r + 3); n.txt.setAttribute('y', np_[1] + 3); }
     });
     var lbl = document.getElementById('liveclock');
-    if (lbl) lbl.textContent = 'LIVE ' + new Date().toISOString().slice(0, 16).replace('T', ' ') +
-      ' UTC - dots extrapolated from last measurement';
+    if (lbl) lbl.textContent = 'Positions estimated for ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + ' your time';
   }
-  update(); setInterval(update, 30000);
+  update(); document.addEventListener('DOMContentLoaded', update); setInterval(update, 30000);
 })();
 </script>"""
     script = script.replace("__OBJS__", _json.dumps(payload)).replace("__CFG__", _json.dumps(cfg))
@@ -185,6 +183,13 @@ def main():
     n_pos = sum(1 for r in all_lab if r.get("y") == "1")
     n_neg = len(all_lab) - n_pos
     latest_snap = snaps[-1].stem.replace("neocp_", "") if snaps else "-"
+    def nice(stamp):  # 20261011T2148 -> 11 Oct 2026, 21:48 UTC
+        try:
+            return datetime.strptime(stamp[:13], "%Y%m%dT%H%M").strftime("%d %b %Y, %H:%M UTC").lstrip("0")
+        except ValueError:
+            return stamp
+    snap_iso = (datetime.strptime(latest_snap[:13], "%Y%m%dT%H%M").strftime("%Y-%m-%dT%H:%MZ")
+                if snaps and latest_snap[:8].isdigit() else "")
 
     # show only objects on the CURRENT page (latest snapshot)
     if snaps:
@@ -256,12 +261,16 @@ def main():
     auc_m = (ho.get("roc_auc") or {}).get("model", test.get("roc_auc"))
     auc_b = (ho.get("roc_auc") or {}).get("baseline", base.get("roc_auc"))
     trained = res.get("trained_utc", "")[:10] or "2026-08-05"
+    try:
+        trained = datetime.strptime(trained, "%Y-%m-%d").strftime("%d %b %Y").lstrip("0")
+    except ValueError:
+        pass
     sp_ = ho.get("split") or {}
     # Every page quotes the same evaluation: trained on earlier candidates, tested once on later ones.
     split_txt = (f"tested on {sp_['test_n']} candidates posted after {sp_['test_dates'][0][:10]}, "
                  f"trained on {sp_['train_n']} earlier ones" if sp_ else "tested on the newest 25% of candidates")
     stats = "".join([
-        stat("candidates on the page now", len(vet), f"snapshot {latest_snap} UTC"),
+        stat("candidates on the page now", len(vet), f"captured {nice(latest_snap)} · rescored twice a day"),
         stat("ROC-AUC on later candidates",
              f"{auc_m:.2f}" if auc_m is not None else "—",
              (f"digest2 alone {auc_b:.2f} · " if auc_b is not None else "") + split_txt),
@@ -269,7 +278,7 @@ def main():
              f'{100*op.get("non_neo_excluded_frac", 0):.0f}%' if op else "—",
              f'same test · digest2 alone {100*op_b.get("non_neo_excluded_frac", 0):.0f}% · benchmark 80%'),
         stat("model trained on", res.get("n", "?"),
-             f"labeled candidates · retrained {trained} · {len(all_lab)} labeled now"),
+             f"labeled candidates · last retrained {trained} · retrained every Monday"),
         stat("outcomes archived", len(outcomes), "since 2026-05-16"),
     ])
 
@@ -277,7 +286,7 @@ def main():
     def _pct(x):
         return "—" if x is None else f"{100 * x:.0f}%"
     if withdrawn:
-        eval_html = """<h2 id="eval">Is the model any good?</h2>
+        eval_html = """<div class="sk">EVALUATION · ON CANDIDATES IT NEVER SAW</div><h2 id="eval">Is the model any good?</h2>
 <div class="evalcard"><p><b>Being re-evaluated.</b> The previous evaluation was withdrawn: some inputs described how each candidate changed
 on the page until it left, which leaks the outcome. The model is being retrained on first-posting information only, and the corrected
 evaluation appears here when that finishes. Until then, treat the ranking with extra caution.</p></div>"""
@@ -291,7 +300,7 @@ evaluation appears here when that finishes. Until then, treat the ranking with e
                     f"<td>{_pct(c['neo_recall'])}</td><td>{_pct(c['junk_excluded'])}</td></tr>")
         rel = "".join(f"<tr><td>{b['bin'][0]:.1f}–{b['bin'][1]:.1f}</td><td>{b['n']}</td><td>{b['mean_predicted']:.2f}</td>"
                       f"<td>{b['fraction_neo']:.2f}</td></tr>" for b in cal.get("reliability_model", []))
-        eval_html = f"""<h2 id="eval">Is the model any good?</h2>
+        eval_html = f"""<div class="sk">EVALUATION · ON CANDIDATES IT NEVER SAW</div><h2 id="eval">Is the model any good?</h2>
 <p class="lede">{"Yes, at ranking: " if (auc_m or 0) > (auc_b or 0) else "Not yet: "}on candidates it had never seen, posted after it was trained, it ranked real near-Earth objects
 above junk better than the digest2 score alone (ROC-AUC {ho['roc_auc']['model']:.2f} vs {ho['roc_auc']['baseline']:.2f}).
 At a cut-off that keeps 95% of real ones, it threw out {_pct(op95['model']['junk_excluded'])} of the junk; digest2 alone threw out {_pct(op95['baseline']['junk_excluded'])}.</p>
@@ -312,12 +321,12 @@ evolved on the page until it left, which leaks the outcome and inflated the scor
 <a href="/evidence/#asteroids" style="color:var(--acc)">evidence page</a>.</p>
 </div></details>"""
     else:
-        eval_html = f"""<h2 id="eval">Is the model any good?</h2>
+        eval_html = f"""<div class="sk">EVALUATION · ON CANDIDATES IT NEVER SAW</div><h2 id="eval">Is the model any good?</h2>
 <div class="evalcard"><p>On the newest 25% of candidates, held out by discovery date (n={test.get('n', '?')}), the model's ROC-AUC is
 <strong>{test.get('roc_auc', 0):.2f}</strong> versus <strong>{base.get('roc_auc', 0):.2f}</strong> for the digest2 score alone, so it ranks
 candidates better. But at the strict setting that keeps ≥99% of real NEOs it excludes only {_pct(op.get('non_neo_excluded_frac'))} of junk,
 versus {_pct(op_b.get('non_neo_excluded_frac'))} for digest2 alone, far from the 80% benchmark. Confusion matrices and a calibration check
-appear here after the next weekly retrain.</p></div>"""
+appear here after the next Monday retrain.</p></div>"""
 
     # Limitations shown where people act on the ranking, not buried in documentation.
     lim = [f"It ranks better than the digest2 score alone (ROC-AUC {auc_m:.2f} vs {auc_b:.2f}, {split_txt}), "
@@ -326,7 +335,7 @@ appear here after the next weekly retrain.</p></div>"""
            "Its advantage over the digest2 score alone is not yet established.",
            "Probabilities are <b>not calibrated</b>: use them to order follow-up, not as odds.",
            "Labels are noisy: some candidates marked “not confirmed” were real NEOs that were simply lost.",
-           f"Trained on {res.get('n', '?')} candidates (retrained {trained}); unusual candidates unlike past ones may be scored poorly.",
+           f"Trained on {res.get('n', '?')} candidates (last retrained {trained}; retrained every Monday); unusual candidates unlike past ones may be scored poorly.",
            "<b>Not an impact forecast:</b> a high score means “probably a real near-Earth object”, nothing about hitting Earth."]
     limits_html = ('<div class="ss-limits" style="margin:0 0 14px"><h4>BEFORE YOU ACT ON THIS RANKING</h4><ul>'
                    + "".join(f"<li>{x}</li>" for x in lim)
@@ -400,7 +409,7 @@ appear here after the next weekly retrain.</p></div>"""
     sentry_html = ""
     if sentry_rows:
         sentry_html = f"""
-<h2>Impact watch — NASA Sentry</h2>
+<div class="sk">CONTEXT · KNOWN IMPACT RISKS</div><h2>Impact watch: NASA Sentry</h2>
 <table><tr><th>object</th><th>size</th><th>impact odds</th><th>when</th><th>palermo</th></tr>
 {''.join(sentry_rows)}</table>
 <p class="note">The highest-ranked <em>known</em> impact risks, from
@@ -495,6 +504,7 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
     favicon = quote(comet_svg(64))
     doc = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
+<meta name="ss-updated" content="{snap_iso}">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Asteroid Watch · SpaceSift</title>
 <link rel="icon" href="data:image/svg+xml,{favicon}">
@@ -567,6 +577,15 @@ details.deep[open] > summary::after {{ content:"−"; }}
 details.deep > :not(summary) {{ margin-left:16px; margin-right:16px; }}
 details.deep > :last-child {{ margin-bottom:16px; }}
 details.deep .evalcard {{ margin-top:0; }}
+.sk {{ font:700 10px "Syncopate",sans-serif; letter-spacing:.3em; color:var(--acc); margin:52px 0 0; }}
+.sk + h2 {{ margin-top:10px; }}
+.legend {{ display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 2px 0; color:var(--body); font-size:12.5px; }}
+.legend span {{ display:inline-flex; align-items:center; gap:7px; }}
+.legend i {{ width:9px; height:9px; border-radius:50%; display:inline-block; }}
+.legend i.dash {{ width:18px; height:0; border-radius:0; border-top:1.5px dashed var(--body); }}
+.legend i.dash.pink {{ border-top-color:#f9a8d4; }}
+.legend .clock {{ margin-left:auto; color:var(--dim); }}
+footer a {{ color:var(--body); }}
 </style>
 <script>window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -574,7 +593,7 @@ details.deep .evalcard {{ margin-top:0; }}
 <div id="ss-nav" data-active="asteroids"></div>
 <header class="ss-head"><div class="ss-kicker">INVESTIGATION 03 · NEW ASTEROIDS</div>
 <div class="ss-head-row"><h1>Asteroid Watch</h1><nav class="ss-tabs"><a href="#queue">Queue</a><a href="#map">Sky map</a><a href="#eval">Evaluation</a><a href="/evidence/#asteroids">Evidence</a></nav></div>
-<p class="ss-q">Which of the new candidates on the Minor Planet Center's confirmation page are <b>real near-Earth objects</b>? A ranking, updated twice a day. Last update {now}.</p></header>
+<p class="ss-q">Which of the new candidates on the Minor Planet Center's confirmation page are <b>real near-Earth objects</b>? A ranking, updated twice a day. Latest capture: {nice(latest_snap)}.</p></header>
 <main class="wrap">
 {start_html}
 <div class="ss-plain plainbox"><h4>IN PLAIN WORDS</h4>
@@ -586,7 +605,7 @@ the rest are camera artifacts, satellites, stars or ordinary main-belt asteroids
 is a genuine near-Earth object, not the chance of hitting Earth.</b> No candidate here has an impact assessment; known impact risks are
 in NASA's Sentry table further down.</p></div>
 <div class="statgrid">{stats}</div>
-<h2 id="queue">The confirmation queue, ranked</h2>
+<div class="sk">LIVE · THE RANKING</div><h2 id="queue">The confirmation queue, ranked</h2>
 {limits_html}
 <div class="searchwrap"><input id="queueSearch" class="tsearch" type="search" placeholder="Search designation…" autocomplete="off" aria-label="Search the confirmation queue by designation"><span id="queueSearch-count" class="scount"></span></div>
 <div class="tablewrap"><table id="queueTable">
@@ -600,8 +619,9 @@ Follow-up status: <b style="color:{STATUS['needs_followup']['color']}">Needs fol
 <b style="color:{STATUS['tracked']['color']}">Being tracked</b> = multi-night arc, seen recently ·
 <b style="color:{STATUS['going_stale']['color']}">Going stale</b> = not seen in
 &gt;{int(STALE_DAYS)} days, at risk of loss.</p>
-<h2 id="map">Where they are right now</h2>
+<div class="sk">LIVE · THE SKY</div><h2 id="map">Where they are right now</h2>
 <div class="skycard">{sky_html}
+<div class="legend"><span><i style="background:var(--hi)"></i>likely real (≥0.8)</span><span><i style="background:var(--mid)"></i>uncertain (0.4–0.8)</span><span><i style="background:var(--lo)"></i>probably not (&lt;0.4)</span><span><i class="dash"></i>estimated since last seen</span><span><i class="dash pink"></i>ecliptic</span><span class="clock" id="liveclock"></span></div>
 <p class="note">Each dot is a candidate at its estimated position right now (right ascension and declination, the sky's longitude and latitude).
 Bigger and greener means more likely real; labels mark the top targets. The dashed pink line is the <span style="color:#f9a8d4">ecliptic</span>,
 where ordinary main-belt asteroids cluster, so candidates far from it are more interesting. The faint solid line is each object's measured
@@ -612,7 +632,7 @@ certain with time (dots fade after 7 days). That growing uncertainty is exactly 
 <div class="cols">
 <div>{sentry_html}</div>
 <div>
-<h2>Outcome archive</h2>
+<div class="sk">CONTEXT · WHAT HAPPENED TO PAST CANDIDATES</div><h2>Outcome archive</h2>
 <table><tr><th>class</th><th>n</th></tr>{oc_rows}</table>
 <p class="note">"neo" = confirmed via discovery MPEC. Negatives accrue from live capture;
 designated_other are mostly main-belt identifications.</p>
@@ -620,8 +640,8 @@ designated_other are mostly main-belt identifications.</p>
 </div>
 {tracked_html}
 </main>
-<footer class="wrap">planetary-defense-neocp-vetting · data: MPC NEOCP / Previous-NEOCP / MPECs ·
-regenerate with <span class="mono">python3 src/make_dashboard.py</span></footer>
+<footer class="wrap">SpaceSift · the science of detection · open code and data on <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">GitHub</a>.
+Data: Minor Planet Center (NEO Confirmation Page, Previous NEOCP, MPECs), NASA JPL Sentry. Rescored twice a day, retrained every Monday.</footer>
 <script>
 (function(){{
   function wire(inputId, tableId){{

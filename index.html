@@ -224,7 +224,7 @@
         <span class="fs">11-star test set fixed before tuning · two baselines · one script to rerun</span><span class="fgo">See the evidence →</span></a>
       <a class="fcard reveal" href="/evidence/#asteroids"><span class="ftag mixed">NOT YET PROVEN</span><span class="fk">03 · NEW ASTEROIDS</span>
         <b id="ast-claim">Ranks new asteroid candidates by how likely each is real, tested on later candidates it never saw.</b>
-        <span class="fs" id="ast-fs">Probability of being a real near-Earth object, not of hitting Earth · time-split test · retrained weekly</span><span class="fgo">See the evidence →</span></a>
+        <span class="fs" id="ast-fs">Probability of being a real near-Earth object, not of hitting Earth · time-split test · rescored twice a day, retrained every Monday</span><span class="fgo">See the evidence →</span></a>
     </div>
     <p class="protocol reveal">Every result shows its <b>data</b>, <b>method</b> and <b>baseline</b>, counts its <b>errors in both directions</b>, names its <b>limits</b>, and can be <b>rerun</b>.</p>
   </section>
@@ -739,7 +739,7 @@ fetch("/outputs/training_results.json").then((r) => r.json()).then((tr) => {
   const beats = em != null && eb != null && em > eb, sp = tr.holdout?.split;
   document.getElementById("ast-claim").textContent = `${m > b ? "Ranks new candidates better than" : "Does not yet rank candidates better than"} the standard digest2 score (ROC-AUC ${m.toFixed(2)} vs ${b.toFixed(2)})${beats ? ", and drops more junk while keeping 99% of real ones." : ", but doesn't yet drop more junk where it matters most."}`;
   // Say exactly which evaluation this is, so it matches the dashboard and the evidence page.
-  if (sp) document.getElementById("ast-fs").textContent = `Tested on ${sp.test_n} candidates posted after ${String(sp.test_dates[0]).slice(0, 10)}, trained on ${sp.train_n} earlier ones · probability of being real, not of hitting Earth · retrained weekly`;
+  if (sp) document.getElementById("ast-fs").textContent = `Tested on ${sp.test_n} candidates posted after ${String(sp.test_dates[0]).slice(0, 10)}, trained on ${sp.train_n} earlier ones · probability of being real, not of hitting Earth · retrained every Monday${tr.trained_utc ? ` (last: ${new Date(tr.trained_utc.slice(0, 10)).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })})` : ""}`;
 }).catch(() => {});
 
 // ------------------------------------------------------------ reveals and counters

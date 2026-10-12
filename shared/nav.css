@@ -104,3 +104,18 @@ body.ss-page { background:
 .ss-strip.over { position:fixed; left:0; right:0; background:linear-gradient(rgba(4,6,13,.8), rgba(4,6,13,0)); border-bottom-color:transparent; backdrop-filter:none; transition:background .3s, border-color .3s; }
 .ss-strip.over.scrolled { background:rgba(4,6,13,.92); border-bottom-color:var(--ss-line); backdrop-filter:blur(8px); }
 @media (max-width:600px) { .ss-tabs { margin-left:0; max-width:100%; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; } .ss-tabs::-webkit-scrollbar { display:none; } }
+
+/* Freshness of live data, shown next to the LIVE DATA pill. */
+.ss-fresh { font:600 12px var(--ss-sub); color:var(--ss-live); white-space:nowrap; }
+.ss-fresh.late { color:var(--ss-warn); }
+
+/* Loading states: one spinner and one placeholder shimmer for every page. */
+.ss-spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--ss-line); border-top-color:var(--ss-acc); border-radius:50%;
+              animation:ss-spin .8s linear infinite; vertical-align:-2px; }
+@keyframes ss-spin { to { transform:rotate(360deg); } }
+.ss-skel { display:block; border-radius:8px; background:linear-gradient(90deg, rgba(140,160,220,.08) 25%, rgba(140,160,220,.16) 50%, rgba(140,160,220,.08) 75%);
+           background-size:200% 100%; animation:ss-shimmer 1.4s ease-in-out infinite; }
+.ss-skel.line { height:.9em; margin:.45em 0; } .ss-skel.line.short { width:60%; }
+.ss-skel.block { height:160px; }
+@keyframes ss-shimmer { 0% { background-position:100% 0; } 100% { background-position:-100% 0; } }
+@media (prefers-reduced-motion: reduce) { .ss-spinner, .ss-skel { animation:none; } }

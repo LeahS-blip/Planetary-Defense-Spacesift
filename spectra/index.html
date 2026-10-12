@@ -28,6 +28,10 @@
   /* Start here: one-click first experiments */
   .ss-start-head { margin-top:18px; }
   .ss-start svg { max-width:220px; }
+  .modebar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; margin:4px 0 18px; padding:10px 12px 10px 16px;
+             border:1px solid var(--line); border-radius:14px; background:var(--card2); }
+  .modebar span { font:700 9.5px var(--title); letter-spacing:.26em; color:var(--acc); }
+  #more-wrap { margin-top:46px; }
   .start-alt { margin:12px 0 26px; color:var(--dim); font-size:13.5px; }
   .start-alt a { font-weight:700; }
 
@@ -185,31 +189,14 @@
 <header class="ss-head">
   <div class="ss-kicker">INVESTIGATION 02 · STARLIGHT</div>
   <div class="ss-head-row"><h1>Spectrum Lab</h1><nav class="ss-tabs"><a class="about-link" href="#about"><i>?</i>How it works</a></nav></div>
-  <p class="ss-q">Light carries a fingerprint. <b>Find out how hot a star is and what it's made of, or what kind of rock an asteroid is</b>, from its spectrum alone.</p>
+  <p class="ss-q">Every star's light carries a fingerprint. <b>Slide the temperature and watch the dark lines change</b>: they tell you how hot a star is and what it's made of.</p>
 </header>
 
 <main>
 <div id="app">
-  <!-- Start here: three one-click experiments for first-time visitors -->
-  <div class="ss-start-head"><h2>START HERE</h2><span>Pick one. No science background needed.</span></div>
-  <div class="ss-starts" id="starts">
-    <button class="ss-start primary" data-go="sun"><span class="n">01</span>
-      <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><defs><linearGradient id="sg-sun" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset=".2" stop-color="#3b6cff"/><stop offset=".4" stop-color="#2fd0c8"/><stop offset=".56" stop-color="#5be35b"/><stop offset=".72" stop-color="#ffe14a"/><stop offset=".86" stop-color="#ff9a3c"/><stop offset="1" stop-color="#e8423a"/></linearGradient></defs>
-        <rect y="7" width="200" height="20" rx="5" fill="url(#sg-sun)"/><g fill="#04060d"><rect x="22" y="7" width="3" height="20"/><rect x="106" y="7" width="2" height="20"/><rect x="171" y="7" width="3.5" height="20"/></g></svg>
-      <b>Read the Sun's fingerprint</b><span class="d">See the dark lines in sunlight and which element makes each one.</span><span class="go">Try it →</span></button>
-    <button class="ss-start" data-go="quiz"><span class="n">02</span>
-      <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><defs><linearGradient id="sg-quiz" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset=".25" stop-color="#3b6cff"/><stop offset=".5" stop-color="#5be35b"/><stop offset=".75" stop-color="#ffb43c"/><stop offset="1" stop-color="#e8423a"/></linearGradient></defs>
-        <circle cx="17" cy="17" r="14" fill="#1d2440" stroke="#7aa2ff" stroke-width="1.2"/><text x="17" y="22.5" text-anchor="middle" fill="#eef2fc" font-family="Comfortaa,sans-serif" font-weight="700" font-size="16">?</text>
-        <rect x="40" y="9" width="160" height="16" rx="4" fill="url(#sg-quiz)" opacity=".85"/><g fill="#04060d"><rect x="62" y="9" width="2.5" height="16"/><rect x="98" y="9" width="2" height="16"/><rect x="141" y="9" width="2.5" height="16"/><rect x="180" y="9" width="2" height="16"/></g></svg>
-      <b>Guess the mystery star</b><span class="d">Look at a star's rainbow and guess how hot it is. Try three rounds.</span><span class="go">Try it →</span></button>
-    <button class="ss-start" data-go="ast"><span class="n">03</span>
-      <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><rect x="62" y="1" width="44" height="32" rx="4" fill="rgba(122,162,255,.12)"/>
-        <path d="M2 30 H198" stroke="rgba(140,160,220,.3)" stroke-width="1"/><path d="M4 26 C24 16 44 9 64 10 S84 26 90 26 S108 13 130 10 S170 6 196 4" fill="none" stroke="#c9b38a" stroke-width="2.4" stroke-linecap="round"/></svg>
-      <b>Is this asteroid rock or metal?</b><span class="d">Its reflected light gives it away.</span><span class="go">Try it →</span></button>
-  </div>
-  <p class="start-alt">Have your own spectrum? <a href="#" id="go-upload">Upload it</a> (data file or a picture).</p>
+  <div class="modebar" id="modebar" hidden><span id="mode-name"></span><button class="btn ghost" id="mode-back">← Back to reading stars</button></div>
 
-  <div class="pick">
+  <div class="pick" hidden>
     <button id="pick-stars" class="on"><span class="ico" style="background:radial-gradient(circle at 35% 35%,#fff,#ffd27a 50%,#ff9d3c)"></span>
       <div><b>STARS</b><span>How hot is it, and what's in it?</span></div></button>
     <button id="pick-asteroids"><span class="ico" style="background:radial-gradient(circle at 35% 35%,#c9b38a,#6b5a45 60%,#2c2620)"></span>
@@ -219,7 +206,7 @@
   <!-- ============================================================ STARS -->
   <section id="view-stars">
     <div class="mode">
-      <div class="seg" id="star-mode"><button data-m="explore" class="on">Explore</button><button data-m="quiz">Quiz me</button><button data-m="upload" title="For experts: analyze your own spectrum file or picture">Upload yours</button></div>
+      <div class="seg" id="star-mode" hidden><button data-m="explore" class="on">Explore</button><button data-m="quiz">Quiz me</button><button data-m="upload" title="For experts: analyze your own spectrum file or picture">Upload yours</button></div>
       <span class="score" id="star-score"></span>
     </div>
 
@@ -368,6 +355,24 @@
       </div>
     </details>
   </section>
+  <div id="more-wrap">
+  <div class="ss-start-head"><h2>MORE TO EXPLORE</h2><span>When you're ready for more.</span></div>
+  <div class="ss-starts" id="more">
+    
+    <button class="ss-start" data-go="quiz"><span class="n">TEST YOURSELF</span>
+      <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><defs><linearGradient id="sg-quiz" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset=".25" stop-color="#3b6cff"/><stop offset=".5" stop-color="#5be35b"/><stop offset=".75" stop-color="#ffb43c"/><stop offset="1" stop-color="#e8423a"/></linearGradient></defs>
+        <circle cx="17" cy="17" r="14" fill="#1d2440" stroke="#7aa2ff" stroke-width="1.2"/><text x="17" y="22.5" text-anchor="middle" fill="#eef2fc" font-family="Comfortaa,sans-serif" font-weight="700" font-size="16">?</text>
+        <rect x="40" y="9" width="160" height="16" rx="4" fill="url(#sg-quiz)" opacity=".85"/><g fill="#04060d"><rect x="62" y="9" width="2.5" height="16"/><rect x="98" y="9" width="2" height="16"/><rect x="141" y="9" width="2.5" height="16"/><rect x="180" y="9" width="2" height="16"/></g></svg>
+      <b>Guess the mystery star</b><span class="d">Look at a star's rainbow and guess its type.</span><span class="go">Try it →</span></button>
+    <button class="ss-start" data-go="ast"><span class="n">ASTEROIDS</span>
+      <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><rect x="62" y="1" width="44" height="32" rx="4" fill="rgba(122,162,255,.12)"/>
+        <path d="M2 30 H198" stroke="rgba(140,160,220,.3)" stroke-width="1"/><path d="M4 26 C24 16 44 9 64 10 S84 26 90 26 S108 13 130 10 S170 6 196 4" fill="none" stroke="#c9b38a" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <b>Is this asteroid rock or metal?</b><span class="d">Its reflected light gives it away.</span><span class="go">Try it →</span></button>
+  <button class="ss-start" data-go="upload"><span class="n">YOUR OWN DATA</span>
+      <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><rect x="1" y="3" width="28" height="28" rx="7" fill="none" stroke="#7aa2ff" stroke-width="1.4" stroke-dasharray="3 3"/><path d="M15 23V11M10 16l5-5 5 5" fill="none" stroke="#eef2fc" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M40 22 C60 22 64 12 80 14 S100 26 112 20 S140 10 160 16 S186 18 198 15" fill="none" stroke="rgba(201,208,228,.7)" stroke-width="1.6"/></svg>
+      <b>Analyze your own spectrum</b><span class="d">A data file from a survey, or a picture of a rainbow strip. Matched against 123 real stars.</span><span class="go">Upload →</span></button>
+  </div>
+  </div>
 </div>
 
 <!-- ============================================================ ABOUT -->
@@ -984,34 +989,36 @@ $("ast-guess").onclick = (e) => {
   drawAst();
 };
 
-// ---------------------------------------------------------------- start here cards
+// ---------------------------------------------------------------- activities
+// Reading a star is the main activity; the quiz, asteroids and upload are reached from "More to explore".
 const goTo = (el, block = "start") => el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block });
 const setMode = (seg, m) => $(seg).querySelector(`[data-m="${m}"]`).click(); // same path as a user tap
-const STARTS = {
-  sun: () => { pick("stars"); setMode("star-mode", "explore"); $("star-presets").querySelector('[data-name="Sun"]')?.click(); goTo($("star-step2")); },
-  quiz: () => { pick("stars"); setMode("star-mode", "quiz"); goTo($("star-step2")); },
-  ast: () => { pick("asteroids"); setMode("ast-mode", "explore"); goTo($("ast-step2")); },
+const ACTIVITY = {
+  read: ["", () => { pick("stars"); setMode("star-mode", "explore"); }],
+  quiz: ["TEST YOURSELF · MYSTERY STARS", () => { pick("stars"); setMode("star-mode", "quiz"); }],
+  ast: ["ASTEROIDS · ROCK OR METAL?", () => { pick("asteroids"); setMode("ast-mode", "explore"); }],
+  upload: ["YOUR OWN SPECTRUM", () => { pick("stars"); setMode("star-mode", "upload"); }],
 };
-$("starts").onclick = (e) => {
-  const card = e.target.closest(".ss-start");
-  if (!card) return;
-  STARTS[card.dataset.go]();
-  card.classList.add("done");
-  // Recommend the next card not yet tried (wrapping around).
-  const cards = [...$("starts").children], i = cards.indexOf(card);
-  const next = [...cards.slice(i + 1), ...cards.slice(0, i)].find((c) => !c.classList.contains("done"));
-  for (const c of cards) c.classList.toggle("primary", c === next);
-};
-$("go-upload").onclick = (e) => { e.preventDefault(); pick("stars"); setMode("star-mode", "upload"); goTo($("star-upload")); };
+function activity(name, scroll) {
+  const [label, go] = ACTIVITY[name];
+  go();
+  $("modebar").hidden = name === "read"; $("mode-name").textContent = label;
+  for (const c of $("more").children) c.hidden = c.dataset.go === name;
+  try { localStorage.setItem("spectra-activity", name); } catch {}
+  if (scroll) goTo($("app"));
+}
+$("more").onclick = (e) => { const card = e.target.closest(".ss-start"); if (card) activity(card.dataset.go, true); };
+$("mode-back").onclick = () => activity("read", true);
 
 // ---------------------------------------------------------------- start
 $("t").value = tToSlider(star.T);
 drawStar();
 loadClass(ast.preset.cls, ast.preset);
 colorCalc();
+// A returning visitor lands back in the asteroid view if they left there; everyone else starts by reading a star.
 let saved = null;
-try { saved = localStorage.getItem("spectra-pick"); } catch {}
-pick(saved === "asteroids" ? "asteroids" : "stars");
+try { saved = localStorage.getItem("spectra-activity"); } catch {}
+activity(saved === "ast" ? "ast" : "read");
 route();
 </script>
 <script src="/shared/nav.js"></script>

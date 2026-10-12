@@ -28,6 +28,17 @@
     '<span class="ss-sep"></span><a class="ev' + (active === "evidence" ? " on" : "") + '" href="/evidence/"' + (active === "evidence" ? ' aria-current="page"' : "") + ">Evidence</a>" +
     "</nav></div>" +
     (m ? '<div class="ss-mode ' + (m[0] === "exp" ? "" : m[0]) + '"><span class="ss-pill ' + m[0] + '">' + m[1] + "</span><span>" + m[2] + "</span>" + (m[3] ? '<a href="' + m[3] + '">' + m[4] + "</a>" : "") + "</div>" : "");
+  // Live pages say how fresh their data is. Captures run twice a day; past 18 hours, say it may be late.
+  const upd = document.querySelector('meta[name="ss-updated"]');
+  const t = upd && Date.parse(upd.content), banner = document.querySelector(".ss-mode.live");
+  if (t && banner) {
+    const h = (Date.now() - t) / 3.6e6, ago = h < 1 ? "under an hour ago" : h < 48 ? Math.round(h) + " h ago" : Math.round(h / 24) + " days ago";
+    const el = document.createElement("span");
+    el.className = "ss-fresh" + (h > 18 ? " late" : "");
+    el.title = "Time of the latest capture of the confirmation page";
+    el.textContent = h > 18 ? "Last update " + ago + ", later than the usual 12 hours" : "Updated " + ago;
+    banner.querySelector(".ss-pill").after(el);
+  }
   if (home) {
     const strip = document.querySelector(".ss-strip.over");
     const onScroll = () => strip.classList.toggle("scrolled", scrollY > innerHeight * 0.6);
