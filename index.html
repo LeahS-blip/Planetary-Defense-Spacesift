@@ -232,6 +232,28 @@ try {
             color:transparent; -webkit-text-stroke:1px rgba(140,160,220,.13); letter-spacing:-.02em; will-change:transform; }
   @media (max-width:860px) { .bignum { top:4vh; bottom:auto; left:auto; right:12px; font-size:120px; } }
   @media (prefers-reduced-motion: reduce) { .fviz .draw { stroke-dashoffset:0; transition:none; } .fviz .pop { opacity:1; transition:none; } .fviz .bar { transform:none; transition:none; } }
+  /* Lensing hint: the cursor bends starlight like a mass does. Pointer devices only. */
+  .lens-hint { position:absolute; left:clamp(16px,4vw,48px); bottom:22px; margin:0; color:var(--dim); font-size:12px; opacity:0; animation:fade 1s 3.4s forwards; display:none; }
+  .lens-hint b { color:var(--body); font-weight:600; }
+  @media (hover:hover) and (pointer:fine) { .lens-hint { display:block; } }
+  @media (max-height:760px), (max-width:760px) { .lens-hint { display:none !important; } }
+  /* Live telemetry: real numbers from the pipelines, scrolling past. */
+  .ticker { position:relative; z-index:1; overflow:hidden; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:rgba(4,6,13,.55); backdrop-filter:blur(6px);
+            -webkit-mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); margin-top:10vh; }
+  .ticker .track { display:flex; width:max-content; animation:tick 70s linear infinite; }
+  .ticker:hover .track { animation-play-state:paused; }
+  .ticker .item { display:inline-flex; align-items:center; gap:10px; padding:15px 26px; white-space:nowrap; color:var(--body); font-size:14px; }
+  .ticker .item b { color:var(--ink); font-weight:700; }
+  .ticker .item::after { content:"✦"; color:rgba(122,162,255,.5); margin-left:26px; font-size:10px; }
+  .ticker .lab { font:700 9px var(--title); letter-spacing:.24em; color:var(--acc); }
+  .ticker .lab.live { color:var(--hi); display:inline-flex; align-items:center; gap:7px; }
+  .ticker .lab.live::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--hi); animation:ping 2s infinite; }
+  @keyframes tick { to { transform:translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .ticker .track { animation:none; flex-wrap:wrap; width:auto; } }
+  /* Buttons lean toward the cursor; tiles tilt under it. */
+  .cta, .hero-cta a, .tools a { transition:transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .25s, border-color .2s, background .2s; will-change:transform; }
+  .tile.in { transition:transform .5s cubic-bezier(.2,.7,.2,1), border-color .3s; transform-style:preserve-3d; }
+  .tile.in .num, .tile.in svg, .tile.in .bars, .tile.in .dots { transform:translateZ(24px); }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -269,6 +291,7 @@ try {
     </figure>
     <div class="hero-cta"><a href="/lab/">Hide a planet yourself →</a><a href="#found">See what we found ↓</a></div>
     <div class="cue">SCROLL<i></i></div>
+    <p class="lens-hint">Move your cursor: <b>it bends starlight the way gravity does.</b></p>
   </section>
 
   <section class="found" id="found" aria-label="What we found">
@@ -299,6 +322,8 @@ try {
     </div>
     <p class="protocol reveal">Every result shows its <b>data</b>, <b>method</b> and <b>baseline</b>, counts its <b>errors in both directions</b>, names its <b>limits</b>, and can be <b>rerun</b>.</p>
   </section>
+
+  <div class="ticker" aria-label="Live numbers from SpaceSift"><div class="track" id="ticker-track"></div></div>
 
   <section class="statement" aria-label="What SpaceSift is">
     <p id="statement">Every night, telescopes record millions of points of light. Most are noise. Some are new worlds. A few could come close to Earth. SpaceSift asks how often we catch them, and how often we are fooled.</p>
@@ -690,7 +715,9 @@ function makeStars() {
 }
 makeStars();
 addEventListener("resize", makeStars);
-let lastScroll = scrollY, vel = 0, shooting = null, nextShoot = performance.now() + 3000;
+let lastScroll = scrollY, vel = 0, shooting = null, nextShoot = performance.now() + 3000, lensK = 0;
+const finePointer = matchMedia("(hover:hover) and (pointer:fine)").matches;
+document.addEventListener("pointerout", (e) => { if (!e.relatedTarget) { mouse.x = -1e4; mouse.y = -1e4; } });
 
 const NEB = (() => {
   const c = document.createElement("canvas"); c.width = 480; c.height = 1400; const g = c.getContext("2d");
@@ -719,7 +746,7 @@ function drawSky(t) {
   // Each investigation lights the sky in its own colour while it is on screen.
   for (const sc of scenes) {
     const r = sc.el.getBoundingClientRect(), vis = clamp(Math.min(r.bottom, innerHeight) - Math.max(r.top, 0), 0, innerHeight) / innerHeight;
-    if (vis <= 0) continue;
+    if (!(vis > 0)) continue; // also skips NaN when the viewport has no height yet
     const [cr, cg, cb] = TINT[sc.kind], tg = ctx.createRadialGradient(w * 0.72, h * 0.45, 0, w * 0.72, h * 0.45, Math.max(w, h) * 0.7);
     tg.addColorStop(0, `rgba(${cr},${cg},${cb},${0.13 * vis})`); tg.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
     ctx.fillStyle = tg; ctx.fillRect(0, 0, w, h);
@@ -727,28 +754,33 @@ function drawSky(t) {
 
   const dy = scrollY - lastScroll; lastScroll = scrollY;
   vel = reduce ? 0 : lerp(vel, clamp(dy, -80, 80), 0.18);
-  const near = [];
+  // The cursor acts as a point mass: each star's light is bent outward (the main image) and a faint second
+  // image appears on the far side inside the Einstein ring, exactly as the point-lens equation predicts.
+  lensK = lerp(lensK, mouse.x > -1e3 && !reduce && finePointer ? 1 : 0, 0.08);
+  const thE = Math.min(56, w * 0.045);
   for (const s of stars) {
     let y = (s.y * h - scrollY * s.z * 0.45) % h; if (y < 0) y += h;
-    const x = s.x * w + (mouse.x > -1e3 && !reduce ? (mouse.x / w - 0.5) * -24 * s.z : 0);
+    let x = s.x * w + (mouse.x > -1e3 && !reduce ? (mouse.x / w - 0.5) * -24 * s.z : 0);
     const tw = reduce ? 1 : 0.65 + 0.35 * Math.sin(t * 0.001 * s.sp + s.tw);
     const r = 0.35 + s.z * 1.5;
     ctx.globalAlpha = (0.25 + s.z * 0.75) * tw;
     ctx.fillStyle = s.c; ctx.strokeStyle = s.c;
     const streak = vel * s.z * 1.2;
-    if (Math.abs(streak) > 1.5) { ctx.lineWidth = r * 1.4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + streak); ctx.stroke(); }
-    else { ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); }
-    if (s.z > 0.45 && scrollY < innerHeight * 1.2) { const d = Math.hypot(x - mouse.x, y - mouse.y); if (d < 170) near.push([x, y, d]); }
-  }
-  // Constellation lines around the cursor in the hero.
-  if (!reduce && near.length > 1) {
-    near.sort((a, b) => a[2] - b[2]);
-    const pts = near.slice(0, 7);
-    ctx.lineWidth = 0.6;
-    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
-      const d = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]);
-      if (d < 140) { ctx.globalAlpha = (1 - d / 140) * 0.45; ctx.strokeStyle = "#9fb6ff"; ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[j][0], pts[j][1]); ctx.stroke(); }
+    if (Math.abs(streak) > 1.5) { ctx.lineWidth = r * 1.4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + streak); ctx.stroke(); continue; }
+    if (lensK > 0.01) {
+      const dx = x - mouse.x, dy = y - mouse.y, d = Math.max(0.5, Math.hypot(dx, dy)), u = d / thE, root = Math.sqrt(d * d + 4 * thE * thE);
+      const mu = (u * u + 2) / (u * Math.sqrt(u * u + 4)), m1 = (mu + 1) / 2, m2 = (mu - 1) / 2;
+      const d1 = lerp(d, (d + root) / 2, lensK), d2 = (root - d) / 2;
+      const a0 = ctx.globalAlpha, br = lerp(1, Math.min(m1, 3), lensK);
+      ctx.globalAlpha = Math.min(1, a0 * br); ctx.beginPath(); ctx.arc(mouse.x + (dx / d) * d1, mouse.y + (dy / d) * d1, r * Math.sqrt(br), 0, 6.283); ctx.fill();
+      if (m2 > 0.03) { ctx.globalAlpha = Math.min(1, a0 * Math.min(m2, 2) * lensK); ctx.beginPath(); ctx.arc(mouse.x - (dx / d) * d2, mouse.y - (dy / d) * d2, r * 0.9, 0, 6.283); ctx.fill(); }
+      continue;
     }
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+  }
+  if (lensK > 0.02) { // a faint Einstein ring marks the lens
+    ctx.globalAlpha = 0.14 * lensK; ctx.strokeStyle = "#b9cbff"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(mouse.x, mouse.y, thE, 0, 6.283); ctx.stroke();
   }
   // An occasional shooting star.
   if (!reduce) {
@@ -1021,6 +1053,57 @@ const cur = document.querySelector(".cursor"), dot = document.querySelector(".cu
 let cx = -100, cy = -100;
 document.addEventListener("pointerover", (e) => cur.classList.toggle("big", !!e.target.closest("a, button")));
 
+// ------------------------------------------------------------ labels decode like incoming telemetry
+const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+function decode(el) {
+  if (reduce || el.dataset.decoding) return;
+  const txt = el.dataset.txt || (el.dataset.txt = el.textContent), t0 = performance.now(), dur = 520 + txt.length * 14;
+  el.dataset.decoding = "1";
+  const step = (now) => {
+    const k = clamp((now - t0) / dur), n = Math.floor(k * txt.length);
+    el.textContent = txt.slice(0, n) + [...txt.slice(n)].map((c) => (c === " " || c === "·" ? c : GLYPHS[(Math.random() * GLYPHS.length) | 0])).join("");
+    if (k < 1) requestAnimationFrame(step); else { el.textContent = txt; delete el.dataset.decoding; }
+  };
+  requestAnimationFrame(step);
+}
+const decodeIO = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { decode(e.target); decodeIO.unobserve(e.target); } }), { threshold: 0.6 });
+document.querySelectorAll(".found .kicker, .fk, .tile .tag, .why h3").forEach((el) => decodeIO.observe(el));
+// ------------------------------------------------------------ magnetic buttons and tilting tiles
+if (finePointer && !reduce) {
+  document.querySelectorAll(".cta, .hero-cta a, .tools a").forEach((b) => {
+    b.addEventListener("pointermove", (e) => { const r = b.getBoundingClientRect(); b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * 0.22}px, ${(e.clientY - r.top - r.height / 2) * 0.32}px)`; });
+    b.addEventListener("pointerleave", () => { b.style.transform = ""; });
+  });
+  document.querySelectorAll(".tile").forEach((tl) => {
+    tl.addEventListener("pointermove", (e) => { const r = tl.getBoundingClientRect(), px = (e.clientX - r.left) / r.width - 0.5, py = (e.clientY - r.top) / r.height - 0.5;
+      tl.style.transform = `perspective(900px) rotateY(${px * 7}deg) rotateX(${-py * 7}deg) translateY(-3px)`; });
+    tl.addEventListener("pointerleave", () => { tl.style.transform = ""; });
+  });
+}
+// ------------------------------------------------------------ live telemetry ticker (numbers read from the live dashboard and model results)
+(async () => {
+  const items = [
+    ['<span class="lab">HIDDEN PLANETS</span>', "Pulsating star, standard search: <b>0 of 106</b> found · rhythm removed first: <b>105</b>"],
+    ['<span class="lab">HIDDEN PLANETS</span>', "Half of planted planets found at signal-to-noise <b>10.7</b> on 200 quiet Kepler stars"],
+    ['<span class="lab">EXPERIMENTS</span>', "<b>72,440</b> searches with known answers"],
+    ['<span class="lab">STARLIGHT</span>', "Star type read to within <b>1 subclass</b> on real SDSS spectra (first model: 5)"],
+    ['<span class="lab">STARLIGHT</span>', "<b>123</b> real reference stars, from blue O to red M"],
+  ];
+  try {
+    const tr = await fetch("/outputs/training_results.json").then((r) => r.json());
+    if (tr.inputs && tr.holdout) items.push(['<span class="lab">NEW ASTEROIDS</span>', `Ranking on later candidates: ROC-AUC <b>${tr.holdout.roc_auc.model.toFixed(2)}</b> vs <b>${tr.holdout.roc_auc.baseline.toFixed(2)}</b> for digest2 alone`]);
+  } catch {}
+  try {
+    const doc = new DOMParser().parseFromString(await fetch("/outputs/dashboard.html").then((r) => r.text()), "text/html");
+    const st = [...doc.querySelectorAll(".stat")].find((x) => /on the page now/.test(x.querySelector(".l")?.textContent || ""));
+    if (st) items.unshift(['<span class="lab live">LIVE</span>', `<b>${st.querySelector(".v").textContent}</b> asteroid candidates awaiting confirmation right now`]);
+    const top = [...doc.querySelectorAll("#queueTable tr")].filter((r) => r.querySelector("td")).slice(0, 3)
+      .map((r) => `<b>${r.querySelector(".mono").textContent}</b> (${r.querySelector(".pcell span").textContent})`);
+    if (top.length) items.splice(1, 0, ['<span class="lab live">LIVE</span>', `Likeliest real near-Earth objects tonight: ${top.join(", ")}`]);
+  } catch {}
+  const html = items.map(([l, t]) => `<span class="item">${l}<span>${t}</span></span>`).join("");
+  document.getElementById("ticker-track").innerHTML = html + html.replace(/class="item"/g, 'class="item" aria-hidden="true"');
+})();
 // ------------------------------------------------------------ card spotlight
 document.querySelectorAll(".fcard").forEach((c) => c.addEventListener("pointermove", (e) => {
   const r = c.getBoundingClientRect(); c.style.setProperty("--mx", `${e.clientX - r.left}px`); c.style.setProperty("--my", `${e.clientY - r.top}px`);
@@ -1048,6 +1131,7 @@ function frame(t) {
     s.p = reduce ? 1 : progressOf(s.el);
     const idx = Math.min(s.beats.length - 1, Math.floor(s.p * s.beats.length * 0.999));
     if (!reduce) s.beats.forEach((b, i) => b.classList.toggle("on", i === idx));
+    if (idx !== s.last) { s.last = idx; const k = s.beats[idx]?.querySelector(".kicker"); if (k) decode(k); }
     s.bars.forEach((b, i) => { b.style.transform = `scaleX(${clamp(s.p * s.bars.length - i)})`; });
     DRAW[s.kind](s.canvas, reduce ? (s.kind === "transit" ? 0.2 : 1) : s.p, t);
     const bn = s.el.querySelector(".bignum"); if (bn && !reduce) bn.style.transform = `translateY(${(0.5 - s.p) * 120}px)`;
