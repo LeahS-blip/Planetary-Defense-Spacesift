@@ -204,6 +204,34 @@ try {
   .intro-skip:hover { color:var(--ink); }
   h1.mega.formed span { animation:none !important; opacity:1; transform:none; filter:blur(5px); transition:filter .9s ease; }
   h1.mega.formed.sharp span { filter:none; }
+  /* Chapter rail: where you are on the page, always one click from any chapter. */
+  .rail { position:fixed; right:22px; top:50%; transform:translateY(-50%); z-index:30; display:flex; flex-direction:column; gap:16px; opacity:0; pointer-events:none; transition:opacity .5s; }
+  .rail.show { opacity:1; pointer-events:auto; }
+  .rail a { display:flex; align-items:center; justify-content:flex-end; gap:12px; text-decoration:none; color:var(--dim); font:700 9px var(--title); letter-spacing:.22em; }
+  .rail a span { opacity:0; transform:translateX(6px); transition:opacity .3s, transform .3s, color .3s; white-space:nowrap; }
+  .rail a i { width:7px; height:7px; border-radius:50%; border:1px solid rgba(201,208,228,.5); transition:all .3s; flex:0 0 auto; }
+  .rail:hover a span, .rail a:focus-visible span { opacity:1; transform:none; }
+  .rail a span { background:rgba(4,6,13,.82); padding:4px 8px; border-radius:6px; }
+  .rail a.on span { color:var(--ink); }
+  .rail a.on { color:var(--ink); } .rail a.on i { background:var(--acc); border-color:var(--acc); box-shadow:0 0 12px var(--acc); transform:scale(1.3); }
+  .rail a:focus-visible { outline:2px solid var(--acc); outline-offset:4px; border-radius:4px; }
+  @media (max-width:1100px) { .rail { display:none; } }
+  /* What-we-found cards: a small picture of each result, and a light that follows the cursor. */
+  .fcard { position:relative; overflow:hidden; }
+  .fcard::before { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .35s;
+                   background:radial-gradient(340px circle at var(--mx,50%) var(--my,0%), rgba(122,162,255,.20), transparent 62%); }
+  .fcard:hover::before { opacity:1; }
+  .fviz { width:100%; height:64px; display:block; margin:2px 0 4px; overflow:visible; }
+  .fviz .draw { stroke-dasharray:600; stroke-dashoffset:600; transition:stroke-dashoffset 1.8s cubic-bezier(.3,.6,.2,1) .35s; }
+  .fcard.in .fviz .draw { stroke-dashoffset:0; }
+  .fviz .pop { opacity:0; transition:opacity .6s 1.6s; } .fcard.in .fviz .pop { opacity:1; }
+  .fviz .bar { transform:scaleX(0); transform-origin:left; transform-box:fill-box; transition:transform 1.2s cubic-bezier(.3,.6,.2,1); }
+  .fcard.in .fviz .bar { transform:none; }
+  /* Giant chapter numerals behind each investigation. */
+  .bignum { position:absolute; left:clamp(10px,4vw,60px); bottom:-2vh; z-index:0; pointer-events:none; font:700 clamp(150px,24vw,400px)/1 var(--title);
+            color:transparent; -webkit-text-stroke:1px rgba(140,160,220,.13); letter-spacing:-.02em; will-change:transform; }
+  @media (max-width:860px) { .bignum { top:4vh; bottom:auto; left:auto; right:12px; font-size:120px; } }
+  @media (prefers-reduced-motion: reduce) { .fviz .draw { stroke-dashoffset:0; transition:none; } .fviz .pop { opacity:1; transition:none; } .fviz .bar { transform:none; transition:none; } }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -214,6 +242,14 @@ try {
 
 <div id="ss-nav" data-active="home"></div>
 
+<nav class="rail" aria-label="Sections of this page">
+  <a href="#found"><span>WHAT WE FOUND</span><i></i></a>
+  <a href="#ch-transit"><span>01 · HIDDEN PLANETS</span><i></i></a>
+  <a href="#ch-spectrum"><span>02 · STARLIGHT</span><i></i></a>
+  <a href="#ch-asteroid"><span>03 · NEW ASTEROIDS</span><i></i></a>
+  <a href="#numbers"><span>IN NUMBERS</span><i></i></a>
+  <a href="#finale"><span>LOOK UP</span><i></i></a>
+</nav>
 <main id="top">
   <section class="hero">
     <div class="eyebrow">THE SCIENCE OF DETECTION</div>
@@ -239,12 +275,25 @@ try {
     <div class="found-head reveal"><div class="kicker">WHAT WE FOUND</div><h2>Three investigations, one question: how often is a search right, and what does it miss?</h2></div>
     <div class="found-grid">
       <a class="fcard reveal" href="/evidence/#transit"><span class="ftag good">CLEAR RESULT</span><span class="fk">01 · HIDDEN PLANETS</span>
+        <svg class="fviz" viewBox="0 0 300 64" aria-hidden="true"><text x="0" y="9" fill="#7f88a6" font-size="9" font-family="Comfortaa,sans-serif">standard search</text>
+          <rect x="96" y="2" width="200" height="8" rx="4" fill="rgba(140,160,220,.14)"/><rect class="bar" x="96" y="2" width="3" height="8" rx="2" fill="#f87171"/><text x="300" y="22" fill="#c9d0e4" font-size="9" text-anchor="end" font-family="Comfortaa,sans-serif">0 / 106</text>
+          <text x="0" y="41" fill="#7f88a6" font-size="9" font-family="Comfortaa,sans-serif">rhythm removed</text>
+          <rect x="96" y="34" width="200" height="8" rx="4" fill="rgba(140,160,220,.14)"/><rect class="bar" x="96" y="34" width="198" height="8" rx="4" fill="url(#fg1)"/><text x="300" y="54" fill="#eef2fc" font-size="9" text-anchor="end" font-family="Comfortaa,sans-serif">105 / 106</text>
+          <defs><linearGradient id="fg1" x1="0" x2="1"><stop offset="0" stop-color="#7aa2ff"/><stop offset="1" stop-color="#b9cbff"/></linearGradient></defs></svg>
         <b>A pulsating star hides its planets from the standard search: 0 of 106 found. Removing the star's rhythm first: 105.</b>
         <span class="fs">72,440 searches with known answers · thresholds calibrated to 1% false alarms · a pre-registered test on real stars</span><span class="fgo">See the evidence →</span></a>
       <a class="fcard reveal" href="/evidence/#spectra"><span class="ftag good">WORKS, KNOWN GAPS</span><span class="fk">02 · STARLIGHT</span>
+        <svg class="fviz" viewBox="0 0 300 64" aria-hidden="true"><defs><linearGradient id="fg2" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset=".2" stop-color="#3b6cff"/><stop offset=".4" stop-color="#2fd0c8"/><stop offset=".56" stop-color="#5be35b"/><stop offset=".72" stop-color="#ffe14a"/><stop offset=".86" stop-color="#ff9a3c"/><stop offset="1" stop-color="#e8423a"/></linearGradient>
+          <clipPath id="fc2"><rect class="bar" x="0" y="8" width="300" height="26" rx="6"/></clipPath></defs>
+          <g clip-path="url(#fc2)"><rect x="0" y="8" width="300" height="26" fill="url(#fg2)"/><g fill="#04060d" opacity=".9"><rect x="14" y="8" width="3" height="26"/><rect x="20" y="8" width="3" height="26"/><rect x="58" y="8" width="2" height="26"/><rect x="75" y="8" width="2.5" height="26"/><rect x="128" y="8" width="2.5" height="26"/><rect x="170" y="8" width="2" height="26"/><rect x="226" y="8" width="3.5" height="26"/><rect x="260" y="8" width="2.5" height="26"/></g></g>
+          <text class="pop" x="0" y="52" fill="#c9d0e4" font-size="9.5" font-family="Comfortaa,sans-serif">median error: 1 subclass</text><text class="pop" x="300" y="52" fill="#7f88a6" font-size="9.5" text-anchor="end" font-family="Comfortaa,sans-serif">first model: 5</text></svg>
         <b>Reads a star's type from its spectrum to within 1 subclass (median) on real SDSS stars, versus 5 for our first model, and survives bad calibration that breaks color-only methods.</b>
         <span class="fs">11-star test set fixed before tuning · two baselines · one script to rerun</span><span class="fgo">See the evidence →</span></a>
       <a class="fcard reveal" href="/evidence/#asteroids"><span class="ftag mixed">NOT YET PROVEN</span><span class="fk">03 · NEW ASTEROIDS</span>
+        <svg class="fviz" viewBox="0 0 300 64" aria-hidden="true"><path d="M0 52H300" stroke="rgba(140,160,220,.2)"/>
+          <g class="pop"><circle cx="18" cy="30" r="7" fill="#4ade80"/><circle cx="50" cy="32" r="6.5" fill="#4ade80"/><circle cx="80" cy="35" r="6" fill="#4ade80"/><circle cx="108" cy="38" r="5" fill="#fbbf24"/><circle cx="134" cy="40" r="4.5" fill="#fbbf24"/><circle cx="158" cy="43" r="4" fill="#64748b"/><circle cx="180" cy="44" r="3.5" fill="#64748b"/><circle cx="200" cy="45" r="3.5" fill="#64748b"/><circle cx="219" cy="46" r="3" fill="#64748b"/><circle cx="237" cy="47" r="3" fill="#64748b"/><circle cx="254" cy="47" r="2.5" fill="#64748b"/><circle cx="270" cy="48" r="2.5" fill="#64748b"/><circle cx="286" cy="48" r="2.5" fill="#64748b"/></g>
+          <path class="draw" d="M18 30 C60 33 100 38 150 42 S250 47 290 48" fill="none" stroke="rgba(201,208,228,.45)" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <text x="0" y="12" fill="#7f88a6" font-size="9" font-family="Comfortaa,sans-serif">tonight's candidates, likeliest real first</text></svg>
         <b id="ast-claim">Ranks new asteroid candidates by how likely each is real, tested on later candidates it never saw.</b>
         <span class="fs" id="ast-fs">Probability of being a real near-Earth object, not of hitting Earth · time-split test · rescored twice a day, retrained every Monday</span><span class="fgo">See the evidence →</span></a>
     </div>
@@ -256,8 +305,8 @@ try {
   </section>
 
   <!-- Chapter 1: transit -->
-  <section class="scrolly" data-scene="transit">
-    <div class="stage">
+  <section class="scrolly" data-scene="transit" id="ch-transit">
+    <div class="stage"><div class="bignum" aria-hidden="true">01</div>
       <div class="beats">
         <div class="beat"><div class="kicker">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>Worlds hide in starlight.</h2><p>When a planet crosses in front of its star, the starlight dips. For an Earth passing a Sun-like star, by <b>less than 0.01%</b>.</p></div>
         <div class="beat"><div class="kicker">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>Searches hunt for the repeat.</h2><p>Planet-hunting software scans months of brightness for a dip that comes back, orbit after orbit.</p></div>
@@ -269,8 +318,8 @@ try {
   </section>
 
   <!-- Chapter 2: spectrum -->
-  <section class="scrolly" data-scene="spectrum">
-    <div class="stage">
+  <section class="scrolly" data-scene="spectrum" id="ch-spectrum">
+    <div class="stage"><div class="bignum" aria-hidden="true">02</div>
       <div class="beats">
         <div class="beat"><div class="kicker">INVESTIGATION 02 · STARLIGHT</div><h2>Light is a fingerprint.</h2><p>Spread starlight into a rainbow and dark lines appear: atoms in the star soaking up exact colors.</p></div>
         <div class="beat"><div class="kicker">INVESTIGATION 02 · STARLIGHT</div><h2>Every line names an element.</h2><p>Calcium, hydrogen, sodium, iron. Their pattern reveals how hot a star is and what it is made of, and the same trick tells rock from metal on an asteroid.</p></div>
@@ -282,8 +331,8 @@ try {
   </section>
 
   <!-- Chapter 3: asteroids -->
-  <section class="scrolly" data-scene="asteroid">
-    <div class="stage">
+  <section class="scrolly" data-scene="asteroid" id="ch-asteroid">
+    <div class="stage"><div class="bignum" aria-hidden="true">03</div>
       <div class="beats">
         <div class="beat"><div class="kicker">INVESTIGATION 03 · NEW ASTEROIDS</div><h2>New dots, every night.</h2><p>Survey telescopes report moving objects they can't identify to the Minor Planet Center's confirmation page.</p></div>
         <div class="beat"><div class="kicker">INVESTIGATION 03 · NEW ASTEROIDS</div><h2>Which ones are real?</h2><p>A machine-learned ranking scores every candidate <b>twice a day</b> by how likely it is to be a genuine near-Earth object, not junk or an ordinary asteroid. <b>That is not the chance of hitting Earth.</b></p></div>
@@ -294,7 +343,7 @@ try {
     </div>
   </section>
 
-  <section class="numbers">
+  <section class="numbers" id="numbers">
     <h2 class="reveal">Small signals, measured honestly.</h2>
     <div class="bento">
       <div class="tile hero-tile reveal">
@@ -339,7 +388,7 @@ try {
   </section>
 </main>
 
-<footer>
+<footer id="finale">
   <canvas id="finale-sky" aria-hidden="true"></canvas>
   <div class="finale">
     <h2 class="reveal">LOOK UP.</h2>
@@ -643,6 +692,19 @@ makeStars();
 addEventListener("resize", makeStars);
 let lastScroll = scrollY, vel = 0, shooting = null, nextShoot = performance.now() + 3000;
 
+const NEB = (() => {
+  const c = document.createElement("canvas"); c.width = 480; c.height = 1400; const g = c.getContext("2d");
+  const blobs = [[0.25, 0.04, 0.6, "80,110,255", 0.22], [0.8, 0.16, 0.5, "150,90,230", 0.16], [0.2, 0.32, 0.55, "50,160,210", 0.10],
+                 [0.78, 0.47, 0.6, "255,140,80", 0.07], [0.25, 0.62, 0.6, "130,90,240", 0.13], [0.75, 0.78, 0.55, "60,130,255", 0.14], [0.4, 0.95, 0.7, "90,150,255", 0.18]];
+  let seed = 3; const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (const [x, y, rad, col, a] of blobs) for (let k = 0; k < 6; k++) {
+    const xx = (x + (r() - 0.5) * 0.3) * 480, yy = (y + (r() - 0.5) * 0.07) * 1400, rr = rad * 480 * (0.4 + r() * 0.7);
+    const rg = g.createRadialGradient(xx, yy, 0, xx, yy, rr); rg.addColorStop(0, `rgba(${col},${a})`); rg.addColorStop(1, `rgba(${col},0)`);
+    g.fillStyle = rg; g.fillRect(0, 0, 480, 1400);
+  }
+  return c;
+})();
+const TINT = { transit: [255, 160, 80], spectrum: [170, 110, 255], asteroid: [80, 170, 255] };
 function drawSky(t) {
   const { ctx, w, h } = fit(sky);
   ctx.clearRect(0, 0, w, h);
@@ -651,6 +713,17 @@ function drawSky(t) {
   const g = ctx.createRadialGradient(w * (0.3 + 0.4 * prog), h * 0.15, 0, w * 0.5, h * 0.5, Math.max(w, h) * 0.9);
   g.addColorStop(0, `hsla(${230 - prog * 60}, 70%, 22%, .35)`); g.addColorStop(0.5, "hsla(250, 60%, 10%, .15)"); g.addColorStop(1, "rgba(4,6,13,0)");
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  // Nebula: one tall painting of soft clouds, scrolling at a fraction of the page speed for depth.
+  const nh = Math.max(h * 2.4, w * 1.2);
+  ctx.globalAlpha = 0.6; ctx.drawImage(NEB, 0, -prog * (nh - h), w, nh); ctx.globalAlpha = 1;
+  // Each investigation lights the sky in its own colour while it is on screen.
+  for (const sc of scenes) {
+    const r = sc.el.getBoundingClientRect(), vis = clamp(Math.min(r.bottom, innerHeight) - Math.max(r.top, 0), 0, innerHeight) / innerHeight;
+    if (vis <= 0) continue;
+    const [cr, cg, cb] = TINT[sc.kind], tg = ctx.createRadialGradient(w * 0.72, h * 0.45, 0, w * 0.72, h * 0.45, Math.max(w, h) * 0.7);
+    tg.addColorStop(0, `rgba(${cr},${cg},${cb},${0.13 * vis})`); tg.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+    ctx.fillStyle = tg; ctx.fillRect(0, 0, w, h);
+  }
 
   const dy = scrollY - lastScroll; lastScroll = scrollY;
   vel = reduce ? 0 : lerp(vel, clamp(dy, -80, 80), 0.18);
@@ -890,7 +963,27 @@ function drawFinale(t) {
     if (d < lim * reveal) { ctx.strokeStyle = `rgba(159,182,255,${(1 - d / lim) * 0.35 * reveal})`; ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[j][0], pts[j][1]); ctx.stroke(); }
   }
   for (const [x, y, z] of pts) { ctx.fillStyle = `rgba(238,242,252,${0.4 + 0.6 * z})`; ctx.beginPath(); ctx.arc(x, y, 0.8 + z * 1.6 + (reduce ? 0 : 0.4 * Math.sin(t * 0.002 + x)), 0, 6.283); ctx.fill(); }
+  // Earth's limb rises as you arrive, with sunrise breaking over the edge.
+  const R = Math.max(w * 1.25, h * 1.4), rise = smooth(0, 1, reveal), cxE = w * 0.5, cyE = h * 0.8 + R + (1 - rise) * h * 0.28;
+  const air = ctx.createRadialGradient(cxE, cyE, R * 0.985, cxE, cyE, R * 1.07);
+  air.addColorStop(0, "rgba(120,180,255,.55)"); air.addColorStop(0.35, "rgba(70,130,255,.22)"); air.addColorStop(1, "rgba(60,110,255,0)");
+  ctx.fillStyle = air; ctx.beginPath(); ctx.arc(cxE, cyE, R * 1.07, 0, 6.283); ctx.fill();
+  const body = ctx.createLinearGradient(0, cyE - R, 0, cyE - R + h * 0.35);
+  body.addColorStop(0, "#12306a"); body.addColorStop(0.08, "#0a1a3c"); body.addColorStop(1, "#03060f");
+  ctx.fillStyle = body; ctx.beginPath(); ctx.arc(cxE, cyE, R, 0, 6.283); ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.arc(cxE, cyE, R, 0, 6.283); ctx.clip();
+  for (const c of CITY) { const a = c.a * 6.283, d = R - c.d * h * 0.3; const x = cxE + Math.sin(a) * d * 0.4, y = cyE - Math.cos(a * 0.4) * d;
+    ctx.globalAlpha = c.b * rise * (0.6 + 0.4 * Math.sin(t * 0.001 + c.a * 40)); ctx.fillStyle = "#ffcf8a"; ctx.fillRect(x, y, 1.4, 1.4); }
+  ctx.restore(); ctx.globalAlpha = 1;
+  ctx.save(); ctx.strokeStyle = "rgba(170,210,255,.9)"; ctx.lineWidth = 1.6; ctx.shadowColor = "#7ab4ff"; ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.arc(cxE, cyE, R, Math.PI * 1.32, Math.PI * 1.68); ctx.stroke(); ctx.restore();
+  const sx = cxE + w * 0.16, sy = cyE - Math.sqrt(R * R - (w * 0.16) ** 2);
+  const sun = ctx.createRadialGradient(sx, sy, 0, sx, sy, w * 0.35);
+  sun.addColorStop(0, `rgba(255,248,230,${0.95 * rise})`); sun.addColorStop(0.04, `rgba(255,214,150,${0.6 * rise})`); sun.addColorStop(0.25, `rgba(255,170,90,${0.12 * rise})`); sun.addColorStop(1, "rgba(255,150,80,0)");
+  ctx.fillStyle = sun; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = `rgba(255,236,200,${0.35 * rise})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx - w * 0.3, sy); ctx.lineTo(sx + w * 0.3, sy); ctx.stroke();
 }
+const CITY = Array.from({ length: 160 }, () => ({ a: Math.random() - 0.5, d: Math.random() ** 0.6, b: 0.25 + Math.random() * 0.6 }));
 
 // ------------------------------------------------------------ 123 dots, colored like the template stars (hot to cool)
 {
@@ -928,8 +1021,22 @@ const cur = document.querySelector(".cursor"), dot = document.querySelector(".cu
 let cx = -100, cy = -100;
 document.addEventListener("pointerover", (e) => cur.classList.toggle("big", !!e.target.closest("a, button")));
 
+// ------------------------------------------------------------ card spotlight
+document.querySelectorAll(".fcard").forEach((c) => c.addEventListener("pointermove", (e) => {
+  const r = c.getBoundingClientRect(); c.style.setProperty("--mx", `${e.clientX - r.left}px`); c.style.setProperty("--my", `${e.clientY - r.top}px`);
+}));
+// ------------------------------------------------------------ chapter rail
+const rail = document.querySelector(".rail"), railLinks = [...rail.querySelectorAll("a")];
+const railTargets = railLinks.map((a) => document.querySelector(a.getAttribute("href")));
+function updateRail() {
+  rail.classList.toggle("show", scrollY > innerHeight * 0.7);
+  let on = 0; railTargets.forEach((el, i) => { if (el && el.getBoundingClientRect().top < innerHeight * 0.5) on = i; });
+  railLinks.forEach((a, i) => { a.classList.toggle("on", i === on); if (i === on) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); });
+}
+
 // ------------------------------------------------------------ main loop
 function frame(t) {
+  updateRail();
   drawSky(t);
   sift.draw(t);
   // statement words
@@ -943,6 +1050,7 @@ function frame(t) {
     if (!reduce) s.beats.forEach((b, i) => b.classList.toggle("on", i === idx));
     s.bars.forEach((b, i) => { b.style.transform = `scaleX(${clamp(s.p * s.bars.length - i)})`; });
     DRAW[s.kind](s.canvas, reduce ? (s.kind === "transit" ? 0.2 : 1) : s.p, t);
+    const bn = s.el.querySelector(".bignum"); if (bn && !reduce) bn.style.transform = `translateY(${(0.5 - s.p) * 120}px)`;
   }
   drawFinale(t);
   if (!reduce) {
