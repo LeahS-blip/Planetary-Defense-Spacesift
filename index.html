@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>
+try {
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches && !location.hash && !sessionStorage.getItem("ss-intro")) {
+    document.documentElement.classList.add("intro");
+    window.ssIntroFailsafe = setTimeout(function () { document.documentElement.classList.remove("intro"); }, 5000);
+  }
+} catch (e) {}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SpaceSift</title>
 <meta name="description" content="SpaceSift: open experiments on what telescopes can find and what they miss, from hidden planets around other stars to new asteroids near Earth.">
@@ -182,6 +190,16 @@
     .beat { position:relative; inset:auto; opacity:1; transform:none; margin-bottom:40px; pointer-events:auto; }
     .progress, .cursor, .cursor-dot { display:none; }
   }
+  /* Opening: stars are sifted into the name, which lands exactly where the title sits. */
+  html.intro .hero *, html.intro .hero { animation-play-state:paused !important; }
+  html.intro .ss-strip, html.intro .cursor, html.intro .cursor-dot { opacity:0; pointer-events:none; }
+  .ss-strip.over { transition:opacity 1s ease .3s, background .3s, border-color .3s; }
+  #intro { position:fixed; inset:0; width:100%; height:100%; z-index:60; pointer-events:none; transition:opacity .9s ease; }
+  #intro.out { opacity:0; }
+  .intro-skip { position:fixed; right:18px; bottom:16px; z-index:61; border:none; background:none; color:var(--dim); font:600 12px var(--sub); letter-spacing:.08em; cursor:pointer; opacity:0; animation:fade .6s .9s forwards; }
+  .intro-skip:hover { color:var(--ink); }
+  h1.mega.formed span { animation:none !important; opacity:1; transform:none; filter:blur(5px); transition:filter .9s ease; }
+  h1.mega.formed.sharp span { filter:none; }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -349,6 +367,99 @@ addEventListener("pointermove", (e) => { mouse.x = e.clientX; mouse.y = e.client
 const h1 = document.querySelector("h1.mega");
 h1.innerHTML = [...h1.textContent].map((ch, i) => `<span aria-hidden="true" style="animation-delay:${0.5 + i * 0.08}s">${ch}</span>`).join("");
 
+// ------------------------------------------------------------ opening: noise sifted into the name
+// Points of starlight drift across the screen. A detector beam sweeps left to right; each point it passes
+// either falls into place in the letters of SPACESIFT or fades away as noise. The letters are sampled from
+// the real title's position, so the dots resolve into the actual heading when the intro ends.
+if (document.documentElement.classList.contains("intro")) (async () => {
+  const root = document.documentElement;
+  clearTimeout(window.ssIntroFailsafe); // the script is running; it ends the intro itself
+  try { sessionStorage.setItem("ss-intro", "1"); } catch {}
+  try { await Promise.race([document.fonts.load('700 100px "Syncopate"'), new Promise((r) => setTimeout(r, 1500))]); } catch {}
+  const cv = document.createElement("canvas"); cv.id = "intro"; cv.setAttribute("aria-hidden", "true"); document.body.appendChild(cv);
+  const skip = document.createElement("button"); skip.className = "intro-skip"; skip.textContent = "Skip intro"; document.body.appendChild(skip);
+  // Where the title's letters sit (offsets ignore the letters' entrance transforms).
+  const hr = h1.getBoundingClientRect(), cs = getComputedStyle(h1), fs = parseFloat(cs.fontSize);
+  const W = Math.ceil(hr.width), H = Math.ceil(hr.height);
+  const off = document.createElement("canvas"); off.width = W; off.height = H;
+  const o = off.getContext("2d"); o.font = `700 ${fs}px Syncopate, sans-serif`; o.fillStyle = "#fff";
+  const m = o.measureText("S"), fa = m.fontBoundingBoxAscent ?? fs * 0.9, fd = m.fontBoundingBoxDescent ?? fs * 0.25;
+  const base = (H - (fa + fd)) / 2 + fa;
+  for (const sp of h1.children) o.fillText(sp.textContent, sp.offsetLeft - h1.offsetLeft, base);
+  const img = o.getImageData(0, 0, W, H).data;
+  let step = Math.max(3, Math.round(fs / 26)), targets;
+  do {
+    targets = [];
+    for (let y = 0; y < H; y += step) for (let x = 0; x < W; x += step) if (img[(y * W + x) * 4 + 3] > 140) targets.push([hr.left + x, hr.top + y, y / H]);
+    step++;
+  } while (targets.length > 3200);
+  step--;
+  const SC = ["#9db4ff", "#cad8ff", "#f8f7ff", "#fff4ea", "#ffe4c4", "#ffd2a1", "#ffb07a"];
+  const vw = innerWidth, vh = innerHeight, rnd = Math.random;
+  const pts = targets.map(([tx, ty, fy]) => ({ x: rnd() * vw, y: rnd() * vh, tx, ty, fy, c: SC[Math.floor(rnd() ** 1.6 * 7)], r: 0.4 + rnd() * 1.1, a: 0.3 + rnd() * 0.6, ph: rnd() * 6.28, arc: (rnd() - 0.5) * 160, noise: false }));
+  const nNoise = Math.round(Math.min(1400, (vw * vh) / 900));
+  for (let i = 0; i < nNoise; i++) pts.push({ x: rnd() * vw, y: rnd() * vh, c: SC[Math.floor(rnd() ** 1.6 * 7)], r: 0.4 + rnd() * 1.1, a: 0.25 + rnd() * 0.55, ph: rnd() * 6.28, noise: true });
+  const left = hr.left - 80, right = hr.right + 80;
+  const SLOW = /introslow/.test(location.search) ? 4 : 1; // ?introslow plays it 4x slower, for inspecting
+  const T_SWEEP0 = 500 * SLOW, T_SWEEP = 1700 * SLOW, FLY = 800 * SLOW, T_HOLD = T_SWEEP0 + T_SWEEP + FLY + 350 * SLOW;
+  const beamX = (t) => lerp(left, right, smooth(0, 1, (t - T_SWEEP0) / T_SWEEP));
+  const beamT = (x) => T_SWEEP0 + T_SWEEP * (() => { // invert the eased sweep numerically
+    let lo = 0, hi = 1; for (let k = 0; k < 18; k++) { const mid = (lo + hi) / 2; (lerp(left, right, smooth(0, 1, mid)) < x ? (lo = mid) : (hi = mid)); } return lo; })();
+  for (const q of pts) q.tl = beamT(q.noise ? q.x : q.tx);
+  const finalR = step * 0.46;
+  const hex = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const top = [255, 255, 255], bot = [169, 184, 232];
+  let t0 = null, done = false;
+  function finish(fast) {
+    if (done) return; done = true;
+    h1.classList.add("formed"); setTimeout(() => h1.classList.add("sharp"), 40);
+    root.classList.remove("intro");
+    cv.style.transitionDuration = fast ? ".35s" : ".9s"; cv.classList.add("out"); skip.remove();
+    setTimeout(() => cv.remove(), 1000);
+  }
+  skip.addEventListener("click", () => finish(true));
+  addEventListener("keydown", () => finish(true), { once: true });
+  addEventListener("wheel", () => finish(true), { once: true, passive: true });
+  addEventListener("touchmove", () => finish(true), { once: true, passive: true });
+  function tick(now) {
+    if (t0 === null) t0 = now;
+    const t = now - t0;
+    const { ctx, w, h } = fit(cv);
+    ctx.clearRect(0, 0, w, h);
+    // the detector beam
+    if (t > T_SWEEP0 - 200 && t < T_SWEEP0 + T_SWEEP + 300) {
+      const bx = beamX(t), ba = Math.sin(Math.PI * clamp((t - T_SWEEP0 + 200) / (T_SWEEP + 500)));
+      const g = ctx.createLinearGradient(bx - 70, 0, bx + 6, 0);
+      g.addColorStop(0, "rgba(122,162,255,0)"); g.addColorStop(0.85, `rgba(122,162,255,${0.16 * ba})`); g.addColorStop(1, `rgba(220,230,255,${0.9 * ba})`);
+      ctx.fillStyle = g; ctx.fillRect(bx - 70, hr.top - H * 1.1, 76, H * 3.2);
+      const v = ctx.createLinearGradient(0, hr.top - H * 1.1, 0, hr.bottom + H * 1.1);
+      v.addColorStop(0, "rgba(4,6,13,1)"); v.addColorStop(0.3, "rgba(4,6,13,0)"); v.addColorStop(0.7, "rgba(4,6,13,0)"); v.addColorStop(1, "rgba(4,6,13,1)");
+      ctx.globalCompositeOperation = "destination-out"; ctx.fillStyle = v; ctx.fillRect(bx - 70, hr.top - H * 1.1, 76, H * 3.2); ctx.globalCompositeOperation = "source-over";
+    }
+    for (const q of pts) {
+      const tw = 0.7 + 0.3 * Math.sin(now * 0.003 + q.ph);
+      if (q.noise) { // noise fades once the beam has passed it
+        const k = 1 - clamp((t - q.tl) / 500);
+        if (k <= 0) continue;
+        ctx.globalAlpha = q.a * tw * k * clamp(t / 400); ctx.fillStyle = q.c;
+        ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.fill(); continue;
+      }
+      const k = clamp((t - q.tl) / FLY), e = 1 - (1 - k) ** 3;
+      const nx = q.tx - q.x, ny = q.ty - q.y, len = Math.hypot(nx, ny) || 1, bend = Math.sin(Math.PI * e) * q.arc;
+      const x = lerp(q.x, q.tx, e) - (ny / len) * bend, y = lerp(q.y, q.ty, e) + (nx / len) * bend;
+      const [r1, g1, b1] = hex(q.c), f = q.fy, fin = [lerp(top[0], bot[0], f), lerp(top[1], bot[1], f), lerp(top[2], bot[2], f)];
+      ctx.globalAlpha = lerp(q.a * tw * clamp(t / 400), 1, e);
+      ctx.fillStyle = `rgb(${lerp(r1, fin[0], e) | 0},${lerp(g1, fin[1], e) | 0},${lerp(b1, fin[2], e) | 0})`;
+      ctx.beginPath(); ctx.arc(x, y, lerp(q.r, finalR, e), 0, 6.283); ctx.fill();
+      if (k > 0 && k < 1) { ctx.globalAlpha = 0.35 * (1 - k); ctx.beginPath(); ctx.arc(x, y, lerp(q.r, finalR, e) * 3, 0, 6.283); ctx.fill(); }
+    }
+    ctx.globalAlpha = 1;
+    if (t > T_HOLD) finish(false);
+    if (!done || cv.isConnected) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})().catch(() => document.documentElement.classList.remove("intro"));
+
 // ------------------------------------------------------------ the sift: a planet buried in a star's flicker
 // Simulated photometry: the star's own variability (several slow rhythms) + white noise + a planet's transits.
 // Step 1 draws the raw light curve, step 2 subtracts the variability (and zooms in), step 3 folds every point
@@ -396,6 +507,7 @@ const sift = (() => {
     if (cap.dataset.i !== String(i)) { cap.dataset.i = i; cap.innerHTML = CAPS[i]; }
   }
   function draw(t) {
+    if (document.documentElement.classList.contains("intro")) return;
     const r = c.getBoundingClientRect();
     if (r.bottom < 0 || r.top > innerHeight) return;
     if (!started) { started = true; lastT = t; holdUntil = t + (reduce ? 0 : 1700); setTarget(target); }
