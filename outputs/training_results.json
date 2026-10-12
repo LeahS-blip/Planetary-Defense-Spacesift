@@ -61,7 +61,7 @@
     "obs_T08",
     "obs_M22"
   ],
-  "trained_utc": "2026-10-11T23:02Z",
+  "trained_utc": "2026-10-12T10:12Z",
   "with_backfill": false,
   "inputs": "first-posting only (no lookahead ts_* features)",
   "baseline_digest2_score": {
@@ -82,13 +82,13 @@
     "model": "lightgbm_dart",
     "n": 344,
     "n_pos": 212,
-    "roc_auc": 0.9246355060034305,
-    "pr_auc": 0.9430293251787537,
+    "roc_auc": 0.9257432818753573,
+    "pr_auc": 0.9440773370462842,
     "at_99pct_neo_recall": {
-      "threshold": 0.07983783232651634,
+      "threshold": 0.10322596219260319,
       "neo_recall": 0.9905660377358491,
-      "non_neo_excluded_frac": 0.30303030303030304,
-      "precision": 0.695364238410596
+      "non_neo_excluded_frac": 0.3939393939393939,
+      "precision": 0.7241379310344828
     }
   },
   "baseline_on_test": {
@@ -120,39 +120,39 @@
       ]
     },
     "roc_auc": {
-      "model": 0.9246355060034305,
+      "model": 0.9257432818753573,
       "baseline": 0.6972913093196111
     },
     "pr_auc": {
-      "model": 0.9430293251787537,
+      "model": 0.9440773370462842,
       "baseline": 0.7283131582481057
     },
     "auc_bootstrap_95ci": {
       "model": [
-        0.8924937114052974,
-        0.9521599961671193
+        0.8936977843339681,
+        0.9529132200103793
       ],
       "baseline": [
         0.6399469498623512,
         0.7526586312949526
       ],
       "difference": [
-        0.16978747271074698,
-        0.2838596097659624
+        0.17113416974402315,
+        0.28400306471966824
       ],
       "p_model_not_better": 0.0
     },
     "operating_points": {
       "95pct_recall": {
         "model": {
-          "threshold": 0.27656039333797067,
-          "tp": 202,
-          "fn": 10,
-          "fp": 44,
-          "tn": 88,
-          "neo_recall": 0.9528301886792453,
-          "junk_excluded": 0.6666666666666666,
-          "precision": 0.8211382113821138
+          "threshold": 0.26821737027675524,
+          "tp": 201,
+          "fn": 11,
+          "fp": 46,
+          "tn": 86,
+          "neo_recall": 0.9481132075471698,
+          "junk_excluded": 0.6515151515151515,
+          "precision": 0.8137651821862348
         },
         "baseline": {
           "threshold": 0.9,
@@ -167,14 +167,14 @@
       },
       "99pct_recall": {
         "model": {
-          "threshold": 0.05383661713883133,
+          "threshold": 0.05542648381221118,
           "tp": 211,
           "fn": 1,
-          "fp": 109,
-          "tn": 23,
+          "fp": 110,
+          "tn": 22,
           "neo_recall": 0.9952830188679245,
-          "junk_excluded": 0.17424242424242425,
-          "precision": 0.659375
+          "junk_excluded": 0.16666666666666666,
+          "precision": 0.6573208722741433
         },
         "baseline": {
           "threshold": 0.76,
@@ -211,7 +211,7 @@
       }
     },
     "calibration": {
-      "brier_model": 0.10764807341163964,
+      "brier_model": 0.10840254101464018,
       "brier_baseline": 0.30840755813953485,
       "brier_always_base_rate": 0.2577549006753251,
       "reliability_model": [
@@ -221,7 +221,7 @@
             0.2
           ],
           "n": 84,
-          "mean_predicted": 0.09011091769557703,
+          "mean_predicted": 0.08990841961865156,
           "fraction_neo": 0.10714285714285714
         },
         {
@@ -229,68 +229,68 @@
             0.2,
             0.4
           ],
-          "n": 37,
-          "mean_predicted": 0.3089317550670114,
-          "fraction_neo": 0.24324324324324326
+          "n": 33,
+          "mean_predicted": 0.30558845365263876,
+          "fraction_neo": 0.21212121212121213
         },
         {
           "bin": [
             0.4,
             0.6000000000000001
           ],
-          "n": 26,
-          "mean_predicted": 0.5044607536915263,
-          "fraction_neo": 0.6538461538461539
+          "n": 30,
+          "mean_predicted": 0.4820871923277977,
+          "fraction_neo": 0.6666666666666666
         },
         {
           "bin": [
             0.6000000000000001,
             0.8
           ],
-          "n": 64,
-          "mean_predicted": 0.7144746210258295,
-          "fraction_neo": 0.75
+          "n": 66,
+          "mean_predicted": 0.7240156658624217,
+          "fraction_neo": 0.7424242424242424
         },
         {
           "bin": [
             0.8,
             1.0
           ],
-          "n": 133,
-          "mean_predicted": 0.8775291075530519,
-          "fraction_neo": 0.9699248120300752
+          "n": 131,
+          "mean_predicted": 0.8801251507275956,
+          "fraction_neo": 0.9694656488549618
         }
       ]
     }
   },
-  "cv_auc": 0.9098753400640831,
-  "cv_auc_std": 0.015063795220162945,
+  "cv_auc": 0.9096372433332512,
+  "cv_auc_std": 0.0150141740737079,
   "conformal": {
     "0.01": {
       "alpha": 0.01,
       "target_neo_recall": 0.99,
-      "achieved_neo_recall_mean": 0.9918338108882523,
-      "junk_excluded_mean": 0.19882005899705016,
-      "junk_excluded_std": 0.06622336755704217,
-      "threshold_mean": 0.05823568939128798,
+      "achieved_neo_recall_mean": 0.9912607449856733,
+      "junk_excluded_mean": 0.19306784660766962,
+      "junk_excluded_std": 0.06931196193250438,
+      "threshold_mean": 0.05735812297993868,
       "n_splits_used": 40
     },
     "0.05": {
       "alpha": 0.05,
       "target_neo_recall": 0.95,
-      "achieved_neo_recall_mean": 0.9558022922636102,
-      "junk_excluded_mean": 0.6558259587020648,
-      "junk_excluded_std": 0.06427493561937221,
-      "threshold_mean": 0.26575092948897466,
+      "achieved_neo_recall_mean": 0.9565186246418339,
+      "junk_excluded_mean": 0.6504424778761062,
+      "junk_excluded_std": 0.06441899765519168,
+      "threshold_mean": 0.2608745324688046,
       "n_splits_used": 40
     },
     "0.1": {
       "alpha": 0.1,
       "target_neo_recall": 0.9,
-      "achieved_neo_recall_mean": 0.9083094555873925,
-      "junk_excluded_mean": 0.7517699115044247,
-      "junk_excluded_std": 0.02043238714545728,
-      "threshold_mean": 0.3853635254456595,
+      "achieved_neo_recall_mean": 0.9080229226361032,
+      "junk_excluded_mean": 0.7547197640117995,
+      "junk_excluded_std": 0.020239836403195308,
+      "threshold_mean": 0.383267074855259,
       "n_splits_used": 40
     }
   }
