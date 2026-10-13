@@ -158,7 +158,7 @@ function init() {
     const y = data(), F = fold(y, curP()), shift = Math.round(F.at + F.w / 2 - NB / 2), bins = [];
     for (let b = 0; b < NB; b++) { const q = (b + shift + NB) % NB; bins.push(F.n[q] ? F.s[q] / F.n[q] / F.sd * 3 : 0); }
     $("hunt-listen").classList.add("playing");
-    dispatchEvent(new CustomEvent("ss-sound", { detail: { type: "sonify", bins, reps: 3, done: () => $("hunt-listen").classList.remove("playing") } }));
+    dispatchEvent(new CustomEvent("ss-sound", { detail: { type: "sonify", bins, reps: 2, done: () => $("hunt-listen").classList.remove("playing") } }));
   }
   // Share card: the folded dip, the time, the site. Shared as an image where the browser can, saved otherwise.
   async function share() {
