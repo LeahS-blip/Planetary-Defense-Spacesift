@@ -66,18 +66,31 @@
   input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:12px; border-radius:999px; background:var(--line); outline:none; margin:6px 0 0; }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:#fff; border:3px solid var(--bg); box-shadow:0 0 0 2px var(--acc); cursor:pointer; }
   input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#fff; border:3px solid var(--bg); box-shadow:0 0 0 2px var(--acc); cursor:pointer; }
+  /* The main temperature slider: thumb glows in the star's color; a bubble follows it with the reading. */
+  .temp { --tc:#fff; --tcg:rgba(255,255,255,.4); }
+  .t-wrap { position:relative; padding-top:34px; }
+  #t { box-shadow:inset 0 1px 2px rgba(0,0,0,.45), 0 0 22px -6px var(--tcg); }
+  #t::-webkit-slider-thumb { background:radial-gradient(circle at 40% 35%, #fff 30%, var(--tc)); box-shadow:0 0 0 2px var(--tc), 0 0 14px 4px var(--tcg), 0 0 34px 8px var(--tcg); }
+  #t::-moz-range-thumb { background:radial-gradient(circle at 40% 35%, #fff 30%, var(--tc)); box-shadow:0 0 0 2px var(--tc), 0 0 14px 4px var(--tcg), 0 0 34px 8px var(--tcg); }
+  .t-bub { position:absolute; top:0; left:50%; transform:translateX(-50%); padding:3px 10px; border-radius:999px; white-space:nowrap; pointer-events:none;
+           font:700 12px var(--sub); color:var(--ink); background:rgba(8,12,26,.92); border:1px solid var(--tc); box-shadow:0 0 14px -2px var(--tcg); }
+  .t-bub::after { content:""; position:absolute; top:100%; left:var(--ax, 50%); margin-left:-5px; border:5px solid transparent; border-top-color:var(--tc); }
 
-  /* Answer card */
-  .answer { display:flex; gap:22px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; }
-  .orb { width:110px; height:110px; border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
-         font:700 40px var(--sub); color:#8b93ad; transition:background .25s, box-shadow .25s; }
+  /* Answer card: a soft wash of the object's light behind the orb */
+  .answer { display:flex; gap:22px; align-items:center; border:1px solid var(--line); border-radius:16px; padding:22px;
+            background:radial-gradient(circle at 77px 50%, var(--ag, transparent), transparent 260px), var(--card); transition:background .4s; }
+  .orb { position:relative; width:110px; height:110px; border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+         font:700 40px var(--sub); color:#8b93ad; }
+  .orb canvas { position:absolute; inset:-30%; width:160%; height:160%; pointer-events:none; }
+  .orb span { position:relative; transition:opacity .3s; }
   .answer h2 { margin:0 0 6px; font:700 22px/1.3 var(--sub); }
   .answer p { margin:0; color:var(--body); line-height:1.7; }
   .answer p b { color:var(--ink); }
   .facts { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
   .facts span { border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:4px 12px; font-size:13px; color:var(--body); }
   .facts b { color:var(--ink); }
-  @media (max-width:600px) { .answer { flex-direction:column; text-align:center; } .facts, .guess { justify-content:center; } .orb { width:90px; height:90px; } }
+  @media (max-width:600px) { .answer { flex-direction:column; text-align:center; background:radial-gradient(circle at 50% 67px, var(--ag, transparent), transparent 220px), var(--card); }
+                             .facts, .guess { justify-content:center; } .orb { width:90px; height:90px; } }
 
   /* Rainbow strip with element labels */
   .strip-box { position:relative; padding-top:74px; }
@@ -85,7 +98,17 @@
   .labels .lab { position:absolute; transform:translateX(-50%); font:600 11px var(--sub); white-space:nowrap; cursor:pointer;
                  padding:2px 7px; border-radius:6px; background:var(--card2); border:1px solid var(--line); }
   .labels .lab.dim, .ticks i.dim { opacity:.18; }
-  canvas.strip { width:100%; height:64px; display:block; border-radius:10px; }
+  canvas.strip { width:100%; height:64px; display:block; border-radius:10px; cursor:crosshair; touch-action:pan-y;
+                 box-shadow:0 0 0 1px rgba(255,255,255,.05), 0 10px 36px -12px var(--sg, transparent); transition:box-shadow .4s; }
+  /* Magnifier: a frame on the strip, and a lens below it drawn from the spectrum at high resolution */
+  .lens-spot { position:absolute; top:70px; height:72px; border:1.5px solid rgba(255,255,255,.85); border-radius:8px; pointer-events:none;
+               box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 0 16px rgba(255,255,255,.25); transform:translateX(-50%); }
+  .lens { position:absolute; top:calc(100% + 12px); width:min(260px, 100%); z-index:6; pointer-events:none; padding:8px; border-radius:14px;
+          background:rgba(8,12,26,.95); border:1px solid var(--line); box-shadow:0 14px 36px rgba(0,0,0,.55); transform:translateX(-50%); animation:lens-in .16s ease-out; }
+  .lens canvas { display:block; width:100%; height:64px; border-radius:8px; }
+  .lens-t { padding:7px 4px 1px; font-size:12.5px; line-height:1.5; color:var(--dim); }
+  .lens-t b { color:var(--ink); } .lens-t em { float:right; font-style:normal; color:var(--body); }
+  @keyframes lens-in { from { opacity:0; margin-top:-4px; } }
   .ticks { position:absolute; left:0; right:0; bottom:0; height:64px; pointer-events:none; }
   .ticks i { position:absolute; top:-6px; bottom:-6px; width:0; border-left:1.5px dashed; opacity:.85; }
   .strip-ends { display:flex; justify-content:space-between; color:var(--dim); font-size:12px; margin-top:6px; }
@@ -214,7 +237,8 @@
       <div class="step">1 · PICK A STAR</div>
       <div class="chips" id="star-presets"></div>
       <div class="temp">
-        <input type="range" id="t" min="0" max="1000" step="1" aria-label="Surface temperature">
+        <div class="t-wrap"><output class="t-bub" id="t-bub" for="t" aria-hidden="true"></output>
+        <input type="range" id="t" min="0" max="1000" step="1" aria-label="Surface temperature"></div>
         <div class="ends"><span>← cooler, redder</span><b id="t-now"></b><span>hotter, bluer →</span></div>
       </div>
     </div>
@@ -263,9 +287,11 @@
       <div class="labels" id="labels"></div>
       <canvas class="strip" id="star-strip" width="1400" height="64"></canvas>
       <div class="ticks" id="ticks"></div>
+      <div class="lens-spot" id="lens-spot" hidden></div>
+      <div class="lens" id="lens" hidden><canvas id="lens-cv" width="520" height="128"></canvas><div class="lens-t" id="lens-t"></div></div>
     </div>
     <div class="strip-ends"><span>violet</span><span>red</span></div>
-    <div class="caption">Starlight spread into its colors. <b>Each dark line is an element</b> in the star's atmosphere soaking up one exact color, like a fingerprint.</div>
+    <div class="caption">Starlight spread into its colors. <b>Each dark line is an element</b> in the star's atmosphere soaking up one exact color, like a fingerprint. <span id="lens-hint">Hover over or tap a line to magnify it.</span></div>
     </div>
 
     <div id="star-ingr-wrap">
@@ -434,17 +460,209 @@ function layout(xt, yt, extra = {}) {
     yaxis: { title: { text: yt }, gridcolor: css("--line"), zeroline: false },
   }, extra);
 }
-const glow = (hex, size = 34) => ({
-  background: `radial-gradient(circle at 35% 32%, #ffffff, ${hex} 42%, ${hex}cc 70%)`,
-  boxShadow: `0 0 ${size}px ${hex}88, 0 0 ${size * 2.5}px ${hex}33`,
-});
-const MYSTERY = { background: "radial-gradient(circle at 35% 32%, #4a5580, #1d2440)", boxShadow: "none" };
-const setStyle = (el, s) => Object.assign(el.style, s);
 // True star colors are pale (the Sun is nearly white); boost saturation so the orb reads as its color name.
 function vivid(hex, k = 2.4) {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
   const m = (r + g + b) / 3;
   return "#" + [r, g, b].map((c) => Math.round(Math.max(0, Math.min(255, m + (c - m) * k))).toString(16).padStart(2, "0")).join("");
+}
+const RM = matchMedia("(prefers-reduced-motion: reduce)");
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+const ease = (x) => x * x * (3 - 2 * x);
+const hexRGB = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const rgba = (c, a) => `rgba(${c.map(Math.round).join(",")},${a})`;
+const wash = (el, hex) => el.style.setProperty("--ag", hex ? hex + "2e" : "transparent"); // light behind the orb
+
+// ---------------------------------------------------------------- living orbs
+// A star: limb-darkened disc, corona and boiling granulation. Convection cells are big and vigorous in cool stars;
+// stars hotter than about 8,000 K carry heat outward by radiation, so their surfaces are smooth and calm.
+// An asteroid: a lumpy, cratered rock turning slowly, lit by the Sun from one side.
+const granulation = (T) => clamp01((Math.log10(8500) - Math.log10(T)) / (Math.log10(8500) - Math.log10(2600)));
+// Tileable cell texture (white cells, dark lanes) used as a multiply layer: 8 x 8 cells over 192 px.
+function cellTexture(seed, G = 8, N = 192) {
+  const rng = S.makeRng(seed), pts = [];
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) pts.push([(i + 0.1 + 0.8 * rng()) / G, (j + 0.1 + 0.8 * rng()) / G]);
+  const c = document.createElement("canvas"); c.width = c.height = N;
+  const ctx = c.getContext("2d"), img = ctx.createImageData(N, N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const u = (x + 0.5) / N, v = (y + 0.5) / N, ci = Math.floor(u * G), cj = Math.floor(v * G);
+    let f1 = 9, f2 = 9;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const ii = (ci + di + G) % G, jj = (cj + dj + G) % G, p = pts[jj * G + ii];
+      const d = (p[0] + (ci + di - ii) / G - u) ** 2 + (p[1] + (cj + dj - jj) / G - v) ** 2;
+      if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) f2 = d;
+    }
+    const e = clamp01((Math.sqrt(f2) - Math.sqrt(f1)) * G * 2.4), val = 255 * (0.18 + 0.82 * Math.sqrt(e)) * (1 - 0.25 * clamp01(Math.sqrt(f1) * G * 1.4));
+    const p = 4 * (y * N + x); img.data[p] = img.data[p + 1] = img.data[p + 2] = val; img.data[p + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
+let CELLS = null; // built on first use
+function rockShape(seed) {
+  const rng = S.makeRng(seed), r = () => rng() * 2 - 1;
+  return {
+    lobes: [[2, 0.11], [3, 0.07], [4, 0.035], [6, 0.02]].map(([k, a]) => [k, a * (0.7 + 0.6 * rng()), rng() * 6.283]),
+    craters: Array.from({ length: 9 }, () => ({ x: 0.7 * r(), y: 0.7 * r(), r: 0.1 + 0.18 * rng(), d: 0.35 + 0.4 * rng() })),
+    m: [r() * 3, r() * 3, r() * 3], spin: rng() * 6.283,
+  };
+}
+const MYST = [[74, 85, 128], [29, 36, 64]];
+const ORBS = [];
+let orbRaf = 0;
+const kickOrbs = () => { if (!orbRaf) orbRaf = requestAnimationFrame(orbTick); };
+function orbTick(now) {
+  orbRaf = 0;
+  let more = false;
+  for (const o of ORBS) if (o.visible && !document.hidden) more = o.render(now) || more;
+  if (more && !RM.matches) orbRaf = requestAnimationFrame(orbTick);
+}
+document.addEventListener("visibilitychange", kickOrbs);
+RM.addEventListener?.("change", kickOrbs);
+class Orb {
+  constructor(el, kind) {
+    Object.assign(this, { el, kind, rgb: [200, 200, 200], to: [200, 200, 200], lit: 0, litTo: 0, g: 0, gTo: 0, ring: 0, ringTo: 0, flash: -1, seed: -1, last: 0, visible: true });
+    el.textContent = "";
+    this.cv = el.appendChild(document.createElement("canvas")); this.cv.setAttribute("aria-hidden", "true");
+    this.txt = el.appendChild(document.createElement("span"));
+    this.buf = document.createElement("canvas");
+    if ("IntersectionObserver" in window) new IntersectionObserver((es) => { this.visible = es[es.length - 1].isIntersecting; kickOrbs(); }).observe(el);
+    ORBS.push(this);
+  }
+  /** Neutral, unlit orb with a glyph, as in quiz questions and the empty upload state. */
+  mystery(glyph) { this.txt.textContent = glyph; this.litTo = 0; this.ringTo = 0; this.flash = -1; kickOrbs(); }
+  light(hex, extra) {
+    this.to = hexRGB(hex);
+    if (this.lit < 0.05) { this.rgb = [...this.to]; } // never show the previous object's color while lighting up
+    Object.assign(this, extra); this.txt.textContent = ""; this.litTo = 1; kickOrbs();
+  }
+  star(hex, T) { this.light(hex, { gTo: granulation(T) }); if (this.lit < 0.05) this.g = this.gTo; }
+  rock(hex, seed) {
+    // Class colors are a key, not true color (real asteroids are dark grey to brown): tint a rock grey with them.
+    const c = hexRGB(hex), grey = [138, 131, 120];
+    this.light("#" + c.map((v, i) => Math.round(0.55 * v + 0.45 * grey[i]).toString(16).padStart(2, "0")).join(""));
+    if (seed !== this.seed) { this.seed = seed; this.shape = rockShape(seed); }
+  }
+  /** Quiz answer: the mystery object lights up in its true color; a green ring if the guess was right. */
+  ignite(ok) { this.flash = RM.matches ? -1 : performance.now(); this.lit = 0; this.ringTo = ok ? 1 : 0; kickOrbs(); }
+  render(now) {
+    const cv = this.cv, dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(cv.clientWidth * dpr);
+    if (!W) return false;
+    if (cv.width !== W) { cv.width = cv.height = this.buf.width = this.buf.height = W; }
+    const rm = RM.matches, dt = Math.min(0.1, (now - (this.last || now)) / 1000), k = rm ? 1 : 1 - Math.exp(-dt / 0.08);
+    this.last = now;
+    for (let i = 0; i < 3; i++) this.rgb[i] += (this.to[i] - this.rgb[i]) * k;
+    this.g += (this.gTo - this.g) * k; this.ring += (this.ringTo - this.ring) * (rm ? 1 : k * 0.5);
+    let fp = 1;
+    if (this.flash >= 0) { fp = clamp01((now - this.flash) / 1100); this.lit = this.litTo * ease(clamp01(fp * 1.4)); if (fp >= 1) this.flash = -1; }
+    else this.lit += (this.litTo - this.lit) * k;
+    const ctx = cv.getContext("2d"), c = W / 2, R = W / 3.2, t = rm ? 0 : now / 1000;
+    ctx.clearRect(0, 0, W, W); ctx.globalAlpha = 1;
+    if (this.lit < 0.995) { // the old neutral orb
+      const gd = ctx.createRadialGradient(c - 0.3 * R, c - 0.36 * R, 0, c, c, R);
+      gd.addColorStop(0, rgba(MYST[0], 1)); gd.addColorStop(1, rgba(MYST[1], 1));
+      ctx.globalAlpha = 1 - this.lit; ctx.fillStyle = gd; ctx.beginPath(); ctx.arc(c, c, R, 0, 7); ctx.fill();
+    }
+    if (this.lit > 0.005) {
+      const b = this.buf.getContext("2d");
+      b.setTransform(1, 0, 0, 1, 0, 0); b.globalAlpha = 1; b.globalCompositeOperation = "source-over"; b.clearRect(0, 0, W, W);
+      this.kind === "star" ? this.drawStar(b, W, c, R, t) : this.drawRock(b, W, c, R, t);
+      ctx.globalAlpha = this.lit; ctx.drawImage(this.buf, 0, 0);
+    }
+    this.txt.style.opacity = 1 - this.lit;
+    if (fp < 1) { // ignition flash: a bright shell racing outward
+      ctx.globalAlpha = (1 - fp) ** 1.5; ctx.strokeStyle = rgba(this.rgb.map((v) => v + (255 - v) * 0.5), 1); ctx.lineWidth = W / 60;
+      ctx.beginPath(); ctx.arc(c, c, R * (1 + 0.55 * ease(fp)), 0, 7); ctx.stroke();
+    }
+    if (this.ring > 0.01) {
+      ctx.globalAlpha = this.ring; ctx.strokeStyle = "#4ade80"; ctx.lineWidth = W / 75; ctx.shadowColor = "#4ade80"; ctx.shadowBlur = W / 25;
+      ctx.beginPath(); ctx.arc(c, c, R * 1.14, 0, 7); ctx.stroke(); ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = 1;
+    const settling = Math.abs(this.lit - this.litTo) > 0.003 || Math.abs(this.ring - this.ringTo) > 0.01 || this.flash >= 0 || Math.abs(this.g - this.gTo) > 0.002
+      || this.rgb.some((v, i) => Math.abs(v - this.to[i]) > 0.5);
+    return this.lit > 0.005 || settling;
+  }
+  drawStar(b, W, c, R, t) {
+    const col = this.rgb, g = this.g, fl = 1 + 0.03 * Math.sin(t * 2.1) + 0.018 * Math.sin(t * 5.3 + 1.7) + 0.01 * Math.sin(t * 11.7);
+    // Corona: a soft glow, with a few faint streamers turning very slowly.
+    let gd = b.createRadialGradient(c, c, R * 0.92, c, c, c);
+    gd.addColorStop(0, rgba(col, 0.6 * fl)); gd.addColorStop(0.3, rgba(col, 0.2 * fl)); gd.addColorStop(1, rgba(col, 0));
+    b.fillStyle = gd; b.fillRect(0, 0, W, W);
+    b.save(); b.translate(c, c);
+    for (let i = 0; i < 6; i++) {
+      b.rotate(1.047 + 0.02 * Math.sin(t * 0.13 + i));
+      const L = R * (1.32 + 0.12 * Math.sin(t * 0.7 + i * 2.1)), sg = b.createLinearGradient(R * 0.8, 0, L, 0);
+      sg.addColorStop(0, rgba(col, 0.16 * fl)); sg.addColorStop(1, rgba(col, 0));
+      b.fillStyle = sg; b.beginPath(); b.ellipse(R * 0.9, 0, L - R * 0.9, R * 0.16, 0, 0, 7); b.fill();
+    }
+    b.restore();
+    // Photosphere.
+    b.save(); b.beginPath(); b.arc(c, c, R, 0, 7); b.clip();
+    b.fillStyle = rgba(col.map((v) => Math.min(255, v * fl)), 1); b.fillRect(c - R, c - R, 2 * R, 2 * R);
+    CELLS ??= [cellTexture(11), cellTexture(29)];
+    const across = 24 - 18 * g, contrast = 0.05 + 0.45 * g, speed = 0.12 + 0.55 * g, scale = (2 * R) / across / 24;
+    b.globalCompositeOperation = "multiply";
+    CELLS.forEach((tex, i) => {
+      const p = b.createPattern(tex, "repeat");
+      if (!p || !p.setTransform) return;
+      const w = 0.5 + 0.5 * Math.sin(t * speed * 1.3 + i * Math.PI), drift = t * speed * 2.2 * (i ? 1 : -1);
+      p.setTransform(new DOMMatrix().translateSelf(c + drift * R * 0.05, c + drift * R * 0.03 * (i ? -1 : 1)).scaleSelf(scale));
+      b.globalAlpha = Math.min(1, contrast * (0.25 + 1.1 * w)); b.fillStyle = p; b.fillRect(c - R, c - R, 2 * R, 2 * R);
+    });
+    // Limb darkening: we look through cooler, higher gas near the edge, so it is dimmer and a little redder.
+    b.globalAlpha = 1;
+    gd = b.createRadialGradient(c, c, 0, c, c, R);
+    for (const r of [0, 0.4, 0.6, 0.75, 0.85, 0.92, 0.97, 1]) {
+      const I = 1 - 0.6 * (1 - Math.sqrt(1 - r * r));
+      gd.addColorStop(r, rgba([255 * I, 255 * I ** 1.2, 255 * I ** 1.45], 1));
+    }
+    b.fillStyle = gd; b.fillRect(c - R, c - R, 2 * R, 2 * R);
+    b.globalCompositeOperation = "screen"; // white-hot center
+    gd = b.createRadialGradient(c, c, 0, c, c, R * 0.75);
+    gd.addColorStop(0, `rgba(255,255,255,${0.3 * fl})`); gd.addColorStop(1, "rgba(255,255,255,0)");
+    b.fillStyle = gd; b.fillRect(c - R, c - R, 2 * R, 2 * R);
+    b.restore();
+  }
+  drawRock(b, W, c, R, t) {
+    const col = this.rgb, sh = this.shape;
+    let gd = b.createRadialGradient(c, c, R * 0.6, c, c, c); // faint halo so it reads on the dark card
+    gd.addColorStop(0, rgba(col, 0.22)); gd.addColorStop(1, rgba(col, 0));
+    b.fillStyle = gd; b.fillRect(0, 0, W, W);
+    // Shade per pixel at half resolution, then scale up.
+    const n = Math.ceil(W / 2), Rb = R / 2, ang = sh.spin + t * 0.14, ca = Math.cos(ang), sa = Math.sin(ang);
+    this.rbuf ??= document.createElement("canvas");
+    if (this.rbuf.width !== n) { this.rbuf.width = this.rbuf.height = n; this.rimg = null; }
+    const rc = this.rbuf.getContext("2d"), img = (this.rimg ??= rc.createImageData(n, n)), d = img.data;
+    d.fill(0);
+    const L = [-0.62, -0.46, 0.64], Ln = Math.hypot(...L), lx0 = L[0] / Ln, ly0 = L[1] / Ln, lz0 = L[2] / Ln, m = sh.m;
+    for (let py = 0; py < n; py++) for (let px = 0; px < n; px++) {
+      const sx = (px + 0.5 - n / 2) / Rb, sy = (py + 0.5 - n / 2) / Rb, dd = Math.hypot(sx, sy);
+      if (dd > 1.25) continue;
+      const lx = sx * ca + sy * sa, ly = -sx * sa + sy * ca, th = Math.atan2(ly, lx);
+      let rr = 0.9;
+      for (const [k2, a, ph] of sh.lobes) rr += 0.9 * a * Math.cos(k2 * th + ph);
+      const edge = (rr - dd) * Rb;
+      if (edge < -0.5) continue;
+      const q = Math.min(0.999, dd / rr), nz0 = Math.sqrt(1 - q * q), inv = dd > 1e-6 ? q / dd : 0;
+      let pxl = 0, pyl = 0, alb = 1;
+      for (const cr of sh.craters) {
+        const dx = lx - cr.x, dy = ly - cr.y, s = Math.hypot(dx, dy) / cr.r;
+        if (s >= 1.3) continue;
+        const f = s < 1 ? -cr.d : cr.d * 0.7 * (1.3 - s) / 0.3; // bowl walls face inward, rims outward
+        pxl += (f * dx) / cr.r; pyl += (f * dy) / cr.r;
+        if (s < 1) alb *= 0.9 + 0.1 * s;
+      }
+      const pnx = (pxl * ca - pyl * sa) * nz0, pny = (pxl * sa + pyl * ca) * nz0;
+      const nx = sx * inv + pnx, ny = sy * inv + pny, nl = Math.hypot(nx, ny, nz0);
+      const lam = Math.max(0, (nx * lx0 + ny * ly0 + nz0 * lz0) / nl);
+      alb *= 1 + 0.09 * Math.sin(5 * lx + m[0]) * Math.sin(6 * ly + m[1]) + 0.05 * Math.sin(13 * lx + 11 * ly + m[2]);
+      const v = (0.07 + 1.05 * lam ** 0.85) * alb, o = 4 * (py * n + px);
+      d[o] = col[0] * v; d[o + 1] = col[1] * v; d[o + 2] = col[2] * v; d[o + 3] = 255 * clamp01(edge + 0.5);
+    }
+    rc.putImageData(img, 0, 0);
+    b.imageSmoothingEnabled = true; b.drawImage(this.rbuf, 0, 0, n, n, 0, 0, W, W);
+  }
 }
 
 // ---------------------------------------------------------------- navigation
@@ -484,8 +702,19 @@ const sliderToT = (v) => Math.round(10 ** (Math.log10(TMIN) + (v / 1000) * (Math
 const tToSlider = (T) => Math.round((1000 * (Math.log10(T) - Math.log10(TMIN))) / (Math.log10(TMAX) - Math.log10(TMIN)));
 const star = { T: 5772, feh: 0, preset: "Sun", focus: null, quiz: null, score: [0, 0], mode: "explore", upload: null };
 
-// Paint the slider track in real star colors, cool to hot.
-$("t").style.background = `linear-gradient(90deg, ${Array.from({ length: 9 }, (_, i) => vivid(S.starHex(sliderToT(i * 125)))).join(",")})`;
+// Paint the slider track in real star colors, cool (left, red) to hot (right, blue-white), with a soft sheen on top.
+$("t").style.background = `linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 55%, rgba(0,0,0,.18)), linear-gradient(90deg, ${Array.from({ length: 13 }, (_, i) => vivid(S.starHex(sliderToT((i * 1000) / 12)))).join(",")})`;
+const starOrb = new Orb($("orb"), "star"), astOrb = new Orb($("ast-orb"), "rock");
+// Live reading that rides above the slider thumb, e.g. "5,772 K · G2".
+function sliderBubble() {
+  const tEl = $("t"), bub = $("t-bub"), hex = vivid(S.starHex(star.T)), Wi = tEl.clientWidth;
+  bub.textContent = `${fmt(star.T)} K · ${S.spectralClass(star.T).name}`;
+  const wrap = tEl.closest(".temp");
+  wrap.style.setProperty("--tc", hex); wrap.style.setProperty("--tcg", hex + "88");
+  if (!Wi) return;
+  const x = 12 + (+tEl.value / 1000) * (Wi - 24), bw = bub.offsetWidth, left = Math.max(bw / 2, Math.min(Wi - bw / 2, x));
+  bub.style.left = left + "px"; bub.style.setProperty("--ax", x - left + bw / 2 + "px");
+}
 
 $("star-presets").innerHTML = S.REAL_STARS.map((s) => `<button data-name="${s.name}"><i style="background:${vivid(S.starHex(s.T))}"></i>${s.name}</button>`).join("");
 $("star-presets").onclick = (e) => {
@@ -507,18 +736,97 @@ function compareSun(T) {
   return r > 1 ? `${r.toFixed(r < 2 ? 1 : 0)}× hotter than the Sun` : `${(1 / r).toFixed(1)}× cooler than the Sun`;
 }
 
-function drawStrip(wl, trans) {
-  const c = $("star-strip"), ctx = c.getContext("2d"), W = c.width, H = c.height;
-  const img = ctx.createImageData(W, H);
+// The strip eases between spectra (~250 ms) so lines darken and fade smoothly as the temperature changes.
+const strip = { wl: null, cur: null, from: null, to: null, t0: 0, key: "", raf: 0, lines: [], rgb: null };
+function drawStrip(wl, trans, key = "") {
+  const same = strip.wl === wl && strip.key === key && strip.cur && strip.cur.length === trans.length;
+  strip.key = key; strip.wl = wl;
+  if (!same || RM.matches) { cancelAnimationFrame(strip.raf); strip.raf = 0; strip.cur = Array.from(trans); paintStrip(); return; }
+  strip.from = strip.cur.slice(); strip.to = trans; strip.t0 = performance.now();
+  if (!strip.raf) strip.raf = requestAnimationFrame(stepStrip);
+}
+function stepStrip(now) {
+  const p = ease(clamp01((now - strip.t0) / 250)), { from, to } = strip;
+  strip.cur = to.map((v, i) => from[i] + (v - from[i]) * p);
+  paintStrip(); if (lens.on) showLens(lens.on);
+  strip.raf = p < 1 ? requestAnimationFrame(stepStrip) : 0;
+}
+const transAt = (l) => { // displayed transmission at wavelength l (linear interpolation; NaN in gaps)
+  const wl = strip.wl, f = (l - wl[0]) / (wl[1] - wl[0]), i = Math.floor(f);
+  if (i < 0 || i >= wl.length - 1) return NaN;
+  return strip.cur[i] + (strip.cur[i + 1] - strip.cur[i]) * (f - i);
+};
+function paintStrip() {
+  const c = $("star-strip"), ctx = c.getContext("2d"), W = c.width, H = c.height, wl = strip.wl, trans = strip.cur;
+  strip.rgb ??= Array.from({ length: W }, (_, x) => S.wavelengthRGB(380 + (370 * x) / (W - 1)));
+  const img = ctx.createImageData(W, 1);
   for (let x = 0; x < W; x++) {
     const l = 380 + (370 * x) / (W - 1);
     const i = Math.round((l - wl[0]) / (wl[1] - wl[0]));
     const k = i >= 0 && i < wl.length ? trans[i] : NaN;
     // Gaps (outside an uploaded file's range, or missing data) are drawn dark grey.
-    const [r, g, b] = Number.isFinite(k) ? S.wavelengthRGB(l).map((v) => 255 * v * k) : [26, 31, 51];
-    for (let y = 0; y < H; y++) { const p = 4 * (y * W + x); img.data[p] = r; img.data[p + 1] = g; img.data[p + 2] = b; img.data[p + 3] = 255; }
+    const [r, g, b] = Number.isFinite(k) ? strip.rgb[x].map((v) => 255 * v * k) : [26, 31, 51];
+    img.data[4 * x] = r; img.data[4 * x + 1] = g; img.data[4 * x + 2] = b; img.data[4 * x + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = false; ctx.drawImage(c, 0, 0, W, 1, 0, 1, W, H - 1); // repeat the row down the strip
+}
+
+// ---------------------------------------------------------------- magnifier on the strip
+const LINE_NAME = {
+  H: { 656.3: "Hydrogen-alpha (Hα)", 486.1: "Hydrogen-beta (Hβ)", 434: "Hydrogen-gamma (Hγ)", 410.2: "Hydrogen-delta (Hδ)", 397: "Hydrogen-epsilon (Hε)" },
+  CaII: { 393.4: "Calcium K", 396.8: "Calcium H" }, Na: { 589: "Sodium D2", 589.6: "Sodium D1" }, CH: { 430.5: "The G band (CH)" },
+  Mg: { 516.7: "Magnesium b", 517.3: "Magnesium b", 518.4: "Magnesium b" }, HeI: { 587.6: "Helium D3" }, HeII: { 468.6: "Ionized helium 4686" },
+};
+const LENS_SPAN = 16; // nm shown in the lens
+const lens = { on: null, timer: 0 };
+function showLens(hit) {
+  lens.on = hit;
+  const box = document.querySelector(".strip-box"), BW = box.clientWidth, x = ((hit.nm - 380) / 370) * BW;
+  const lw = Math.min(260, BW), cv = $("lens-cv"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
+  const lo = hit.nm - LENS_SPAN / 2, img = ctx.createImageData(W, 1);
+  for (let i = 0; i < W; i++) {
+    const l = lo + (LENS_SPAN * i) / (W - 1), k = transAt(l), rgb = S.wavelengthRGB(Math.max(380, Math.min(750, l)));
+    const [r, g, b] = Number.isFinite(k) ? rgb.map((v) => 255 * v * Math.max(0, k)) : [26, 31, 51];
+    img.data[4 * i] = r; img.data[4 * i + 1] = g; img.data[4 * i + 2] = b; img.data[4 * i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0); ctx.imageSmoothingEnabled = false; ctx.drawImage(cv, 0, 0, W, 1, 0, 1, W, H - 1);
+  // Ruler: a tick every nanometer, longer every 5; a marker at the line's laboratory wavelength.
+  ctx.fillStyle = "rgba(255,255,255,.55)";
+  for (let nm = Math.ceil(lo); nm <= lo + LENS_SPAN; nm++) { const px = ((nm - lo) / LENS_SPAN) * W; ctx.fillRect(px - 1, H - (nm % 5 ? 10 : 20), 2, nm % 5 ? 10 : 20); }
+  const mx = ((hit.nm - lo) / LENS_SPAN) * W;
+  ctx.fillStyle = SP_COLOR[hit.id]; ctx.beginPath(); ctx.moveTo(mx - 9, 0); ctx.lineTo(mx + 9, 0); ctx.lineTo(mx, 13); ctx.fill();
+  // How much of this color the line removes (deepest point within a nanometer of the line).
+  let kmin = 1;
+  for (let d = -1; d <= 1; d += 0.125) { const k = transAt(hit.nm + d); if (Number.isFinite(k)) kmin = Math.min(kmin, k); }
+  const name = LINE_NAME[hit.id]?.[hit.nm] || (hit.id === "TiO" ? "Titanium oxide band edge" : S.PLAIN[hit.id].name);
+  $("lens-t").innerHTML = `<em>${Math.round(100 * (1 - kmin))}% dimmer</em><b style="color:${SP_COLOR[hit.id]}">${name}</b> · ${hit.nm.toFixed(1)} nm<br>${S.PLAIN[hit.id].why}`;
+  const el = $("lens"), spot = $("lens-spot"), sw = (LENS_SPAN / 370) * BW;
+  el.style.width = lw + "px"; el.style.left = Math.max(lw / 2, Math.min(BW - lw / 2, x)) + "px"; el.style.borderColor = SP_COLOR[hit.id] + "88";
+  spot.style.left = x + "px"; spot.style.width = Math.max(14, sw) + "px";
+  el.hidden = spot.hidden = false;
+}
+function hideLens() { lens.on = null; $("lens").hidden = $("lens-spot").hidden = true; }
+function lensHit(e, slack) {
+  if (!strip.lines.length) return null;
+  const box = document.querySelector(".strip-box"), r = $("star-strip").getBoundingClientRect(), id = e.target.dataset?.id;
+  if (id) { const f = strip.lines.find((o) => o.id === id && o.nm === S.PLAIN[id].labelNm) || strip.lines.find((o) => o.id === id); if (f) return f; }
+  if (e.clientY < r.top - 8 || e.clientY > r.bottom + 8) return null;
+  const nm = 380 + (370 * (e.clientX - r.left)) / r.width, tol = (slack / box.clientWidth) * 370;
+  let best = null;
+  for (const o of strip.lines) if (Math.abs(o.nm - nm) < tol && (!best || Math.abs(o.nm - nm) < Math.abs(best.nm - nm))) best = o;
+  return best;
+}
+{
+  const box = document.querySelector(".strip-box");
+  box.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") { const h = lensHit(e, 16); h ? (h !== lens.on && showLens(h)) : hideLens(); } });
+  box.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hideLens(); });
+  box.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+    const h = lensHit(e, 26); clearTimeout(lens.timer);
+    if (h) { showLens(h); lens.timer = setTimeout(hideLens, 5000); } else hideLens();
+  });
+  document.addEventListener("pointerdown", (e) => { if (lens.on && !box.contains(e.target)) hideLens(); });
 }
 
 function drawLabels(feats, show, min = 0.1) {
@@ -541,6 +849,10 @@ function drawLabels(feats, show, min = 0.1) {
   });
   $("ticks").innerHTML = ticks;
   $("labels").innerHTML = labs;
+  // Lines the magnifier can name: only the labelled ones (none while a quiz answer is hidden).
+  strip.lines = shown.flatMap((f) => f.nm.filter((nm) => nm >= 380 && nm <= 750).map((nm) => ({ id: f.id, nm })));
+  $("lens-hint").hidden = !strip.lines.length;
+  if (lens.on) { const h = strip.lines.find((o) => o.id === lens.on.id && o.nm === lens.on.nm); h ? showLens(h) : hideLens(); }
 }
 $("labels").onclick = (e) => { const id = e.target.dataset.id; if (id) { star.focus = star.focus === id ? null : id; drawStar(); } };
 
@@ -564,17 +876,21 @@ function drawStar() {
   for (const b of $("star-presets").children) b.classList.toggle("on", b.dataset.name === star.preset);
   $("t-now").textContent = `${fmt(star.T)} K`;
   $("star-explore").hidden = !!q; $("star-quiz").hidden = !q;
+  if (!q) sliderBubble();
+  // Color washes are neutral while the answer is hidden, so they can't give the mystery star away.
+  wash($("orb").parentElement, reveal ? hex : null); $("star-strip").style.setProperty("--sg", reveal ? hex + "66" : "transparent");
   $("star-step2").textContent = q ? "MYSTERY STAR" : "2 · WHAT IT IS";
   $("star-step3").textContent = q ? "ITS RAINBOW: READ THE DARK LINES" : "3 · ITS RAINBOW";
   $("star-ingr-wrap").hidden = !reveal; $("star-adv").hidden = !!q;
 
   if (!reveal) {
-    setStyle($("orb"), MYSTERY); $("orb").textContent = "?";
+    starOrb.mystery("?");
     $("star-h").textContent = "What kind of star is this?";
     $("star-p").innerHTML = `Study the dark lines in its rainbow below. <b>Few lines, mostly at the blue end:</b> a hot O or B star. <b>A handful of thick, evenly spaced lines:</b> hydrogen, so an A or F star. <b>Many lines, deepest at the violet end:</b> a Sun-like G or K star. <b>Broad dark bands:</b> a cool red M star.`;
     $("star-facts").innerHTML = "";
   } else {
-    setStyle($("orb"), glow(hex)); $("orb").textContent = "";
+    if (!q) starOrb.ringTo = 0; // the quiz's green ring stays only on the answered mystery star
+    starOrb.star(hex, T);
     const preset = !q && S.REAL_STARS.find((s) => s.name === star.preset);
     const top = [...new Set(feats.filter((f) => f.strength > 0.15).map((f) => S.PLAIN[f.id].name.replace(" (super-hot)", "").replace(/^\w/, (c) => c.toLowerCase())))].slice(0, 3);
     const list = top.length > 1 ? top.slice(0, -1).join(", ") + " and " + top[top.length - 1] : top[0];
@@ -586,7 +902,7 @@ function drawStar() {
     ].map(([k, v]) => `<span>${k}: <b>${v}</b></span>`).join("");
   }
 
-  drawStrip(sp.wl, trans);
+  drawStrip(sp.wl, trans, q ? "q" + q.seed : "explore");
   drawLabels(feats, reveal);
 
   if (reveal) {
@@ -644,6 +960,7 @@ $("star-guess").onclick = (e) => {
   $("star-verdict").innerHTML = `<div class="verdict ${off ? (off === 1 ? "close" : "bad") : "good"}">${off ? (off === 1 ? "So close! One step off." : "Not this time.") : "Correct!"}</div>
     <div class="btns"><button class="btn" id="again-star">Next star →</button></div>`;
   $("again-star").onclick = newStarQuiz;
+  starOrb.ignite(!off);
   drawStar();
 };
 
@@ -659,7 +976,7 @@ function drawUpload() {
   $("star-step3").textContent = "3 · ITS RAINBOW, FROM YOUR FILE";
   $("star-strip-wrap").hidden = !fit; $("star-ingr-wrap").hidden = !fit; $("up-result").hidden = !fit;
   if (!fit) {
-    setStyle($("orb"), MYSTERY); $("orb").textContent = "↑";
+    starOrb.mystery("↑"); wash($("orb").parentElement, null);
     $("star-h").textContent = "Upload a star's spectrum";
     $("star-p").innerHTML = "The lab compares it with <b>123 real stars</b> of every type, from hot blue O stars to cool red M giants, plus white dwarfs and carbon stars. It tells you which kind your star matches, its rough <b>temperature</b>, and which <b>elements</b> show up in its light. Works with visible-light spectra between 380 and 900 nm.";
     $("star-facts").innerHTML = "";
@@ -667,7 +984,7 @@ function drawUpload() {
   }
   const b = fit.best, name = u.object || "Your star";
   const hex = vivid(S.starHex(b.kind === "wd" ? 15000 : b.teff ?? 3000));
-  setStyle($("orb"), glow(hex)); $("orb").textContent = "";
+  starOrb.ringTo = 0; starOrb.star(hex, b.kind === "wd" ? 15000 : b.teff ?? 3000); wash($("orb").parentElement, hex); $("star-strip").style.setProperty("--sg", hex + "66");
 
   const warns = [];
   let head, body;
@@ -716,7 +1033,7 @@ function drawUpload() {
   if (fit.quality === "poor" && !u.image) lim.push("<b>Poor match:</b> this may not be a normal star, or the file may have calibration problems.");
   $("up-limits").innerHTML = `<h4>HOW SURE IS THIS?</h4><ul>${lim.map((x) => `<li>${x}</li>`).join("")}</ul><a href="/evidence/#spectra" style="display:inline-block;margin-top:8px;color:var(--acc);font-weight:700;text-decoration:none">How we tested it →</a>`;
   $("up-limits").hidden = false;
-  drawStrip(fit.grid.wl, fit.grid.norm.map((v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : NaN)));
+  drawStrip(fit.grid.wl, fit.grid.norm.map((v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : NaN)), "upload");
   const found = fit.lines.filter((l) => l.found).sort((a, b2) => b2.depth - a.depth);
   const strength = Object.fromEntries(found.map((l) => [l.id, l.depth]));
   drawLabels(S.SPECIES.map((sp) => ({ ...sp, strength: strength[sp.id] || 0 })), true, 0);
@@ -917,12 +1234,12 @@ function drawAst() {
   $("ast-step3").textContent = q ? "THE CLUES IN ITS LIGHT" : "3 · THE CLUES IN ITS LIGHT";
 
   if (!reveal) {
-    setStyle($("ast-orb"), MYSTERY); $("ast-orb").textContent = "?";
+    astOrb.mystery("?"); wash($("ast-orb").parentElement, null);
     $("ast-h").textContent = "What kind of asteroid is this?";
     $("ast-p").textContent = "Read the three clues below, then pick a type.";
   } else {
-    setStyle($("ast-orb"), { background: `radial-gradient(circle at 35% 32%, ${info.color}, #2a2f45 75%)`, boxShadow: `0 0 30px ${info.color}44` });
-    $("ast-orb").textContent = "";
+    if (!q) astOrb.ringTo = 0;
+    astOrb.rock(info.color, KEYS.indexOf(best) * 7919 + 17); wash($("ast-orb").parentElement, info.color);
     const who = q ? "It's" : ast.preset ? `${ast.preset.name} is` : ast.custom ? "Your spectrum looks like" : "This is";
     $("ast-h").textContent = `${who} probably ${S.ASTEROID_PLAIN[best]}`;
     $("ast-p").innerHTML = `<b>${info.name}.</b> ${info.composition}${q ? "" : albedoNote(best, $("a-albedo").value)}${ast.preset && !q ? `<br><span style="color:var(--dim)">${ast.preset.note}</span>` : ""}`;
@@ -986,6 +1303,7 @@ $("ast-guess").onclick = (e) => {
   $("ast-verdict").innerHTML = `<div class="verdict ${right ? "good" : close ? "close" : "bad"}">${right ? "Correct!" : close ? "Close: same family of rock." : "Not this time."}</div>
     <div class="btns"><button class="btn" id="again-ast">Next asteroid →</button></div>`;
   $("again-ast").onclick = newAstQuiz;
+  astOrb.ignite(right);
   drawAst();
 };
 
@@ -1020,6 +1338,7 @@ let saved = null;
 try { saved = localStorage.getItem("spectra-activity"); } catch {}
 activity(saved === "ast" ? "ast" : "read");
 route();
+document.fonts?.ready.then(() => { if (!$("view-stars").hidden && !star.quiz && star.mode === "explore") sliderBubble(); });
 </script>
 <script src="/shared/nav.js"></script>
 </body>
