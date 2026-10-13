@@ -12,6 +12,7 @@ function init() {
   const toP = (v) => PMIN * Math.exp((v / STEPS) * Math.log(PMAX / PMIN));
   const toV = (P) => Math.round((Math.log(P / PMIN) / Math.log(PMAX / PMIN)) * STEPS);
   let star, mode = "quiet", clean = false, t0 = 0, solved = false, seed = (Date.now() % 100000) + 1;
+  let last = null; // the latest find, for the share card
   let trace = new Float32Array(STEPS + 1); // signal strength at every orbit the visitor has passed over
 
   function rng(s) { return () => ((s = (s * 16807) % 2147483647) / 2147483647); }
@@ -81,6 +82,7 @@ function init() {
     if (!star) return newStar(); // the controls work even before the section has scrolled into view
     const v = toV(P); $("hunt-p").value = v; $("hunt-pv").textContent = `${P.toFixed(3)} days`;
     const F = drawFold(P); trace[v] = Math.max(trace[v], F.snr); drawTrace(v);
+    dispatchEvent(new CustomEvent("ss-sound", { detail: { type: "tick", snr: F.snr } }));
   }
   // The trace under the slider: a periodogram the visitor builds by hand as they sweep.
   function drawTrace(v) {
@@ -119,6 +121,7 @@ function init() {
   }
   function claim() {
     const P = curP(), F = fold(data(), P), secs = (performance.now() - t0) / 1000, rel = (x) => Math.abs(P - x) / x;
+    const fmtS = (x) => (x < 60 ? Math.round(x) + " s" : Math.round(x / 60) + " min");
     const verdict = F.snr < THRESH ? ["miss", "Not strong enough yet", "The dip at that orbit doesn't stand out from the noise. Keep sliding, or fine-tune with the arrows."]
       : rel(star.P) < 0.006 ? ["win", `Found it in ${secs < 60 ? Math.round(secs) + " seconds" : Math.round(secs / 60) + " min"}!`, `Your orbit: ${P.toFixed(3)} days. The real one: ${star.P.toFixed(3)} days.`]
       : rel(star.P / 2) < 0.006 || rel(star.P * 2) < 0.006 ? ["half", "Close: that's an echo of the planet", `You found ${P < star.P ? "half" : "twice"} the real orbit (${star.P.toFixed(3)} days). Searches fall for this too.`]
@@ -129,7 +132,15 @@ function init() {
     const pg = periodogram(); $("hunt-race").hidden = false; drawPgram(pg, P);
     const best = pg.out.reduce((a, b) => (b[1] > a[1] ? b : a));
     $("hunt-cmp").innerHTML = `The computer tried <b>${pg.n.toLocaleString("en-US")} orbits in ${Math.max(1, Math.round(pg.ms))} ms</b> and its top pick was ${best[0].toFixed(3)} days${Math.abs(best[0] - star.P) / star.P < 0.006 ? ", the planet" : Math.abs(best[0] - star.P / 2) / star.P < 0.006 || Math.abs(best[0] - 2 * star.P) / star.P < 0.006 ? ", an echo of the planet" : ": <b>wrong</b>, fooled by the star"}. That's why SpaceSift tests searches on thousands of planets with known answers.`;
-    if (verdict[0] === "win") { solved = true; $("hunt-claim").disabled = true; if (!reduce) burst(); }
+    dispatchEvent(new CustomEvent("ss-sound", { detail: { type: verdict[0] === "win" ? "found" : "miss" } }));
+    $("hunt-share").hidden = verdict[0] !== "win";
+    if (verdict[0] === "win") {
+      solved = true; $("hunt-claim").disabled = true; if (!reduce) burst();
+      const key = "ss-hunt-best-" + mode; let best = null; try { best = parseFloat(localStorage.getItem(key)); } catch {}
+      const record = !(best <= secs); if (record) try { localStorage.setItem(key, String(secs)); } catch {}
+      $("hunt-best").textContent = record ? (best ? `New personal best! (was ${fmtS(best)})` : "Your first find. That's your time to beat.") : `Your best on this kind of star: ${fmtS(best)}.`;
+      last = { secs, P, mode };
+    } else $("hunt-best").textContent = "";
   }
   function burst() { // a little celebration over the folded plot
     const c = $("hunt-fold"), r = c.getBoundingClientRect(), fx = document.createElement("canvas");
@@ -140,6 +151,37 @@ function init() {
       if (++f < 60) requestAnimationFrame(step); else fx.remove(); })();
   }
 
+  // Listen: the folded data as sound, dip in the middle, played three times over.
+  function listen() {
+    if (!star) newStar();
+    const tog = document.getElementById("sound-toggle"); if (tog && tog.getAttribute("aria-pressed") !== "true") tog.click();
+    const y = data(), F = fold(y, curP()), shift = Math.round(F.at + F.w / 2 - NB / 2), bins = [];
+    for (let b = 0; b < NB; b++) { const q = (b + shift + NB) % NB; bins.push(F.n[q] ? F.s[q] / F.n[q] / F.sd * 3 : 0); }
+    $("hunt-listen").classList.add("playing");
+    dispatchEvent(new CustomEvent("ss-sound", { detail: { type: "sonify", bins, reps: 3, done: () => $("hunt-listen").classList.remove("playing") } }));
+  }
+  // Share card: the folded dip, the time, the site. Shared as an image where the browser can, saved otherwise.
+  async function share() {
+    if (!last) return;
+    const W = 1200, H = 630, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+    const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, "#0b1430"); bg.addColorStop(1, "#04060d"); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 260; i++) { g.globalAlpha = Math.random() * 0.7; g.fillStyle = "#dfe6ff"; g.fillRect(Math.random() * W, Math.random() * H, 1.5, 1.5); } g.globalAlpha = 1;
+    g.fillStyle = "#7aa2ff"; g.font = "700 22px Syncopate, sans-serif"; g.fillText("S P A C E S I F T", 70, 90);
+    g.fillStyle = "#eef2fc"; g.font = "700 64px Comfortaa, sans-serif"; g.fillText(`I found a planet in ${last.secs < 60 ? Math.round(last.secs) + " seconds" : Math.round(last.secs / 60) + " minutes"}.`, 70, 190);
+    g.fillStyle = "#c9d0e4"; g.font = "28px Comfortaa, sans-serif";
+    g.fillText(`Hidden in ${last.mode === "flicker" ? "a flickering star" : "a star"}'s light, orbiting every ${last.P.toFixed(3)} days.`, 70, 245);
+    const y = data(), F = fold(y, last.P), x0 = 70, x1 = W - 70, mid = 430, sc = 22, shift = (F.at + F.w / 2) / NB - 0.5;
+    g.fillStyle = "rgba(201,208,228,.45)";
+    for (let i = 0; i < y.length; i++) { const ph = ((((star.t[i] / last.P) % 1) - shift) % 1 + 1) % 1; g.fillRect(x0 + ph * (x1 - x0), mid - (y[i] - F.mean) * sc, 2.4, 2.4); }
+    g.strokeStyle = "#4ade80"; g.lineWidth = 5; g.shadowColor = "#4ade80"; g.shadowBlur = 18; g.beginPath();
+    const pts = []; for (let b = 0; b < NB; b++) if (F.n[b]) pts.push([x0 + ((((b + 0.5) / NB - shift) % 1 + 1) % 1) * (x1 - x0), mid - (F.s[b] / F.n[b]) * sc]);
+    pts.sort((a, b) => a[0] - b[0]).forEach(([x, yy], i) => (i ? g.lineTo(x, yy) : g.moveTo(x, yy))); g.stroke(); g.shadowBlur = 0;
+    g.fillStyle = "#7f88a6"; g.font = "24px Comfortaa, sans-serif"; g.fillText("Can you beat me? spacesift.vercel.app/#hunt", 70, H - 50);
+    const blob = await new Promise((r) => c.toBlob(r, "image/png")), file = new File([blob], "spacesift-planet.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text: "I found a hidden planet on SpaceSift. Can you beat my time?", url: location.origin + "/#hunt" }); return; } catch {} }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "spacesift-planet.png"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  $("hunt-listen").onclick = listen; $("hunt-share").onclick = share;
   $("hunt-p").max = STEPS;
   $("hunt-p").addEventListener("input", () => setP(curP()));
   $("hunt-minus").onclick = () => setP(curP() * 0.9995); $("hunt-plus").onclick = () => setP(curP() * 1.0005);

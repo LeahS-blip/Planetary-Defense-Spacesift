@@ -15,6 +15,7 @@ function init() {
   const meridians = Array.from({ length: 6 }, (_, k) => ring((d) => { const a = (k / 6) * Math.PI; return [Math.cos(d) * Math.cos(a), Math.cos(d) * Math.sin(a), Math.sin(d)]; }));
   let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const bg = Array.from({ length: 700 }, () => { const z = rnd() * 2 - 1, a = rnd() * 6.283, s = Math.sqrt(1 - z * z); return { v: [s * Math.cos(a), s * Math.sin(a), z], m: rnd() }; });
+  let focus = null, target = null, downAt = null;
   let objs = [], yaw = 0.6, pitch = 0.35, vyaw = reduce ? 0 : 0.0016, drag = null, hover = null, visible = false, mouse = null;
 
   const rot = ([x, y, z]) => { // spin about the celestial pole, then tilt toward the viewer
@@ -61,8 +62,15 @@ function init() {
     for (const q of proj) if (q.d > 0) { dot(ctx, q, 1, t); if (mouse && Math.hypot(mouse[0] - q.x, mouse[1] - q.y) < 12) hover = q; }
     // labels for the three likeliest
     ctx.font = "600 11px Comfortaa, sans-serif";
-    for (const q of proj) if (q.d > 0 && q.o.rank < 3) { ctx.fillStyle = "#eef2fc"; ctx.globalAlpha = 0.85; ctx.fillText(q.o.desig, q.x + 10, q.y + 4); }
+    for (const q of proj) if (q.d > 0 && q.o.rank < 3 && q.o !== focus) { ctx.fillStyle = "#eef2fc"; ctx.globalAlpha = 0.85; ctx.fillText(q.o.desig, q.x + 10, q.y + 4); }
     ctx.globalAlpha = 1;
+    const fq = focus && proj.find((q) => q.o === focus);
+    if (fq && fq.d > 0) {
+      const pr = 14 + (reduce ? 0 : 3 * Math.sin(t * 0.005));
+      ctx.strokeStyle = "#eef2fc"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(fq.x, fq.y, pr, 0, 6.283); ctx.stroke();
+      for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + t * 0.0008; ctx.beginPath(); ctx.moveTo(fq.x + Math.cos(a) * (pr + 4), fq.y + Math.sin(a) * (pr + 4)); ctx.lineTo(fq.x + Math.cos(a) * (pr + 11), fq.y + Math.sin(a) * (pr + 11)); ctx.stroke(); }
+      ctx.fillStyle = "#eef2fc"; ctx.font = "700 12px Comfortaa, sans-serif"; ctx.fillText(fq.o.desig, fq.x + pr + 14, fq.y + 4);
+    }
     if (hover) { tip.hidden = false; tip.style.left = `${hover.x + 14}px`; tip.style.top = `${hover.y - 10}px`;
       tip.innerHTML = `<b>${hover.o.desig}</b><br>P(real NEO) ${hover.o.p.toFixed(2)} · brightness V ${hover.o.mag}`; cv.style.cursor = "pointer"; }
     else { tip.hidden = true; cv.style.cursor = drag ? "grabbing" : "grab"; }
@@ -75,25 +83,55 @@ function init() {
     ctx.fillStyle = `rgba(${col},${a})`; ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, 6.283); ctx.fill();
   }
   function loop(t) {
-    if (visible) { if (!drag) { yaw += vyaw; vyaw += ((reduce ? 0 : 0.0016) - vyaw) * 0.02; } draw(t); }
+    if (visible) {
+      if (target && !drag) { // swing the sky so the chosen candidate faces us
+        let dy = target[0] - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+        yaw += dy * (reduce ? 1 : 0.08); pitch += (target[1] - pitch) * (reduce ? 1 : 0.08);
+        if (Math.abs(dy) < 0.002 && Math.abs(target[1] - pitch) < 0.002) target = null;
+      } else if (!drag && !focus) { yaw += vyaw; vyaw += ((reduce ? 0 : 0.0016) - vyaw) * 0.02; }
+      draw(t);
+    }
     requestAnimationFrame(loop);
   }
-  cv.addEventListener("pointerdown", (e) => { drag = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener("pointerdown", (e) => { drag = [e.clientX, e.clientY]; downAt = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); });
   cv.addEventListener("pointermove", (e) => {
     const r = cv.getBoundingClientRect(); mouse = [e.clientX - r.left, e.clientY - r.top];
     if (!drag) return;
     const dx = e.clientX - drag[0], dy = e.clientY - drag[1]; drag = [e.clientX, e.clientY];
-    yaw += dx * 0.006; pitch = Math.max(-1.3, Math.min(1.3, pitch + dy * 0.006)); vyaw = dx * 0.006;
+    yaw += dx * 0.006; pitch = Math.max(-1.5, Math.min(1.5, pitch + dy * 0.006)); vyaw = dx * 0.006;
     if (reduce) draw(0);
   });
-  cv.addEventListener("pointerup", () => { drag = null; });
+  cv.addEventListener("pointerup", (e) => {
+    const click = downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 5; drag = null; downAt = null;
+    if (click && hover) focusOn(hover.o); else if (!click) { focus = null; showFocus(null); }
+  });
+  function focusOn(o) {
+    focus = o;
+    const [x, y, z] = o.v, rho = Math.hypot(x, y);
+    target = [-Math.PI / 2 - Math.atan2(y, x), Math.max(-1.5, Math.min(1.5, Math.atan2(z, rho) - 0.4))]; // parked just above Earth
+    vyaw = 0; showFocus(o);
+    dispatchEvent(new CustomEvent("ss-sound", { detail: { type: "focus" } }));
+  }
+  function showFocus(o) {
+    const box = document.getElementById("globe-focus"); box.hidden = !o; if (!o) return;
+    // Ecliptic latitude: how far it sits from the plane where ordinary asteroids crowd.
+    const [x, y, z] = o.v, beta = Math.asin(Math.max(-1, Math.min(1, z * Math.cos(EPS) - y * Math.sin(EPS)))) * 180 / Math.PI;
+    const ago = o.t ? (Date.now() - o.t) / 3.6e6 : null, word = o.p >= 0.8 ? "likely real" : o.p >= 0.4 ? "uncertain" : "probably not real";
+    box.innerHTML = `<div class="gf-k">SELECTED CANDIDATE</div><b class="gf-name">${o.desig}</b>
+      <div class="gf-row"><span>P(real NEO)</span><b>${o.p.toFixed(2)} · ${word}</b></div>
+      <div class="gf-row"><span>Brightness</span><b>magnitude ${o.mag}</b></div>
+      <div class="gf-row"><span>Distance from the ecliptic</span><b>${Math.abs(beta).toFixed(0)}°${Math.abs(beta) > 25 ? " · far from the main belt's crowd" : ""}</b></div>
+      ${ago != null ? `<div class="gf-row"><span>Last measured</span><b>${ago < 48 ? Math.round(ago) + " hours" : Math.round(ago / 24) + " days"} ago</b></div>` : ""}
+      <div class="gf-row"><span>Rank tonight</span><b>${o.rank + 1} of ${objs.length}</b></div>`;
+  }
+  document.getElementById("globe-top").addEventListener("click", () => objs.length && focusOn(objs[0]));
   cv.addEventListener("pointerleave", () => { mouse = null; });
   new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(cv);
 
   fetch("/outputs/dashboard.html").then((r) => r.text()).then((html) => {
     const m = html.match(/var objs = (\[[\s\S]*?\]), cfg/);
     if (!m) throw new Error("no sky data");
-    objs = JSON.parse(m[1]).sort((a, b) => b.p - a.p).map((o, i) => ({ desig: o.desig, p: o.p, mag: o.v || "?", v: vec(o.ra, o.dec), rank: i }));
+    objs = JSON.parse(m[1]).sort((a, b) => b.p - a.p).map((o, i) => ({ desig: o.desig, p: o.p, mag: o.v || "?", v: vec(o.ra, o.dec), t: o.t, rank: i }));
     const hi = objs.filter((o) => o.p >= 0.8).length;
     const upd = new DOMParser().parseFromString(html, "text/html").querySelector('meta[name="ss-updated"]')?.content;
     document.getElementById("globe-count").innerHTML = `<b>${objs.length}</b> candidates right now · <b>${hi}</b> likely real${upd ? ` · captured ${new Date(upd).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}`;

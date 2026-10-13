@@ -307,6 +307,28 @@ try {
   .globe-key li { display:flex; align-items:center; gap:10px; } .globe-key i { width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
   .globe-key i.line { width:20px; height:0; border-radius:0; border-top:1.5px dashed #f9a8d4; } .globe-key i.eq { width:20px; height:0; border-radius:0; border-top:1.5px solid rgba(140,160,220,.6); }
   .globe-side .note { color:var(--dim); font-size:13px; line-height:1.6; }
+  /* Sound: off by default, one tap to turn on. */
+  .sound-toggle { position:fixed; left:18px; bottom:16px; z-index:35; display:inline-flex; align-items:center; gap:9px; padding:8px 14px; border-radius:999px;
+                  border:1px solid var(--line); background:rgba(4,6,13,.7); backdrop-filter:blur(8px); color:var(--body); font:600 12.5px var(--sub); cursor:pointer; transition:border-color .2s, color .2s; }
+  .sound-toggle:hover { border-color:var(--acc); color:var(--ink); }
+  .sound-toggle[aria-pressed="true"] { color:var(--ink); border-color:rgba(122,162,255,.5); }
+  .eq { display:inline-flex; align-items:flex-end; gap:2px; height:12px; }
+  .eq i { width:2px; height:3px; background:currentColor; border-radius:1px; }
+  .sound-toggle[aria-pressed="true"] .eq i, .listen.playing .eq i { animation:eq .9s ease-in-out infinite; }
+  .eq i:nth-child(2) { animation-delay:.15s !important; } .eq i:nth-child(3) { animation-delay:.3s !important; }
+  @keyframes eq { 0%, 100% { height:3px; } 50% { height:12px; } }
+  html.intro .sound-toggle { opacity:0; pointer-events:none; }
+  .listen { display:inline-flex; align-items:center; gap:9px; }
+  .hunt-result .best { margin-top:6px; color:var(--acc); font-weight:700; } .hunt-result .best:empty { display:none; }
+  .hunt-result .share { margin-top:12px; } .hunt-result .share[hidden] { display:none; }
+  @media (prefers-reduced-motion: reduce) { .eq i { animation:none !important; } }
+  .globe-top { margin:0 0 16px; }
+  .globe-focus { border:1px solid rgba(122,162,255,.4); border-radius:14px; padding:14px 16px; margin:0 0 18px; background:rgba(122,162,255,.07); }
+  .globe-focus[hidden] { display:none; }
+  .gf-k { font:700 9px var(--title); letter-spacing:.26em; color:var(--acc); }
+  .gf-name { display:block; font:700 22px var(--sub); color:var(--ink); margin:4px 0 8px; letter-spacing:.02em; }
+  .gf-row { display:flex; justify-content:space-between; gap:12px; font-size:13px; color:var(--dim); padding:5px 0; border-top:1px solid rgba(140,160,220,.1); }
+  .gf-row b { color:var(--ink); font-weight:600; text-align:right; }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -327,6 +349,7 @@ try {
   <a href="#numbers"><span>IN NUMBERS</span><i></i></a>
   <a href="#finale"><span>LOOK UP</span><i></i></a>
 </nav>
+<button class="sound-toggle" id="sound-toggle" hidden aria-pressed="false" title="Sound effects and a quiet space ambience"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span>Sound off</span></button>
 <main id="top">
   <section class="hero">
     <div class="eyebrow">THE SCIENCE OF DETECTION</div>
@@ -423,10 +446,12 @@ try {
       <div class="hunt-bottom">
         <div class="meter-wrap"><div class="meter" id="hunt-meter"><i></i></div><small id="hunt-snr" aria-live="polite"></small></div>
         <button class="btn-claim" id="hunt-claim">Claim the planet</button>
+        <button class="btn-ghost listen" id="hunt-listen" title="Hear the stacked light: a planet sounds like a repeating dip"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>Listen</button>
         <button class="btn-ghost" id="hunt-new">New star</button>
       </div>
       <div class="hunt-result" id="hunt-result" hidden aria-live="polite">
-        <h3 id="hunt-vh"></h3><p id="hunt-vp"></p>
+        <h3 id="hunt-vh"></h3><p id="hunt-vp"></p><p class="best" id="hunt-best"></p>
+        <button class="btn-ghost share" id="hunt-share" hidden>Share your result card ↗</button>
         <div id="hunt-race" hidden><canvas id="hunt-pgram" aria-label="The computer's search over every orbit"></canvas><p id="hunt-cmp"></p></div>
       </div>
     </div>
@@ -463,11 +488,13 @@ try {
   <section class="play" id="sky-live" aria-label="Tonight's asteroid candidates on a globe of the sky">
     <div class="kicker reveal">TONIGHT'S SKY · LIVE</div>
     <h2 class="reveal">Every new asteroid candidate, where it is right now.</h2>
-    <p class="lead reveal">The sky drawn as a globe, with Earth at the centre. Each dot is a candidate on the Minor Planet Center's confirmation page, glowing by how likely our model thinks it is to be a real near-Earth object. Drag to turn the sky.</p>
+    <p class="lead reveal">The sky drawn as a globe, with Earth at the centre. Each dot is a candidate on the Minor Planet Center's confirmation page, glowing by how likely our model thinks it is to be a real near-Earth object. Drag to turn the sky; click a candidate to fly to it.</p>
     <div class="instrument globe-wrap reveal">
       <div class="globe-stage"><canvas id="globe" aria-label="Rotatable globe of the sky with live asteroid candidates"></canvas><div id="globe-tip" hidden></div></div>
       <div class="globe-side">
         <p class="count" id="globe-count"><span class="ss-spinner"></span> Loading tonight's candidates…</p>
+        <button class="btn-ghost globe-top" id="globe-top">◎ Fly to the likeliest real one</button>
+        <div class="globe-focus" id="globe-focus" hidden aria-live="polite"></div>
         <ul class="globe-key">
           <li><i style="background:#4ade80;box-shadow:0 0 10px #4ade80"></i>Likely real (P ≥ 0.8)</li>
           <li><i style="background:#fbbf24"></i>Uncertain (0.4 to 0.8)</li>
@@ -537,6 +564,7 @@ try {
 </footer>
 
 <script src="/shared/nav.js"></script>
+<script type="module" src="/home/sound.js"></script>
 <script type="module" src="/home/hunt.js"></script>
 <script type="module" src="/home/globe.js"></script>
 <script type="module">
