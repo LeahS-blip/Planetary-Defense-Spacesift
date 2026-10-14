@@ -23,7 +23,7 @@
   .ss-head { max-width:920px; padding-left:20px; padding-right:20px; } /* align with main */
   .about-link i { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; margin-right:6px; border-radius:50%; border:1px solid currentColor; font:700 10.5px var(--sub); font-style:normal; vertical-align:1px; }
   main { max-width:920px; margin:0 auto; padding:4px 20px 60px; }
-  .step, #star-upload, .strip-box { scroll-margin-top:64px; } /* clear the sticky platform strip */
+  .step, #star-upload, .strip-box, #view-stars, #star-predict, #star-errors { scroll-margin-top:112px; } /* clear the sticky platform strip and journey */
 
   /* Start here: one-click first experiments */
   .ss-start-head { margin-top:18px; }
@@ -157,17 +157,39 @@
   .btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
   .score { color:var(--dim); font-size:13px; }
 
-  /* Advanced */
-  details.adv { margin-top:28px; border:1px solid var(--line); border-radius:14px; background:var(--card2); }
-  details.adv summary { cursor:pointer; padding:14px 16px; font:600 14px var(--sub); color:var(--body); list-style:none; display:flex; justify-content:space-between; gap:12px; }
-  details.adv summary::-webkit-details-marker { display:none; }
-  details.adv summary::after { content:"+"; color:var(--dim); font-size:18px; line-height:1; }
-  details.adv[open] summary::after { content:"−"; }
-  details.adv .in { padding:0 16px 16px; }
+  /* Predict: a quick guess before the answer (preset stars only; the slider never asks) */
+  .predict { margin-top:18px; padding:14px 16px; border:1px solid rgba(122,162,255,.38); border-radius:14px; background:linear-gradient(90deg, rgba(122,162,255,.11), var(--card2)); }
+  .predict > b { font:700 15px/1.4 var(--sub); color:var(--ink); }
+  .predict .guess { margin-top:10px; gap:6px; }
+  .predict .guess button { min-width:48px; padding:6px 8px; font-size:16px; }
+  .linkish { background:none; border:none; padding:0; color:var(--acc); font:600 13px var(--sub); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+  .predict .linkish { display:inline-block; margin-top:10px; }
+  .answer-wrap { position:relative; }
+  .answer-wrap .answer { transition:background .4s, filter .35s, opacity .35s; }
+  .answer-wrap.covered .answer { filter:blur(5px); opacity:.5; pointer-events:none; user-select:none; }
+  .cover { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:16px; border-radius:16px;
+           border:1px dashed rgba(122,162,255,.55); background:rgba(4,6,13,.3); color:var(--ink); font:700 15px/1.5 var(--sub); }
+  .said { font:700 15.5px/1.5 var(--sub); margin:0 0 8px; color:var(--body); }
+  .said.good { color:var(--hi); } .said.close { color:var(--mid); } .said.bad { color:var(--bad); }
+  .said small { display:block; font:400 13px/1.5 var(--sub); color:var(--dim); }
+
+  /* Investigate the errors: where the real-star reader misses */
+  .errs .ss-plain { margin-bottom:12px; }
+  .err-rows { display:grid; gap:7px; margin:6px 0 8px; }
+  .err-row { display:grid; grid-template-columns:40px minmax(0,1fr) auto; gap:4px 10px; align-items:center; font-size:13px; color:var(--body); }
+  .err-row > b { color:var(--ink); }
+  .err-row .bar { height:8px; border-radius:4px; background:var(--line); overflow:hidden; }
+  .err-row .bar i { display:block; height:100%; border-radius:4px; }
+  .err-row em { font-style:normal; color:var(--dim); white-space:nowrap; }
+  .err-row .why { grid-column:2 / -1; color:var(--dim); font-size:12.5px; line-height:1.5; }
+  .errs .ss-limits { margin-top:12px; }
+
+  /* Advanced (look comes from details.ss-advanced in /shared/nav.css) */
+  details.ss-advanced .in { padding:0 16px 16px; }
   label.f { display:flex; justify-content:space-between; margin:12px 0 2px; color:var(--dim); font-size:13px; }
   label.f b { color:var(--ink); font-weight:600; }
-  .adv input[type=range] { height:6px; }
-  .adv input[type=range]::-webkit-slider-thumb { width:18px; height:18px; border-width:2px; }
+  .ss-advanced input[type=range] { height:6px; }
+  .ss-advanced input[type=range]::-webkit-slider-thumb { width:18px; height:18px; border-width:2px; }
   input[type=number], select { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font:inherit; }
   select option { background:#10162a; } /* dropdown lists can't be translucent */
   .row { display:flex; gap:12px; } .row > * { flex:1; min-width:0; }
@@ -214,6 +236,12 @@
   <div class="ss-head-row"><h1>Spectrum Lab</h1><nav class="ss-tabs"><a class="about-link" href="#about"><i>?</i>How it works</a></nav></div>
   <p class="ss-q">Every star's light carries a fingerprint. <b>Slide the temperature and watch the dark lines change</b>: they tell you how hot a star is and what it's made of.</p>
 </header>
+<nav class="ss-journey" id="journey" aria-label="How this investigation works">
+  <a href="#view-stars" data-s="1"><i>1</i><b>Inspect the data</b><span>Look at a star's rainbow</span></a>
+  <a href="#star-predict" data-s="2" id="journey-2"><i>2</i><b>Make a prediction</b><span>Guess its type</span></a>
+  <a href="#star-step2" data-s="3"><i>3</i><b>Reveal the evidence</b><span>See what it is</span></a>
+  <a href="#star-errors" data-s="4"><i>4</i><b>Investigate the errors</b><span>Where readings go wrong</span></a>
+</nav>
 
 <main>
 <div id="app">
@@ -265,24 +293,9 @@
       </div>
     </div>
 
-    <div class="step" id="star-step2">2 · WHAT IT IS</div>
-    <div class="answer">
-      <div class="orb" id="orb"></div>
-      <div>
-        <h2 id="star-h"></h2>
-        <p id="star-p"></p>
-        <div class="facts" id="star-facts"></div>
-        <div id="star-quiz" hidden>
-          <div class="guess" id="star-guess"></div>
-          <div id="star-verdict"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="ss-limits" id="up-limits" style="margin-top:12px" hidden></div>
-
+    <!-- 1 · INSPECT: the rainbow comes first -->
     <div id="star-strip-wrap">
-    <div class="step" id="star-step3">3 · ITS RAINBOW</div>
+    <div class="step" id="star-step3">2 · ITS RAINBOW</div>
     <div class="strip-box">
       <div class="labels" id="labels"></div>
       <canvas class="strip" id="star-strip" width="1400" height="64"></canvas>
@@ -293,6 +306,34 @@
     <div class="strip-ends"><span>violet</span><span>red</span></div>
     <div class="caption">Starlight spread into its colors. <b>Each dark line is an element</b> in the star's atmosphere soaking up one exact color, like a fingerprint. <span id="lens-hint">Hover over or tap a line to magnify it.</span></div>
     </div>
+
+    <!-- 2 · PREDICT: only for a freshly picked preset star; the slider never asks -->
+    <div class="predict" id="star-predict" hidden>
+      <b id="predict-q">Your guess: what type of star is this?</b>
+      <div class="guess" id="predict-chips" role="group" aria-labelledby="predict-q"></div>
+      <button class="linkish" id="predict-skip" type="button">Skip, just show me</button>
+    </div>
+
+    <!-- 3 · REVEAL -->
+    <div class="step" id="star-step2">3 · WHAT IT IS</div>
+    <div class="answer-wrap" id="star-answer-wrap">
+    <div class="answer" id="star-answer">
+      <div class="orb" id="orb"></div>
+      <div>
+        <div class="said" id="star-said" hidden></div>
+        <h2 id="star-h"></h2>
+        <p id="star-p"></p>
+        <div class="facts" id="star-facts"></div>
+        <div id="star-quiz" hidden>
+          <div class="guess" id="star-guess"></div>
+          <div id="star-verdict"></div>
+        </div>
+      </div>
+    </div>
+    <div class="cover" id="star-cover" hidden>Make a guess or skip to reveal</div>
+    </div>
+
+    <div class="ss-limits" id="up-limits" style="margin-top:12px" hidden></div>
 
     <div id="star-ingr-wrap">
       <div class="step">4 · WHAT'S IN IT</div>
@@ -308,8 +349,17 @@
       <div class="caption">Grey: your spectrum. Color: the best-matching real star, gently reshaped to allow for differences in calibration and dust. Shaded bands are where Earth's own atmosphere absorbs light, so they are left out of the match.</div>
     </div>
 
-    <details class="adv" id="star-adv">
-      <summary>Advanced: brightness graph and metal content</summary>
+    <!-- 4 · INVESTIGATE THE ERRORS: filled from eval/results.json -->
+    <section class="errs" id="star-errors" aria-labelledby="err-title">
+      <div class="step" id="err-title">5 · WHERE READINGS GO WRONG</div>
+      <div class="ss-plain" id="err-head"><span class="ss-skel line"></span><span class="ss-skel line short"></span></div>
+      <div class="err-rows" id="err-rows"></div>
+      <div class="caption" id="err-key" hidden></div>
+      <div class="ss-limits" id="err-gaps"></div>
+    </section>
+
+    <details class="ss-advanced" id="star-adv">
+      <summary>Brightness graph and a metal-content slider</summary>
       <div class="in">
         <label class="f">Metal content (elements heavier than helium) <b id="feh-val"></b></label>
         <input type="range" id="feh" min="-2" max="0.5" step="0.05" value="0">
@@ -355,8 +405,8 @@
       <div class="info" id="ast-info"></div>
     </div>
 
-    <details class="adv" id="ast-adv">
-      <summary>Advanced: build your own spectrum, or classify from survey colors</summary>
+    <details class="ss-advanced" id="ast-adv">
+      <summary>Build your own asteroid spectrum, or classify one from survey colors</summary>
       <div class="in">
         <div class="row">
           <div><label class="f">Redness <b id="a-slope-val"></b></label><input type="range" id="a-slope" min="-0.2" max="0.9" step="0.01"></div>
@@ -389,12 +439,12 @@
       <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><defs><linearGradient id="sg-quiz" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset=".25" stop-color="#3b6cff"/><stop offset=".5" stop-color="#5be35b"/><stop offset=".75" stop-color="#ffb43c"/><stop offset="1" stop-color="#e8423a"/></linearGradient></defs>
         <circle cx="17" cy="17" r="14" fill="#1d2440" stroke="#7aa2ff" stroke-width="1.2"/><text x="17" y="22.5" text-anchor="middle" fill="#eef2fc" font-family="Comfortaa,sans-serif" font-weight="700" font-size="16">?</text>
         <rect x="40" y="9" width="160" height="16" rx="4" fill="url(#sg-quiz)" opacity=".85"/><g fill="#04060d"><rect x="62" y="9" width="2.5" height="16"/><rect x="98" y="9" width="2" height="16"/><rect x="141" y="9" width="2.5" height="16"/><rect x="180" y="9" width="2" height="16"/></g></svg>
-      <b>Guess the mystery star</b><span class="d">Look at a star's rainbow and guess its type.</span><span class="go">Try it →</span></button>
+      <b>Guess the mystery star</b><span class="d">The guessing step as a game: a rainbow with no name attached. Read its lines and pick a type.</span><span class="go">Try it →</span></button>
     <button class="ss-start" data-go="ast"><span class="n">ASTEROIDS</span>
       <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><rect x="62" y="1" width="44" height="32" rx="4" fill="rgba(122,162,255,.12)"/>
         <path d="M2 30 H198" stroke="rgba(140,160,220,.3)" stroke-width="1"/><path d="M4 26 C24 16 44 9 64 10 S84 26 90 26 S108 13 130 10 S170 6 196 4" fill="none" stroke="#c9b38a" stroke-width="2.4" stroke-linecap="round"/></svg>
       <b>Is this asteroid rock or metal?</b><span class="d">Its reflected light gives it away.</span><span class="go">Try it →</span></button>
-  <button class="ss-start" data-go="upload"><span class="n">YOUR OWN DATA</span>
+  <button class="ss-start" data-go="upload"><span class="n">YOUR OWN DATA · FOR EXPERTS</span>
       <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><rect x="1" y="3" width="28" height="28" rx="7" fill="none" stroke="#7aa2ff" stroke-width="1.4" stroke-dasharray="3 3"/><path d="M15 23V11M10 16l5-5 5 5" fill="none" stroke="#eef2fc" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M40 22 C60 22 64 12 80 14 S100 26 112 20 S140 10 160 16 S186 18 198 15" fill="none" stroke="rgba(201,208,228,.7)" stroke-width="1.6"/></svg>
       <b>Analyze your own spectrum</b><span class="d">A data file from a survey, or a picture of a rainbow strip. Matched against 123 real stars.</span><span class="go">Upload →</span></button>
   </div>
@@ -422,7 +472,7 @@
     <li>Uploaded spectra are matched against 123 real stars, not this model. The library is thin on cool red dwarfs and has no old blue horizontal-branch stars, so those match less closely. Temperatures come from the matched star's type, so they are approximate (a few hundred kelvin), and metal content isn't measured.</li>
   </ul>
   <h2>Uploading a spectrum</h2>
-  <p>Your spectrum is compared with 123 real stellar spectra, mostly from the Indo-US library of stars observed at Kitt Peak, as packaged by the Sloan Digital Sky Survey for its own classifications. Each library star is gently reshaped by a smooth curve to allow for differences in flux calibration and dust, and the features astronomers classify by (hydrogen, helium, calcium, magnesium, sodium and molecular bands) count extra. Element lines are measured directly in your file against their surroundings. Tested on 11 SDSS stars from O to M: the median error is 1 subclass (6 within one subclass, 8 within three), against 5 for the lab's first, physics-model classifier; a G2 came out F8, and two faint “A0” and “B9” stars (probably blue horizontal-branch stars) came out as B stars. Full results and the script to rerun them are on the <a href="/evidence/#spectra">Evidence page</a>.</p>
+  <p>Your spectrum is compared with 123 real stellar spectra, mostly from the Indo-US library of stars observed at Kitt Peak, as packaged by the Sloan Digital Sky Survey for its own classifications. Each library star is gently reshaped by a smooth curve to allow for differences in flux calibration and dust, and the features astronomers classify by (hydrogen, helium, calcium, magnesium, sodium and molecular bands) count extra. Element lines are measured directly in your file against their surroundings. Tested on 11 SDSS stars from O to M, chosen before tuning: the median error is 1 subclass (6 within one subclass, 8 within three), against 5 for the lab's first, physics-model classifier on the same 11 stars; a G2 came out F8, and two faint “A0” and “B9” stars (probably blue horizontal-branch stars) came out as B stars. Full results and the script to rerun them are on the <a href="/evidence/#spectra">Evidence page</a>.</p>
   <p><b>Pictures</b> of a spectrum (a rainbow strip with dark lines, like the classic diagram of the Sun's Fraunhofer lines) are read too. The lab finds the colorful strip, guesses the wavelength scale from its colors, then slides and stretches that scale until the dark lines line up with well-known ones such as calcium H and K, hydrogen, sodium and the oxygen bands of Earth's air. Because drawings show where lines are but not how strong they are, pictures are matched on the pattern of lines only, and the answer is a good guess rather than a measurement. You can correct the wavelength scale by hand if your picture has one.</p>
   <p>Text files need a column of wavelengths and a column of brightness; headers, extra columns (errors, sky), quoted values and decimal commas are fine, and JSON or VOTable exports work too. Wavelengths can be in ångströms, nanometers, microns or log₁₀ ångströms; the lab works out which from their size. FITS files can be 1D images with a wavelength solution, LAMOST-style stacked images, or tables with wavelength and flux columns, such as SDSS spectra; .gz files are unzipped in the browser. Nothing is uploaded to a server.</p>
   <h2>References</h2>
@@ -678,9 +728,11 @@ let resizeTimer;
 window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!$("view-stars").hidden) drawStar(); }, 150); });
 $("pick-stars").onclick = () => pick("stars");
 $("pick-asteroids").onclick = () => pick("asteroids");
+let curActivity = "read";
+const syncJourney = () => { $("journey").hidden = location.hash === "#about" || curActivity === "ast" || curActivity === "upload"; };
 function route() {
   const about = location.hash === "#about";
-  $("app").hidden = about; $("view-about").hidden = !about;
+  $("app").hidden = about; $("view-about").hidden = !about; syncJourney();
   document.querySelector(".about-link").classList.toggle("on", about);
   window.scrollTo(0, 0);
 }
@@ -700,7 +752,17 @@ function segment(id, onChange) {
 const TMIN = 2400, TMAX = 45000;
 const sliderToT = (v) => Math.round(10 ** (Math.log10(TMIN) + (v / 1000) * (Math.log10(TMAX) - Math.log10(TMIN))));
 const tToSlider = (T) => Math.round((1000 * (Math.log10(T) - Math.log10(TMIN))) / (Math.log10(TMAX) - Math.log10(TMIN)));
-const star = { T: 5772, feh: 0, preset: "Sun", focus: null, quiz: null, score: [0, 0], mode: "explore", upload: null };
+// guess: null, or { pending } while a freshly picked preset waits for a guess, then { html, tone, ring } for the verdict line.
+const star = { T: 5772, feh: 0, preset: "Sun", focus: null, quiz: null, score: [0, 0], mode: "explore", upload: null, guess: null };
+const ORDER = "OBAFGKM";
+// The investigation journey (inspect -> predict -> reveal -> investigate the errors), from /shared/nav.js.
+const J = (n) => window.ssJourney && window.ssJourney(n);
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const an = (s) => (/^[AFMO]/.test(s) ? "an " : "a ") + s; // "an F5", "a G2"
+const guessPending = () => star.mode === "explore" && !star.quiz && !!star.guess?.pending;
 
 // Paint the slider track in real star colors, cool (left, red) to hot (right, blue-white), with a soft sheen on top.
 $("t").style.background = `linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 55%, rgba(0,0,0,.18)), linear-gradient(90deg, ${Array.from({ length: 13 }, (_, i) => vivid(S.starHex(sliderToT((i * 1000) / 12)))).join(",")})`;
@@ -708,7 +770,7 @@ const starOrb = new Orb($("orb"), "star"), astOrb = new Orb($("ast-orb"), "rock"
 // Live reading that rides above the slider thumb, e.g. "5,772 K · G2".
 function sliderBubble() {
   const tEl = $("t"), bub = $("t-bub"), hex = vivid(S.starHex(star.T)), Wi = tEl.clientWidth;
-  bub.textContent = `${fmt(star.T)} K · ${S.spectralClass(star.T).name}`;
+  bub.textContent = `${fmt(star.T)} K · ${guessPending() ? "?" : S.spectralClass(star.T).name}`; // don't give the guess away
   const wrap = tEl.closest(".temp");
   wrap.style.setProperty("--tc", hex); wrap.style.setProperty("--tcg", hex + "88");
   if (!Wi) return;
@@ -720,11 +782,49 @@ $("star-presets").innerHTML = S.REAL_STARS.map((s) => `<button data-name="${s.na
 $("star-presets").onclick = (e) => {
   const s = S.REAL_STARS.find((x) => x.name === e.target.closest("button")?.dataset.name);
   if (!s) return;
-  Object.assign(star, { T: s.T, feh: s.feh, preset: s.name, focus: null });
+  // A freshly picked star asks for a guess first, unless the visitor has asked us to stop.
+  const ask = !LS.get("spectra-no-guess", false);
+  Object.assign(star, { T: s.T, feh: s.feh, preset: s.name, focus: null, guess: ask ? { pending: true } : null });
   $("t").value = tToSlider(s.T); $("feh").value = s.feh;
   drawStar();
+  J(ask ? 2 : 3);
 };
-$("t").oninput = () => { star.T = sliderToT(+$("t").value); star.preset = null; drawStar(); };
+// Free exploration never asks for a guess: the answer follows the slider.
+$("t").oninput = () => { star.T = sliderToT(+$("t").value); star.preset = null; star.guess = null; drawStar(); J(3); };
+
+// ---------------------------------------------------------------- predict: guess, or skip
+$("predict-chips").innerHTML = ORDER.split("").map((c) =>
+  `<button type="button" data-c="${c}" aria-label="${c}: ${S.CLASS_INFO[c].color}"><span style="color:${vivid(S.starHex(CLASS_TEMP[c]))}">${c}</span><small>${S.CLASS_INFO[c].color}</small></button>`).join("");
+$("predict-chips").onclick = (e) => {
+  const btn = e.target.closest("button[data-c]");
+  if (!btn || !guessPending()) return;
+  const c = btn.dataset.c, cls = S.spectralClass(star.T), off = Math.abs(ORDER.indexOf(c) - ORDER.indexOf(cls.letter));
+  const tally = LS.get("spectra-guesses", { n: 0, right: 0 });
+  tally.n++; if (!off) tally.right++;
+  LS.set("spectra-guesses", tally); LS.set("spectra-skips", 0); // only skips in a row count
+  const how = off ? `${off === 1 ? "one class" : off + " classes"} off.` : "spot on!";
+  star.guess = { tone: off ? (off === 1 ? "close" : "bad") : "good", ring: !off,
+    html: `You said ${c}. It's ${an(cls.name)}: ${how}<small>Your guesses so far: ${tally.right} of ${tally.n} exactly right.</small>` };
+  starOrb.ignite(!off);
+  drawStar();
+  J(3);
+};
+$("predict-skip").onclick = () => {
+  if (!guessPending()) return;
+  const skips = LS.get("spectra-skips", 0) + 1, stop = skips >= 2;
+  LS.set("spectra-skips", skips);
+  if (stop) LS.set("spectra-no-guess", true);
+  star.guess = { tone: "", html: stop ? `<small>Got it: we won't ask you to guess again. <button type="button" class="linkish" data-guess-on>Ask me again</button></small>` : "" };
+  starOrb.ignite(false);
+  drawStar();
+  J(3);
+};
+$("star-said").onclick = (e) => {
+  if (!e.target.closest("[data-guess-on]")) return;
+  LS.set("spectra-no-guess", false); LS.set("spectra-skips", 0);
+  if (star.guess) star.guess.html = "<small>OK: we'll ask for a guess next time you pick a star.</small>";
+  drawStar();
+};
 $("feh").oninput = () => { star.feh = +$("feh").value; drawStar(); };
 $("star-adv").ontoggle = () => drawStar();
 
@@ -859,6 +959,13 @@ $("labels").onclick = (e) => { const id = e.target.dataset.id; if (id) { star.fo
 function drawStar() {
   $("star-upload").hidden = star.mode !== "upload";
   $("up-limits").hidden = true;
+  // Predict step: a pending guess covers the answer card until the visitor guesses or skips.
+  const pending = guessPending(), g = star.mode === "explore" && !star.quiz ? star.guess : null;
+  $("star-predict").hidden = !pending; $("star-cover").hidden = !pending;
+  $("star-answer-wrap").classList.toggle("covered", pending); $("star-answer").inert = pending;
+  $("star-said").hidden = pending || !g?.html; $("star-said").className = "said " + (g?.tone || ""); $("star-said").innerHTML = g?.html || "";
+  $("journey-2").setAttribute("href", pending ? "#star-predict" : "#star-step2");
+  $("star-errors").hidden = star.mode === "upload"; // uploads get their own "How sure is this?" panel
   if (star.mode === "upload") return drawUpload();
   $("star-strip-wrap").hidden = false; $("up-result").hidden = true;
   const q = star.quiz;
@@ -871,7 +978,7 @@ function drawStar() {
     trans = flux.map((v, i) => Math.max(0, Math.min(1, v / sp.continuum[i])));
   }
   const feats = S.features(T, feh), cls = S.spectralClass(T), hex = vivid(S.starHex(T));
-  const reveal = !q || q.answered;
+  const reveal = q ? q.answered : !pending;
 
   for (const b of $("star-presets").children) b.classList.toggle("on", b.dataset.name === star.preset);
   $("t-now").textContent = `${fmt(star.T)} K`;
@@ -879,17 +986,19 @@ function drawStar() {
   if (!q) sliderBubble();
   // Color washes are neutral while the answer is hidden, so they can't give the mystery star away.
   wash($("orb").parentElement, reveal ? hex : null); $("star-strip").style.setProperty("--sg", reveal ? hex + "66" : "transparent");
-  $("star-step2").textContent = q ? "MYSTERY STAR" : "2 · WHAT IT IS";
-  $("star-step3").textContent = q ? "ITS RAINBOW: READ THE DARK LINES" : "3 · ITS RAINBOW";
+  $("star-step2").textContent = q ? "MYSTERY STAR" : "3 · WHAT IT IS";
+  $("star-step3").textContent = q ? "ITS RAINBOW: READ THE DARK LINES" : "2 · ITS RAINBOW";
   $("star-ingr-wrap").hidden = !reveal; $("star-adv").hidden = !!q;
 
   if (!reveal) {
     starOrb.mystery("?");
     $("star-h").textContent = "What kind of star is this?";
-    $("star-p").innerHTML = `Study the dark lines in its rainbow below. <b>Few lines, mostly at the blue end:</b> a hot O or B star. <b>A handful of thick, evenly spaced lines:</b> hydrogen, so an A or F star. <b>Many lines, deepest at the violet end:</b> a Sun-like G or K star. <b>Broad dark bands:</b> a cool red M star.`;
+    $("star-p").innerHTML = q
+      ? `Study the dark lines in its rainbow above. <b>Few lines, mostly at the blue end:</b> a hot O or B star. <b>A handful of thick, evenly spaced lines:</b> hydrogen, so an A or F star. <b>Many lines, deepest at the violet end:</b> a Sun-like G or K star. <b>Broad dark bands:</b> a cool red M star.`
+      : "Look at its rainbow above, then make a guess.";
     $("star-facts").innerHTML = "";
   } else {
-    if (!q) starOrb.ringTo = 0; // the quiz's green ring stays only on the answered mystery star
+    if (!q && !g?.ring) starOrb.ringTo = 0; // the green ring stays only on a correctly guessed star
     starOrb.star(hex, T);
     const preset = !q && S.REAL_STARS.find((s) => s.name === star.preset);
     const top = [...new Set(feats.filter((f) => f.strength > 0.15).map((f) => S.PLAIN[f.id].name.replace(" (super-hot)", "").replace(/^\w/, (c) => c.toLowerCase())))].slice(0, 3);
@@ -903,7 +1012,7 @@ function drawStar() {
   }
 
   drawStrip(sp.wl, trans, q ? "q" + q.seed : "explore");
-  drawLabels(feats, reveal);
+  drawLabels(feats, reveal || pending); // element labels are evidence for the guess; the quiz hides them
 
   if (reveal) {
     $("ingr").innerHTML = feats.filter((f) => f.strength > 0.06).map((f) => `
@@ -942,6 +1051,7 @@ function newStarQuiz() {
     `<button data-c="${c}"><span style="color:${vivid(S.starHex(CLASS_TEMP[c]))}">${c}</span><small>${S.CLASS_INFO[c].color}</small></button>`).join("");
   $("star-verdict").innerHTML = "";
   drawStar();
+  J(2);
 }
 segment("star-mode", (m) => {
   star.mode = m;
@@ -962,18 +1072,64 @@ $("star-guess").onclick = (e) => {
   $("again-star").onclick = newStarQuiz;
   starOrb.ignite(!off);
   drawStar();
+  J(3);
 };
 
 // ---------------------------------------------------------------- upload
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const pct = (x) => Math.round(100 * Math.max(0, x));
 const aColor = (letter) => { const c = S.CLASS_INFO[letter].color; return (/^[aeiou]/.test(c) ? "an " : "a ") + c; };
+// Known limits of the real-star reader, shared by the upload panel (#up-limits) and "Where readings go wrong".
+const LIMITS = {
+  accuracy: "Checked on 11 real SDSS stars: median error <b>1 subclass</b>.",
+  approx: "Temperatures are approximate (± a few hundred K), and metal content isn't measured.",
+  picture: "<b>Read from a picture:</b> drawings show where lines are, not how strong they are, so this is a pattern match.",
+  mdwarf: "The library has <b>few red dwarfs</b> (most of its M stars are giants), so M dwarfs match less closely.",
+  bhb: "Old, metal-poor <b>blue horizontal-branch</b> stars aren't in the library and can come out as B stars.",
+};
+
+// ---------------------------------------------------------------- investigate the errors (eval/results.json)
+// Why a star was missed, where the evaluation notes say so (keyed by the SDSS type).
+const MISS_WHY = {
+  A0: "Faint, with deep hydrogen lines: probably an old blue horizontal-branch star, a kind missing from the library.",
+  B9: "Probably a blue horizontal-branch star too, so it came out as a hotter B star.",
+};
+const subType = (s) => (String(s).match(/^[OBAFGKM][\d.]*/) || [String(s)])[0]; // "B2.5Ve" -> "B2.5"
+const subs = (n) => `${n} subclass${n === 1 ? "" : "es"}`;
+function drawErrors(data) {
+  const gaps = `<h4>KNOWN GAPS</h4><ul><li>${LIMITS.mdwarf}</li><li>${LIMITS.bhb}</li><li>${LIMITS.picture}</li><li>${LIMITS.approx}</li></ul>`
+    + `<a href="/evidence/#spectra" style="display:inline-block;margin-top:8px;color:var(--acc);font-weight:700;text-decoration:none">Full results and how we tested →</a>`;
+  $("err-gaps").innerHTML = gaps;
+  const m = data?.methods?.templates, base = data?.methods?.baseline, rows = data?.rows;
+  if (!m || !Array.isArray(rows)) {
+    $("err-head").innerHTML = `<h4>HOW OFTEN THE READER IS RIGHT</h4><p>The test results couldn't be loaded. They're on the <a href="/evidence/#spectra">Evidence page</a>.</p>`;
+    $("err-rows").innerHTML = ""; $("err-key").hidden = true;
+    return;
+  }
+  $("err-head").innerHTML = `<h4>HOW OFTEN THE READER IS RIGHT</h4>`
+    + `<p><b>Tested on ${m.n} real stars from the Sloan Digital Sky Survey (O to M), chosen before tuning: median error ${subs(m.medianErr)}; ${m.within1} within one subclass, ${m.within3} within three.</b>`
+    + `${base ? ` The lab's first, physics-model classifier had a median error of ${subs(base.medianErr)} on the same ${base.n} SDSS stars.` : ""}</p>`
+    + `<p>"Right" means the type the SDSS pipeline gave each star. These numbers are for the real-star reader behind <i>Analyze your own spectrum</i>; the rainbows above come from a simplified teaching model.</p>`;
+  const tone = (e) => (e <= 1 ? "var(--hi)" : e <= 3 ? "var(--mid)" : "var(--bad)");
+  $("err-rows").innerHTML = [...rows].sort((a, b) => b.templatesErr - a.templatesErr).map((r) => {
+    const e = +r.templatesErr, why = e > 1 && MISS_WHY[r.truth];
+    return `<div class="err-row"><b>${esc(r.truth)}</b><span class="bar" role="img" aria-label="${subs(e)} off"><i style="width:${Math.max(3, Math.min(100, e * 10))}%;background:${tone(e)}"></i></span>`
+      + `<em>read as ${esc(subType(r.templates))} · ${e ? e + " off" : "exact"}</em>${why ? `<span class="why">${why}</span>` : ""}</div>`;
+  }).join("");
+  $("err-key").hidden = false;
+  $("err-key").innerHTML = `Each row is one of the ${m.n} test stars, labeled with its SDSS type and sorted by how far off the lab was. Numbers are subclasses off; a full bar is one whole class (10 subclasses). <b style="color:var(--hi)">Green</b>: within one subclass; <b style="color:var(--mid)">amber</b>: within three; <b style="color:var(--bad)">red</b>: further.`;
+}
+fetch("eval/results.json").then((r) => (r.ok ? r.json() : null)).catch(() => null).then(drawErrors);
+// Reaching the errors section is step 4 of the journey.
+if ("IntersectionObserver" in window) new IntersectionObserver((es) => {
+  if (es.some((x) => x.isIntersecting) && !$("view-stars").hidden && !$("star-errors").hidden) J(4);
+}, { threshold: 0.35 }).observe($("star-errors"));
 
 function drawUpload() {
   const u = star.upload, fit = u && u.fit;
   $("star-explore").hidden = true; $("star-quiz").hidden = true; $("star-adv").hidden = true;
-  $("star-step2").textContent = "2 · YOUR STAR";
-  $("star-step3").textContent = "3 · ITS RAINBOW, FROM YOUR FILE";
+  $("star-step2").textContent = "3 · YOUR STAR";
+  $("star-step3").textContent = "2 · ITS RAINBOW, FROM YOUR FILE";
   $("star-strip-wrap").hidden = !fit; $("star-ingr-wrap").hidden = !fit; $("up-result").hidden = !fit;
   if (!fit) {
     starOrb.mystery("↑"); wash($("orb").parentElement, null);
@@ -1026,10 +1182,10 @@ function drawUpload() {
   facts.push(["File", esc(u.name)], ["Covers", `${Math.round(fit.coverage[0])}–${Math.round(fit.coverage[1])} nm (${u.image ? "read from the picture" : `read as ${u.unit}`})`]);
   $("star-facts").innerHTML = facts.map(([k, v]) => `<span>${k}: <b>${v}</b></span>`).join("");
 
-  const lim = ["Checked on 11 real SDSS stars: median error <b>1 subclass</b>. Temperatures are approximate (± a few hundred K), and metal content isn't measured."];
-  if (u.image) lim.push("<b>Read from a picture:</b> drawings show where lines are, not how strong they are, so this is a pattern match.");
-  if (b.letter === "M") lim.push("The library has <b>few red dwarfs</b> (most of its M stars are giants), so M dwarfs match less closely.");
-  if (b.letter === "A" || b.letter === "B") lim.push("Old, metal-poor <b>blue horizontal-branch</b> stars aren't in the library and can come out as B stars.");
+  const lim = [`${LIMITS.accuracy} ${LIMITS.approx}`];
+  if (u.image) lim.push(LIMITS.picture);
+  if (b.letter === "M") lim.push(LIMITS.mdwarf);
+  if (b.letter === "A" || b.letter === "B") lim.push(LIMITS.bhb);
   if (fit.quality === "poor" && !u.image) lim.push("<b>Poor match:</b> this may not be a normal star, or the file may have calibration problems.");
   $("up-limits").innerHTML = `<h4>HOW SURE IS THIS?</h4><ul>${lim.map((x) => `<li>${x}</li>`).join("")}</ul><a href="/evidence/#spectra" style="display:inline-block;margin-top:8px;color:var(--acc);font-weight:700;text-decoration:none">How we tested it →</a>`;
   $("up-limits").hidden = false;
@@ -1321,6 +1477,9 @@ function activity(name, scroll) {
   const [label, go] = ACTIVITY[name];
   go();
   $("modebar").hidden = name === "read"; $("mode-name").textContent = label;
+  // The journey describes reading a star (the quiz is its longer guessing round); asteroids and uploads follow their own steps.
+  curActivity = name; syncJourney();
+  J(name === "quiz" ? 2 : 1);
   for (const c of $("more").children) c.hidden = c.dataset.go === name;
   try { localStorage.setItem("spectra-activity", name); } catch {}
   if (scroll) goTo($("app"));
