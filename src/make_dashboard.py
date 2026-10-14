@@ -487,6 +487,26 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
             '<span class="mono">outputs/daily_vetting.csv</span>; unseen-d is days since last observation.</p></details>')
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    # Your call: resolved past candidates, showing only what was listed on the confirmation page. Our model's
+    # own scores are left out on purpose: it trained on these very candidates, so they would flatter it.
+    FATE = {"neo": "a real near-Earth object", "designated_other": "a new object, but not near-Earth (usually a main-belt asteroid)",
+            "was_not_confirmed": "never confirmed: nobody re-observed it in time (it may have been real)",
+            "does_not_exist": "a false detection: there was nothing there", "was_not_a_minor_planet": "not an asteroid at all (a star or an artifact)",
+            "was_suspected_artificial": "probably a spacecraft or rocket stage"}
+    oc_by = {o["trksub"]: o["outcome_class"] for o in outcomes}
+    def _f(x):
+        try:
+            return float(x)
+        except (TypeError, ValueError):
+            return None
+    calls = [{"d": r["trksub"], "s": _f(r.get("digest2_feed_score")), "V": _f(r.get("V")), "n": _f(r.get("nobs")), "a": _f(r.get("arc_days")),
+              "y": int(oc_by[r["trksub"]] == "neo"), "c": FATE[oc_by[r["trksub"]]]}
+             for r in vet_all if oc_by.get(r["trksub"]) in FATE]
+    import random as _random
+    _random.Random(7).shuffle(calls)
+    calls = calls[:400]
+    d2hi = [c for c in calls if c["s"] is not None and c["s"] >= 90]
+    d2hi_neo = round(100 * sum(c["y"] for c in d2hi) / len(d2hi)) if d2hi else None
     def _p(r):
         try:
             return float(r.get("p_real_neo") or 0)
@@ -586,6 +606,21 @@ details.deep .evalcard {{ margin-top:0; }}
 .legend i.dash.pink {{ border-top-color:#f9a8d4; }}
 .legend .clock {{ margin-left:auto; color:var(--dim); }}
 footer a {{ color:var(--body); }}
+.calls {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,190px),1fr)); gap:10px; }}
+.call {{ border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:var(--card); display:flex; flex-direction:column; gap:8px; }}
+.call .cd {{ font:700 13px "Comfortaa",sans-serif; color:var(--acc); }}
+.call dl {{ display:grid; grid-template-columns:auto auto; gap:2px 10px; margin:0; font-size:12.5px; color:var(--dim); }} .call dd {{ margin:0; color:var(--ink); text-align:right; }}
+.call .pick {{ display:flex; gap:6px; }} .call .pick button {{ flex:1; border:1px solid var(--line); border-radius:999px; background:none; color:var(--body); padding:6px 4px; font:600 12px "Comfortaa",sans-serif; cursor:pointer; }}
+.call .pick button[aria-pressed="true"] {{ background:rgba(122,162,255,.2); color:var(--ink); border-color:var(--acc); }}
+.call .fate {{ font-size:12.5px; line-height:1.45; color:var(--body); }} .call.right {{ border-color:rgba(74,222,128,.6); }} .call.wrong {{ border-color:rgba(248,113,113,.6); }}
+.call .fate b {{ color:var(--ink); }}
+.callbar {{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin-top:14px; }}
+.cbtn {{ border:1px solid var(--line); border-radius:999px; background:none; color:var(--ink); padding:10px 18px; font:600 13.5px "Comfortaa",sans-serif; cursor:pointer; }}
+.cbtn.primary {{ background:var(--ink); color:#04060d; border-color:var(--ink); font-weight:700; }} .cbtn:disabled {{ opacity:.45; cursor:default; }}
+#call-score {{ color:var(--body); font-size:14px; }} #call-score b {{ color:var(--ink); }}
+.errs {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,240px),1fr)); gap:12px; }}
+.err {{ border:1px solid rgba(248,113,113,.3); border-left:3px solid #f87171; border-radius:14px; padding:14px 16px; background:rgba(248,113,113,.05); }}
+.err b {{ display:block; font:700 30px "Syncopate",sans-serif; color:var(--ink); }} .err span {{ color:var(--body); font-size:13.5px; line-height:1.55; }} .err em {{ color:#fca5a5; font-style:normal; }}
 </style>
 <script>window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -594,6 +629,12 @@ footer a {{ color:var(--body); }}
 <header class="ss-head"><div class="ss-kicker">INVESTIGATION 03 · NEW ASTEROIDS</div>
 <div class="ss-head-row"><h1>Asteroid Watch</h1><nav class="ss-tabs"><a href="#queue">Queue</a><a href="#map">Sky map</a><a href="#eval">Evaluation</a><a href="/evidence/#asteroids">Evidence</a></nav></div>
 <p class="ss-q">Which of the new candidates on the Minor Planet Center's confirmation page are <b>real near-Earth objects</b>? A ranking, updated twice a day. Latest capture: {nice(latest_snap)}.</p></header>
+<nav class="ss-journey" aria-label="How this investigation works">
+<a href="#queue" data-s="1"><i>1</i><b>Inspect the data</b><span>Tonight's queue and sky</span></a>
+<a href="#yourcall" data-s="2"><i>2</i><b>Make a prediction</b><span>Real or not? Your call</span></a>
+<a href="#eval" data-s="3"><i>3</i><b>Reveal the evidence</b><span>How the model did</span></a>
+<a href="#errors" data-s="4"><i>4</i><b>Investigate the errors</b><span>Where the ranking fails</span></a>
+</nav>
 <main class="wrap">
 {start_html}
 <div class="ss-plain plainbox"><h4>IN PLAIN WORDS</h4>
@@ -628,7 +669,20 @@ where ordinary main-belt asteroids cluster, so candidates far from it are more i
 path across our snapshots; the dashed stretch is extrapolated from its last measured motion, assuming a straight line, so it grows less
 certain with time (dots fade after 7 days). That growing uncertainty is exactly how unconfirmed objects get lost. Hover a dot for details.</p>
 </div>
+<div class="sk">YOUR CALL · PAST CANDIDATES WITH KNOWN FATES</div><h2 id="yourcall">Real near-Earth object, or not?</h2>
+<p class="lede">Five candidates from past nights, with what observers could see on the page. Make your call on each, then reveal what they turned out to be.</p>
+<div class="callbox"><div class="calls" id="calls"></div>
+<div class="callbar"><button class="cbtn primary" id="call-reveal" disabled>Reveal what they were</button><button class="cbtn" id="call-deal">Deal five more</button><span id="call-score" aria-live="polite"></span></div>
+<p class="note">"digest2's call" means its score was 90 or more, a common rule of thumb. Our model isn't shown here: it learned from these very candidates, so it would look better than it is. Its fair test, on candidates it never saw, is just below.</p></div>
+<script id="calls-data" type="application/json">{json.dumps(calls)}</script>
 {eval_html}
+<div class="sk">THE ERRORS · WHERE THE RANKING GOES WRONG</div><h2 id="errors">Investigate the errors</h2>
+<div class="errs">
+<div class="err"><b>{(((ho.get('operating_points') or {}).get('95pct_recall') or {}).get('model') or {}).get('fn', '—')}</b><span>real near-Earth objects the model would have <em>dropped</em> on the later test candidates, at a cut-off meant to keep 95% of them. Each one is a discovery delayed or lost.</span></div>
+<div class="err"><b>{(((ho.get('operating_points') or {}).get('95pct_recall') or {}).get('model') or {}).get('fp', '—')}</b><span>junk candidates it would still have <em>sent for follow-up</em> at that cut-off, each one wasted telescope time.</span></div>
+<div class="err"><b>{(str(d2hi_neo) + '%') if d2hi_neo is not None else '—'}</b><span>of past candidates that digest2 scored 90 or more turned out to be real near-Earth objects. A high score is a hint, not a verdict, for any method.</span></div>
+</div>
+<p class="note">Why the ranking fails: labels are noisy ("never confirmed" includes real objects nobody caught in time), unusual candidates look like nothing it has seen, and its probabilities are not calibrated. The full analysis is on the <a href="/evidence/#asteroids" style="color:var(--acc)">evidence page</a>.</p>
 <div class="cols">
 <div>{sentry_html}</div>
 <div>
@@ -663,6 +717,48 @@ Data: Minor Planet Center (NEO Confirmation Page, Previous NEOCP, MPECs), NASA J
     inp.addEventListener('input', apply);
   }}
   wire('queueSearch','queueTable');
+  // Your call: five past candidates; the visitor calls each, then the real fates are revealed next to digest2's call.
+  var pool = JSON.parse(document.getElementById('calls-data').textContent || '[]'), hand = [], picks = {{}}, tally = [0, 0, 0];
+  var box = document.getElementById('calls'), rev = document.getElementById('call-reveal'), score = document.getElementById('call-score');
+  function fmt(x, d) {{ return x == null ? '?' : (+x).toFixed(d); }}
+  function deal() {{
+    hand = []; picks = {{}}; var used = {{}};
+    while (hand.length < 5 && hand.length < pool.length) {{ var c = pool[Math.floor(Math.random() * pool.length)]; if (!used[c.d]) {{ used[c.d] = 1; hand.push(c); }} }}
+    box.innerHTML = hand.map(function (c, i) {{
+      return '<div class="call" data-i="' + i + '"><span class="cd">' + c.d + '</span><dl><dt>digest2 score</dt><dd>' + fmt(c.s, 0) + '</dd><dt>Brightness (V)</dt><dd>' + fmt(c.V, 1) +
+        '</dd><dt>Observations</dt><dd>' + fmt(c.n, 0) + '</dd><dt>Arc</dt><dd>' + fmt(c.a, 2) + ' d</dd></dl><div class="pick"><button data-v="1" aria-pressed="false">Real NEO</button><button data-v="0" aria-pressed="false">Not an NEO</button></div></div>';
+    }}).join('');
+    rev.disabled = true; score.textContent = '';
+    window.ssJourney && window.ssJourney(2);
+  }}
+  box.addEventListener('click', function (e) {{
+    var b = e.target.closest('.pick button'); if (!b || rev.dataset.done === '1') return;
+    var card = b.closest('.call'); picks[card.dataset.i] = +b.dataset.v;
+    card.querySelectorAll('.pick button').forEach(function (x) {{ x.setAttribute('aria-pressed', String(x === b)); }});
+    rev.disabled = Object.keys(picks).length < hand.length;
+  }});
+  rev.addEventListener('click', function () {{
+    var you = 0, d2 = 0;
+    hand.forEach(function (c, i) {{
+      var card = box.children[i], dcall = c.s != null && c.s >= 90 ? 1 : 0, ok = picks[i] === c.y;
+      if (ok) you++; if (dcall === c.y) d2++;
+      card.classList.add(ok ? 'right' : 'wrong');
+      card.querySelector('.pick').outerHTML = '<div class="fate">' + (ok ? '✓ ' : '✗ ') + 'It was <b>' + c.c + '</b>.<br>digest2 said: ' + (dcall ? 'real' : 'not real') + (dcall === c.y ? ' (right)' : ' (wrong)') + '</div>';
+    }});
+    tally[0] += you; tally[1] += d2; tally[2] += hand.length;
+    score.innerHTML = 'You: <b>' + you + ' of ' + hand.length + '</b> · digest2: <b>' + d2 + ' of ' + hand.length + '</b>' + (tally[2] > hand.length ? ' · so far you ' + tally[0] + ', digest2 ' + tally[1] + ' of ' + tally[2] : '');
+    rev.disabled = true; rev.dataset.done = '1';
+    window.ssJourney && window.ssJourney(3);
+  }});
+  document.getElementById('call-deal').addEventListener('click', function () {{ rev.dataset.done = ''; deal(); }});
+  if (pool.length) deal(); else document.getElementById('yourcall').nextElementSibling.textContent = 'Past candidates will appear here once outcomes are archived.';
+  // The journey follows the reader: each step lights up as its section reaches the middle of the screen.
+  var steps = ['queue', 'yourcall', 'eval', 'errors'].map(function (id) {{ return document.getElementById(id); }});
+  var seen = 1;
+  addEventListener('scroll', function () {{
+    var n = 1; steps.forEach(function (el, i) {{ if (el && el.getBoundingClientRect().top < innerHeight * 0.45) n = i + 1; }});
+    if (n !== seen) {{ seen = n; window.ssJourney && window.ssJourney(n); }}
+  }}, {{ passive: true }});
   wire('trackedSearch','trackedTable');
 }})();
 </script>

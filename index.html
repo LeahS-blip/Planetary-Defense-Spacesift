@@ -381,14 +381,14 @@ try {
           <text x="0" y="41" fill="#7f88a6" font-size="9" font-family="Comfortaa,sans-serif">rhythm removed</text>
           <rect x="96" y="34" width="200" height="8" rx="4" fill="rgba(140,160,220,.14)"/><rect class="bar" x="96" y="34" width="198" height="8" rx="4" fill="url(#fg1)"/><text x="300" y="54" fill="#eef2fc" font-size="9" text-anchor="end" font-family="Comfortaa,sans-serif">105 / 106</text>
           <defs><linearGradient id="fg1" x1="0" x2="1"><stop offset="0" stop-color="#7aa2ff"/><stop offset="1" stop-color="#b9cbff"/></linearGradient></defs></svg>
-        <b>A pulsating star hides its planets from the standard search: 0 of 106 found. Removing the star's rhythm first: 105.</b>
+        <b>In a simulated star pulsating every 4 hours, the standard search found 0 of 106 hidden planets. Removing the star's rhythm first found 105.</b>
         <span class="fs">72,440 searches with known answers · thresholds calibrated to 1% false alarms · a pre-registered test on real stars</span><span class="fgo">See the evidence →</span></a>
       <a class="fcard reveal" href="/evidence/#spectra"><span class="ftag good">WORKS, KNOWN GAPS</span><span class="fk">02 · STARLIGHT</span>
         <svg class="fviz" viewBox="0 0 300 64" aria-hidden="true"><defs><linearGradient id="fg2" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset=".2" stop-color="#3b6cff"/><stop offset=".4" stop-color="#2fd0c8"/><stop offset=".56" stop-color="#5be35b"/><stop offset=".72" stop-color="#ffe14a"/><stop offset=".86" stop-color="#ff9a3c"/><stop offset="1" stop-color="#e8423a"/></linearGradient>
           <clipPath id="fc2"><rect class="bar" x="0" y="8" width="300" height="26" rx="6"/></clipPath></defs>
           <g clip-path="url(#fc2)"><rect x="0" y="8" width="300" height="26" fill="url(#fg2)"/><g fill="#04060d" opacity=".9"><rect x="14" y="8" width="3" height="26"/><rect x="20" y="8" width="3" height="26"/><rect x="58" y="8" width="2" height="26"/><rect x="75" y="8" width="2.5" height="26"/><rect x="128" y="8" width="2.5" height="26"/><rect x="170" y="8" width="2" height="26"/><rect x="226" y="8" width="3.5" height="26"/><rect x="260" y="8" width="2.5" height="26"/></g></g>
           <text class="pop" x="0" y="52" fill="#c9d0e4" font-size="9.5" font-family="Comfortaa,sans-serif">median error: 1 subclass</text><text class="pop" x="300" y="52" fill="#7f88a6" font-size="9.5" text-anchor="end" font-family="Comfortaa,sans-serif">first model: 5</text></svg>
-        <b>Reads a star's type from its spectrum to within 1 subclass (median) on real SDSS stars, versus 5 for our first model, and survives bad calibration that breaks color-only methods.</b>
+        <b>Reads a star's type from its spectrum to within 1 subclass (median) on 11 real SDSS test stars, versus 5 for our first model, and survives bad calibration that breaks color-only methods.</b>
         <span class="fs">11-star test set fixed before tuning · two baselines · one script to rerun</span><span class="fgo">See the evidence →</span></a>
       <a class="fcard reveal" href="/evidence/#asteroids"><span class="ftag mixed">NOT YET PROVEN</span><span class="fk">03 · NEW ASTEROIDS</span>
         <svg class="fviz" viewBox="0 0 300 64" aria-hidden="true"><path d="M0 52H300" stroke="rgba(140,160,220,.2)"/>
@@ -413,7 +413,7 @@ try {
       <div class="beats">
         <div class="beat"><div class="kicker">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>Worlds hide in starlight.</h2><p>When a planet crosses in front of its star, the starlight dips. For an Earth passing a Sun-like star, by <b>less than 0.01%</b>.</p></div>
         <div class="beat"><div class="kicker">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>Searches hunt for the repeat.</h2><p>Planet-hunting software scans months of brightness for a dip that comes back, orbit after orbit.</p></div>
-        <div class="beat"><div class="kicker">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>But stars flicker.</h2><p>Pulsations and starspots can drown the signal. In our tests the standard search found <b>0 of 106</b> planets hidden around a pulsating star, and <b>105</b> once its rhythm was removed.</p><a class="cta" href="/lab/">Hide a planet yourself <i>→</i></a></div>
+        <div class="beat"><div class="kicker">INVESTIGATION 01 · HIDDEN PLANETS</div><h2>But stars flicker.</h2><p>Pulsations and starspots can drown the signal. In one simulated scenario, a star pulsating every 4 hours, the standard search found <b>0 of 106</b> hidden planets, and <b>105</b> once the star's rhythm was removed.</p><a class="cta" href="/lab/">Hide a planet yourself <i>→</i></a></div>
         <div class="progress"><b><i></i></b><b><i></i></b><b><i></i></b></div>
       </div>
       <canvas aria-hidden="true"></canvas>
@@ -524,12 +524,12 @@ try {
       </div>
       <div class="tile wide reveal">
         <div class="tag">WHEN STARS FLICKER</div>
-        <div class="num"><b data-count="105">105</b><small>of 106 planets found</small></div>
+        <div class="num"><b data-count="105">105</b><small>of 106 planets found, in one simulated scenario</small></div>
         <div class="bars">
           <div class="zero"><span>Standard filter</span><i style="--v:0%"></i><b>0</b></div>
           <div><span>Rhythm removed first</span><i style="--v:99%"></i><b>105</b></div>
         </div>
-        <p>Planets hidden around a star pulsing every 4 hours (experiment SS-0002A).</p>
+        <p>One simulated scenario from experiment SS-0002A: planets hidden around a star pulsing every 4 hours (100 ppm). On quiet stars the standard search does well; flicker is what breaks it.</p>
       </div>
       <div class="tile reveal">
         <div class="tag">STAR FINGERPRINTS</div>
@@ -1226,10 +1226,10 @@ if (finePointer && !reduce) {
 // ------------------------------------------------------------ live telemetry ticker (numbers read from the live dashboard and model results)
 (async () => {
   const items = [
-    ['<span class="lab">HIDDEN PLANETS</span>', "Pulsating star, standard search: <b>0 of 106</b> found · rhythm removed first: <b>105</b>"],
+    ['<span class="lab">HIDDEN PLANETS</span>', "Simulated star pulsating every 4 hours: standard search found <b>0 of 106</b> hidden planets · rhythm removed first: <b>105</b>"],
     ['<span class="lab">HIDDEN PLANETS</span>', "Half of planted planets found at signal-to-noise <b>10.7</b> on 200 quiet Kepler stars"],
     ['<span class="lab">EXPERIMENTS</span>', "<b>72,440</b> searches with known answers"],
-    ['<span class="lab">STARLIGHT</span>', "Star type read to within <b>1 subclass</b> on real SDSS spectra (first model: 5)"],
+    ['<span class="lab">STARLIGHT</span>', "Star type read to within <b>1 subclass</b> (median) on 11 real SDSS test stars (first model: 5)"],
     ['<span class="lab">STARLIGHT</span>', "<b>123</b> real reference stars, from blue O to red M"],
   ];
   try {

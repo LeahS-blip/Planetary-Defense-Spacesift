@@ -39,6 +39,14 @@
     el.textContent = h > 18 ? "Last update " + ago + ", later than the usual 12 hours" : "Updated " + ago;
     banner.querySelector(".ss-pill").after(el);
   }
+  // The investigation journey (inspect -> predict -> reveal -> investigate the errors): mark progress.
+  window.ssJourney = function (n) {
+    document.querySelectorAll(".ss-journey a").forEach(function (a) {
+      var s = +a.dataset.s; a.classList.toggle("on", s === n); a.classList.toggle("done", s < n);
+      if (s === n) a.setAttribute("aria-current", "step"); else a.removeAttribute("aria-current");
+    });
+  };
+  if (document.querySelector(".ss-journey")) window.ssJourney(1);
   if (home) {
     const strip = document.querySelector(".ss-strip.over");
     const onScroll = () => strip.classList.toggle("scrolled", scrollY > innerHeight * 0.6);
