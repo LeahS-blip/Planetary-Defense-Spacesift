@@ -262,7 +262,7 @@
     <button class="opt" data-star="spots"><svg viewBox="0 0 100 26"><path d="M2 9C20 2 30 22 50 18S80 4 98 12" /></svg><b>Spotted star</b><span>Dark starspots turn into view as it spins every 3 days.</span></button>
     <button class="opt" data-star="kepler"><svg viewBox="0 0 100 26"><path d="M2 13l6-4 5 7 6-9 5 10 6-6 5 3 6-8 5 9 6-5 5 6 6-7 5 4 6-6 5 8 6-3 5 1" /></svg><b>Real Kepler star</b><span>Actual data from NASA's Kepler space telescope.</span></button>
   </div>
-  <div id="source-hidden" hidden><button data-v="synthetic" class="on"></button><button data-v="kepler"></button></div>
+  <div id="source-hidden" hidden><button data-v="synthetic" class="on" aria-label="Simulated star"></button><button data-v="kepler" aria-label="Kepler star"></button></div>
   <div id="kepler-pick" class="kepler-pick" hidden>
     <label for="kic">Which Kepler star?</label><select id="kic"></select>
     <div class="hint" id="kic-why"></div>
@@ -329,15 +329,15 @@
       <div class="adv-grid">
         <fieldset id="synthetic-opts">
           <legend>SIMULATED STAR</legend>
-          <label>Flicker</label>
+          <label for="var_kind">Flicker</label>
           <select id="var_kind"><option value="none">None (quiet star)</option><option value="pulsation">Pulsation (regular rhythm)</option><option value="spots">Starspots (drifting rotation)</option></select>
           <div id="var-params"><div class="row">
-            <div><label>Period (hours)</label><input type="number" id="var_period_h" value="4" min="1" step="0.5"></div>
-            <div><label>Amplitude (ppm)</label><input type="number" id="var_amp" value="300" min="0" step="10"></div>
+            <div><label for="var_period_h">Period (hours)</label><input type="number" id="var_period_h" value="4" min="1" step="0.5"></div>
+            <div><label for="var_amp">Amplitude (ppm)</label><input type="number" id="var_amp" value="300" min="0" step="10"></div>
           </div></div>
           <div class="row">
-            <div><label>Noise per 30 min (ppm)</label><input type="number" id="noise" value="150" min="10" step="10"></div>
-            <div><label>Days of data</label><select id="baseline"><option>90</option><option selected>120</option><option>368</option></select></div>
+            <div><label for="noise">Noise per 30 min (ppm)</label><input type="number" id="noise" value="150" min="10" step="10"></div>
+            <div><label for="baseline">Days of data</label><select id="baseline"><option>90</option><option selected>120</option><option>368</option></select></div>
           </div>
           <div class="hint">ppm = parts per million: 100 ppm is a 0.01% change in brightness.</div>
         </fieldset>
@@ -346,26 +346,26 @@
           <label><input type="checkbox" id="planet_on" checked> Hide a planet</label>
           <div id="planet-opts">
             <div class="seg" id="size_mode"><button data-v="snr" class="on">Size by signal</button><button data-v="radius">Size by radius</button></div>
-            <div id="snr-box"><label>Signal-to-noise (SNR): <b id="snr_val">12</b></label><input type="range" id="snr" min="4" max="30" step="0.5" value="12"></div>
-            <div id="radius-box" hidden><label>Radius (Earth radii)</label><input type="number" id="radius" value="1.0" min="0.1" step="0.1"></div>
+            <div id="snr-box"><label for="snr">Signal-to-noise (SNR): <b id="snr_val">12</b></label><input type="range" id="snr" min="4" max="30" step="0.5" value="12"></div>
+            <div id="radius-box" hidden><label for="radius">Radius (Earth radii)</label><input type="number" id="radius" value="1.0" min="0.1" step="0.1"></div>
             <div class="row">
-              <div><label>Orbit (days)</label><input type="number" id="period" value="7.3" min="1" max="30" step="0.1"></div>
-              <div><label>Impact parameter</label><input type="number" id="b" value="0.3" min="0" max="0.9" step="0.1"></div>
+              <div><label for="period">Orbit (days)</label><input type="number" id="period" value="7.3" min="1" max="30" step="0.1"></div>
+              <div><label for="b">Impact parameter</label><input type="number" id="b" value="0.3" min="0" max="0.9" step="0.1"></div>
             </div>
             <div class="hint">Impact parameter: 0 crosses the middle of the star, 0.9 just grazes its edge.</div>
           </div>
         </fieldset>
         <fieldset>
           <legend>SEARCH</legend>
-          <label>Cleaning method</label>
+          <label for="detrend">Cleaning method</label>
           <select id="detrend">
             <option value="none">none</option><option value="biweight-0.25">biweight-0.25</option><option value="biweight-0.5">biweight-0.5</option>
             <option value="biweight-1.0" selected>biweight-1.0</option><option value="biweight-2.0">biweight-2.0</option>
             <option value="prewhiten+biweight-1.0">prewhiten+biweight-1.0</option></select>
           <div class="hint" id="method-hint"></div>
           <div class="row">
-            <div><label>Threshold (SDE)</label><input type="number" id="threshold" step="0.05"></div>
-            <div><label>Random seed</label><div class="row"><input type="number" id="seed" value="1"><button id="reseed" class="mini" title="New random noise and transit timing">↻</button></div></div>
+            <div><label for="threshold">Threshold (SDE)</label><input type="number" id="threshold" step="0.05"></div>
+            <div><label>Random seed</label><div class="row"><input type="number" id="seed" value="1" aria-label="Random seed"><button id="reseed" class="mini" title="New random noise and transit timing">↻</button></div></div>
           </div>
           <div class="hint" id="thr-hint"></div>
         </fieldset>
