@@ -610,8 +610,15 @@ const DPR = Math.min(2, window.devicePixelRatio || 1);
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 const lerp = (a, b, t) => a + (b - a) * t;
+// Canvas sizes come from a ResizeObserver rather than being re-read every frame (a read after a style write
+// forces the browser to recompute layout).
+const SIZES = new WeakMap(), sizeRO = new ResizeObserver((es) => es.forEach((e) => SIZES.set(e.target, [e.contentRect.width, e.contentRect.height])));
+// Element positions are measured once per frame, before anything is written (see frame()).
+let frameRects = new Map();
+const rect = (el) => { let r = frameRects.get(el); if (!r) { r = el.getBoundingClientRect(); frameRects.set(el, r); } return r; };
 function fit(c) {
-  const w = c.clientWidth, h = c.clientHeight;
+  if (!SIZES.has(c)) { SIZES.set(c, [c.clientWidth, c.clientHeight]); sizeRO.observe(c); }
+  const [w, h] = SIZES.get(c);
   if (c.width !== Math.round(w * DPR) || c.height !== Math.round(h * DPR)) { c.width = Math.round(w * DPR); c.height = Math.round(h * DPR); }
   const ctx = c.getContext("2d"); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   return { ctx, w, h };
@@ -815,7 +822,7 @@ const sift = (() => {
   }
   function draw(t) {
     if (document.documentElement.classList.contains("intro")) return;
-    const r = c.getBoundingClientRect();
+    const r = rect(c);
     if (r.bottom < 0 || r.top > innerHeight) return;
     if (!started) { started = true; lastT = t; holdUntil = t + (reduce ? 0 : 1700); setTarget(target); }
     const dt = Math.min(250, t - lastT); lastT = t;
@@ -923,7 +930,7 @@ function drawSky(t) {
   ctx.globalAlpha = 0.6; ctx.drawImage(NEB, 0, -prog * (nh - h), w, nh); ctx.globalAlpha = 1;
   // Each investigation lights the sky in its own colour while it is on screen.
   for (const sc of scenes) {
-    const r = sc.el.getBoundingClientRect(), vis = clamp(Math.min(r.bottom, innerHeight) - Math.max(r.top, 0), 0, innerHeight) / innerHeight;
+    const r = rect(sc.el), vis = clamp(Math.min(r.bottom, innerHeight) - Math.max(r.top, 0), 0, innerHeight) / innerHeight;
     if (!(vis > 0)) continue; // also skips NaN when the viewport has no height yet
     const [cr, cg, cb] = TINT[sc.kind], tg = ctx.createRadialGradient(w * 0.72, h * 0.45, 0, w * 0.72, h * 0.45, Math.max(w, h) * 0.7);
     tg.addColorStop(0, `rgba(${cr},${cg},${cb},${0.13 * vis})`); tg.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
@@ -989,7 +996,7 @@ const scenes = [...document.querySelectorAll(".scrolly")].map((el) => ({
   el, kind: el.dataset.scene, canvas: el.querySelector("canvas"), beats: [...el.querySelectorAll(".beat")],
   bars: [...el.querySelectorAll(".progress i")], p: 0,
 }));
-const progressOf = (el) => { const r = el.getBoundingClientRect(); return clamp(-r.top / (r.height - innerHeight)); };
+const progressOf = (el) => { const r = rect(el); return clamp(-r.top / (r.height - innerHeight)); };
 
 // Transit: a planet crosses a limb-darkened star; the light curve draws underneath.
 // Wide screens: text on the left, so scenes draw in the right part of the full-width canvas.
@@ -1159,7 +1166,7 @@ const DRAW = { transit: drawTransit, spectrum: drawSpectrum, asteroid: drawAster
 const fin = document.getElementById("finale-sky");
 const FIN_STARS = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random() * 0.8, z: Math.random() }));
 function drawFinale(t) {
-  const r = fin.getBoundingClientRect();
+  const r = rect(fin);
   if (r.bottom < 0 || r.top > innerHeight) return;
   const { ctx, w, h } = fit(fin);
   ctx.clearRect(0, 0, w, h);
@@ -1291,20 +1298,23 @@ const rail = document.querySelector(".rail"), railLinks = [...rail.querySelector
 const railTargets = railLinks.map((a) => document.querySelector(a.getAttribute("href")));
 function updateRail() {
   rail.classList.toggle("show", scrollY > innerHeight * 0.7);
-  let on = 0; railTargets.forEach((el, i) => { if (el && el.getBoundingClientRect().top < innerHeight * 0.5) on = i; });
+  let on = 0; railTargets.forEach((el, i) => { if (el && rect(el).top < innerHeight * 0.5) on = i; });
   railLinks.forEach((a, i) => { a.classList.toggle("on", i === on); if (i === on) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); });
 }
 
 // ------------------------------------------------------------ main loop
 function frame(t) {
+  // Measure phase: read every position this frame needs before any styles are written.
+  frameRects = new Map();
+  railTargets.forEach((el) => el && rect(el)); scenes.forEach((s) => rect(s.el)); rect(st); rect(fin); rect(document.getElementById("sift"));
   updateRail();
   drawSky(t);
   sift.draw(t);
   // statement words
-  const sr = st.getBoundingClientRect(), sp = clamp((innerHeight * 0.85 - sr.top) / (sr.height + innerHeight * 0.3));
+  const sr = rect(st), sp = clamp((innerHeight * 0.85 - sr.top) / (sr.height + innerHeight * 0.3));
   if (!reduce) words.forEach((wd, i) => wd.classList.toggle("lit", i / words.length < sp));
   for (const s of scenes) {
-    const r = s.el.getBoundingClientRect();
+    const r = rect(s.el);
     if (r.bottom < -50 || r.top > innerHeight + 50) continue;
     s.p = reduce ? 1 : progressOf(s.el);
     const idx = Math.min(s.beats.length - 1, Math.floor(s.p * s.beats.length * 0.999));
