@@ -109,6 +109,7 @@ def sky_map(objects, replay_label=""):
 <script>
 (function() {
   var objs = __OBJS__, cfg = __CFG__;
+  window.SS_SKY = objs; // the 3D globe beside this map reads the same candidates
   function xy(raH, dec) {
     raH = ((raH % 24) + 24) % 24; dec = Math.max(-89, Math.min(89, dec));
     return [cfg.L + cfg.PW * (1 - raH / 24), cfg.T + cfg.PH * (1 - (dec + 90) / 180)];
@@ -134,7 +135,9 @@ def sky_map(objects, replay_label=""):
     g.appendChild(txt);
     dot.addEventListener('mouseenter', function() { txt.style.display = ''; dot.setAttribute('stroke', '#eef2fc'); });
     dot.addEventListener('mouseleave', function() { txt.style.display = 'none'; dot.setAttribute('stroke', '#04060d'); });
-    nodes[o.id] = {seg: seg, dot: dot, ti: ti, txt: txt};
+    dot.style.cursor = 'pointer';
+    dot.addEventListener('click', function() { window.dispatchEvent(new CustomEvent('ss-sky-pick', {detail: {desig: o.desig}})); });
+    nodes[o.id] = {seg: seg, dot: dot, ti: ti, txt: txt, o: o};
   });
   function update() {
     var now = Date.now();
@@ -157,6 +160,11 @@ def sky_map(objects, replay_label=""):
     var lbl = document.getElementById('liveclock');
     if (lbl) lbl.textContent = 'Positions estimated for ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + ' your time';
   }
+  window.addEventListener('ss-sky-focus', function(e) {
+    Object.keys(nodes).forEach(function(k) { var n = nodes[k], on = n.o.desig === e.detail.desig;
+      n.dot.setAttribute('stroke', on ? '#eef2fc' : '#04060d'); n.dot.setAttribute('stroke-width', on ? '2.5' : '1'); n.dot.setAttribute('r', on ? n.o.r + 3 : n.o.r);
+      n.txt.style.display = on ? '' : 'none'; if (on) g.appendChild(n.dot), g.appendChild(n.txt); });
+  });
   update(); document.addEventListener('DOMContentLoaded', update); setInterval(update, 30000);
 })();
 </script>"""
@@ -563,6 +571,19 @@ tr:last-child td {{ border-bottom:none; }}
 .fill.lo {{ background:var(--lo); }}
 .skycard {{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; }}
 .skycard svg {{ width:100%; height:auto; display:block; }}
+.skypair {{ display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:16px; align-items:start; }}
+@media (max-width:900px) {{ .skypair {{ grid-template-columns:minmax(0,1fr); }} }}
+.vlabel {{ font:700 9px "Syncopate",sans-serif; letter-spacing:.24em; color:var(--acc); margin:2px 0 8px; }}
+.globe-stage {{ position:relative; }}
+#globe {{ width:100%; height:min(420px, 85vw); display:block; touch-action:none; cursor:grab; }}
+#globe-tip {{ position:absolute; z-index:2; pointer-events:none; padding:7px 10px; border-radius:8px; background:rgba(4,6,13,.92); border:1px solid var(--line); font-size:12px; color:var(--body); white-space:nowrap; }}
+#globe-tip b {{ color:var(--ink); }} #globe-tip[hidden], .globe-focus[hidden] {{ display:none; }}
+.globe-top {{ margin-top:8px; }}
+.globe-focus {{ border:1px solid rgba(122,162,255,.4); border-radius:14px; padding:12px 14px; margin-top:10px; background:rgba(122,162,255,.07); }}
+.gf-k {{ font:700 9px "Syncopate",sans-serif; letter-spacing:.26em; color:var(--acc); }}
+.gf-name {{ display:block; font:700 20px "Comfortaa",sans-serif; color:var(--ink); margin:4px 0 6px; }}
+.gf-row {{ display:flex; justify-content:space-between; gap:12px; font-size:12.5px; color:var(--dim); padding:4px 0; border-top:1px solid rgba(140,160,220,.1); }}
+.gf-row b {{ color:var(--ink); font-weight:600; text-align:right; }}
 .fu {{ display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; white-space:nowrap; color:var(--c); border:1px solid var(--c); background:rgba(255,255,255,.04); }}
 .big {{ color:#f87171; font-size:10px; }}
 .bigrow td {{ background:rgba(248,113,113,.05); }}
@@ -661,7 +682,9 @@ Follow-up status: <b style="color:{STATUS['needs_followup']['color']}">Needs fol
 <b style="color:{STATUS['going_stale']['color']}">Going stale</b> = not seen in
 &gt;{int(STALE_DAYS)} days, at risk of loss.</p>
 <div class="sk">LIVE · THE SKY</div><h2 id="map">Where they are right now</h2>
-<div class="skycard">{sky_html}
+<div class="skycard"><div class="skypair"><div class="flat"><div class="vlabel">FLAT MAP · RIGHT ASCENSION × DECLINATION</div>{sky_html}</div>
+<div class="round"><div class="vlabel">3D GLOBE · DRAG TO TURN, CLICK A DOT</div><div class="globe-stage"><canvas id="globe" aria-label="Rotatable globe of the sky with the same candidates"></canvas><div id="globe-tip" hidden></div></div>
+<button class="cbtn globe-top" id="globe-top">◎ Fly to the likeliest real one</button><div class="globe-focus" id="globe-focus" hidden aria-live="polite"></div></div></div>
 <div class="legend"><span><i style="background:var(--hi)"></i>likely real (≥0.8)</span><span><i style="background:var(--mid)"></i>uncertain (0.4–0.8)</span><span><i style="background:var(--lo)"></i>probably not (&lt;0.4)</span><span><i class="dash"></i>estimated since last seen</span><span><i class="dash pink"></i>ecliptic</span><span class="clock" id="liveclock"></span></div>
 <p class="note">Each dot is a candidate at its estimated position right now (right ascension and declination, the sky's longitude and latitude).
 Bigger and greener means more likely real; labels mark the top targets. The dashed pink line is the <span style="color:#f9a8d4">ecliptic</span>,
@@ -763,6 +786,7 @@ Data: Minor Planet Center (NEO Confirmation Page, Previous NEOCP, MPECs), NASA J
 }})();
 </script>
 <script src="/shared/nav.js"></script>
+<script type="module" src="/home/globe.js"></script>
 </body></html>"""
     out = ROOT / "outputs" / "dashboard.html"
     out.write_text(doc, encoding="utf-8")

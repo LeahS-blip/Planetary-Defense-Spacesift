@@ -110,10 +110,11 @@ function init() {
     const [x, y, z] = o.v, rho = Math.hypot(x, y);
     target = [-Math.PI / 2 - Math.atan2(y, x), Math.max(-1.5, Math.min(1.5, Math.atan2(z, rho) - 0.4))]; // parked just above Earth
     vyaw = 0; showFocus(o);
+    dispatchEvent(new CustomEvent("ss-sky-focus", { detail: { desig: o.desig } })); // the flat map highlights it too
     dispatchEvent(new CustomEvent("ss-sound", { detail: { type: "focus" } }));
   }
   function showFocus(o) {
-    const box = document.getElementById("globe-focus"); box.hidden = !o; if (!o) return;
+    const box = document.getElementById("globe-focus"); if (!box) return; box.hidden = !o; if (!o) return;
     // Ecliptic latitude: how far it sits from the plane where ordinary asteroids crowd.
     const [x, y, z] = o.v, beta = Math.asin(Math.max(-1, Math.min(1, z * Math.cos(EPS) - y * Math.sin(EPS)))) * 180 / Math.PI;
     const ago = o.t ? (Date.now() - o.t) / 3.6e6 : null, word = o.p >= 0.8 ? "likely real" : o.p >= 0.4 ? "uncertain" : "probably not real";
@@ -124,18 +125,23 @@ function init() {
       ${ago != null ? `<div class="gf-row"><span>Last measured</span><b>${ago < 48 ? Math.round(ago) + " hours" : Math.round(ago / 24) + " days"} ago</b></div>` : ""}
       <div class="gf-row"><span>Rank tonight</span><b>${o.rank + 1} of ${objs.length}</b></div>`;
   }
-  document.getElementById("globe-top").addEventListener("click", () => objs.length && focusOn(objs[0]));
+  document.getElementById("globe-top")?.addEventListener("click", () => objs.length && focusOn(objs[0]));
+  addEventListener("ss-sky-pick", (e) => { const o = objs.find((q) => q.desig === e.detail.desig); if (o) focusOn(o); }); // picked on the flat map
   cv.addEventListener("pointerleave", () => { mouse = null; });
   new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(cv);
 
-  fetch("/outputs/dashboard.html").then((r) => r.text()).then((html) => {
+  // Data: the dashboard embeds its candidates (window.SS_SKY); the home page reads them from the live dashboard.
+  const load = (list, upd) => {
+    objs = list.slice().sort((a, b) => b.p - a.p).map((o, i) => ({ desig: o.desig, p: o.p, mag: o.v || "?", v: vec(o.ra, o.dec), t: o.t, rank: i }));
+    const hi = objs.filter((o) => o.p >= 0.8).length, cnt = document.getElementById("globe-count");
+    if (cnt) cnt.innerHTML = `<b>${objs.length}</b> candidates right now · <b>${hi}</b> likely real${upd ? ` · captured ${new Date(upd).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}`;
+    if (reduce) draw(0);
+  };
+  if (window.SS_SKY) load(window.SS_SKY, document.querySelector('meta[name="ss-updated"]')?.content);
+  else fetch("/outputs/dashboard.html").then((r) => r.text()).then((html) => {
     const m = html.match(/var objs = (\[[\s\S]*?\]), cfg/);
     if (!m) throw new Error("no sky data");
-    objs = JSON.parse(m[1]).sort((a, b) => b.p - a.p).map((o, i) => ({ desig: o.desig, p: o.p, mag: o.v || "?", v: vec(o.ra, o.dec), t: o.t, rank: i }));
-    const hi = objs.filter((o) => o.p >= 0.8).length;
-    const upd = new DOMParser().parseFromString(html, "text/html").querySelector('meta[name="ss-updated"]')?.content;
-    document.getElementById("globe-count").innerHTML = `<b>${objs.length}</b> candidates right now · <b>${hi}</b> likely real${upd ? ` · captured ${new Date(upd).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}`;
-    if (reduce) draw(0);
-  }).catch(() => { document.getElementById("globe-count").textContent = "Live positions couldn't be loaded right now; the sky grid is still yours to turn."; });
+    load(JSON.parse(m[1]), new DOMParser().parseFromString(html, "text/html").querySelector('meta[name="ss-updated"]')?.content);
+  }).catch(() => { const cnt = document.getElementById("globe-count"); if (cnt) cnt.textContent = "Live positions couldn't be loaded right now; the sky grid is still yours to turn."; });
   requestAnimationFrame(loop);
 }
