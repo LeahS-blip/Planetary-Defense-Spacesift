@@ -238,7 +238,7 @@
     <button class="ss-start primary" data-i="0"><span class="n">01</span><svg viewBox="0 0 200 34" aria-hidden="true"><path d="M2 14H90l4 9h10l4-9H198"/></svg>
       <b>Find a planet around a quiet star</b><span class="d">The easy case: a steady star like the Sun.</span><span class="go">Run →</span></button>
     <button class="ss-start" data-i="1"><span class="n">02</span><svg viewBox="0 0 200 34" aria-hidden="true"><path d="M2 17q6-12 12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0"/></svg>
-      <b>Hide a planet on a pulsating star</b><span class="d">The same planet, but this simulated star swells every 4 hours. Watch the standard search go blind.</span><span class="go">Run →</span></button>
+      <b>Hide a planet on a pulsating star</b><span class="d">The same planet, but this simulated star swells every 4 hours (300 ppm: a strong pulse, so the effect shows in one run). Watch the standard search go blind.</span><span class="go">Run →</span></button>
     <button class="ss-start" data-i="2"><span class="n">03</span><svg viewBox="0 0 200 34" aria-hidden="true"><path d="M2 14q6-11 12 0q6 9 12 0q6-7 12 0q6 5 12 0q6-3 12 0q6 1.5 12 0H118l4 9h10l4-9H198"/></svg>
       <b>Rescue it</b><span class="d">Remove the star's rhythm first, then search again.</span><span class="go">Run →</span></button>
   </div>
@@ -624,7 +624,7 @@ function pvSync() {
   const chip = [...$("snr-chips").querySelectorAll("button")].find((b) => +b.dataset.snr && near(+b.dataset.snr, snr));
   const planet = !on ? "no planet" : state.sizeMode === "radius" ? `${$("radius").value}× Earth planet`
     : `${chip ? chip.textContent.toLowerCase() + " " : ""}planet (signal-to-noise ${snr})`;
-  const star = { quiet: "Quiet star", pulse: `Pulsating star (every ${vh} h)`, spots: `Spotted star (spins every ${+(vh / 24).toFixed(1)} days)`,
+  const star = { quiet: "Quiet star", pulse: `Pulsating star (every ${vh} h, ${$("var_amp").value} ppm)`, spots: `Spotted star (spins every ${+(vh / 24).toFixed(1)} days)`,
     kepler: `Kepler star KIC ${$("kic").value || "…"}, drawn as a Sun-like star` }[kind];
   const txt = `${star} · ${planet}${on ? ` · ${$("period").value}-day year` : ""} · cleaning: ${CLEAN_NAMES[$("detrend").value] || $("detrend").value}`;
   $("pv-desc").textContent = txt; $("pv-cv").setAttribute("aria-label", `Animated illustration: ${txt}`);
