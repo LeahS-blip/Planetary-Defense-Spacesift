@@ -225,6 +225,7 @@
   .about { max-width:760px; }
   .about h2 { font:700 15px var(--title); letter-spacing:.06em; margin:28px 0 8px; text-transform:uppercase; }
   .about p, .about li { color:var(--body); line-height:1.75; }
+  .up-other { margin:8px 0 0; color:var(--dim); font-size:13px; } .up-other b { color:var(--ink); } .up-other a { font-weight:700; }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -280,6 +281,7 @@
         <span>A data file (a table of wavelength and brightness, or a FITS file from a survey such as SDSS or LAMOST), or a <b>picture</b> of a spectrum: a rainbow strip with dark lines. Your file stays on your device.</span>
       </label>
       <div class="up-links"><button class="btn ghost" id="try-example">Try an example</button><a id="dl-example" href="data/example-sdss-k5.csv" download>Download the example file</a> (a real star observed by SDSS) to see the format.</div>
+      <p class="up-other">Have a star's <b>brightness over time</b> (a light curve) instead? Search it for planets in the <a href="/lab/#s-inspect">Transit Lab →</a></p>
       <div id="up-status"></div>
       <div id="img-calib" class="calib" hidden>
         <b>Read from a picture.</b> <span id="cal-how"></span>

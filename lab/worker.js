@@ -79,6 +79,12 @@ async function prepare(req) {
     lc = { time, flux, noise: Float64Array.from(time, () => 1 + sigma * rng.normal()), sigma };
     star = { ...star, radius: s.radius, mass: s.mass };
     label = `KIC ${s.kic} · ${s.label}`;
+  } else if (req.source === "upload") {
+    // The visitor's own light curve (already read, sorted, time from 0 in days, flux relative to its median).
+    const time = Float64Array.from(req.upload.time), flux = Float64Array.from(req.upload.flux);
+    const sigma = E.p2pNoise(flux), rng = E.makeRng(req.seed + 1);
+    lc = { time, flux, noise: Float64Array.from(time, () => 1 + sigma * rng.normal()), sigma };
+    label = req.upload.label || "Your light curve";
   } else {
     const s = E.syntheticStar({ baseline: req.baselineD, noisePpm: req.noisePpm, kind: req.varKind,
                                 periodD: req.varPeriodD, ampPpm: req.varAmpPpm, seed: req.seed });

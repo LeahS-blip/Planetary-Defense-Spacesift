@@ -200,6 +200,19 @@
   @keyframes v-ring { 0% { transform:scale(.6); box-shadow:0 0 0 0 rgba(74,222,128,.75), 0 0 24px rgba(74,222,128,.25); }
                       35% { transform:scale(1.12); } 100% { transform:scale(1); box-shadow:0 0 0 28px rgba(74,222,128,0), 0 0 24px rgba(74,222,128,.25); } }
   @media (prefers-reduced-motion: reduce) { .verdict.enter, .verdict.celebrate .mark, .plots.reveal > .card { animation:none; } }
+  .up-entry { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:flex-start; margin:14px 0 4px; padding:14px 16px; border:1px dashed rgba(122,162,255,.35); border-radius:14px; background:rgba(122,162,255,.05); color:#cfd5e6; font-size:14px; line-height:1.6; }
+  .up-entry b { color:var(--ink); }
+  .up-entry button { margin-left:6px; border:1px solid var(--acc); background:rgba(122,162,255,.14); color:var(--ink); border-radius:999px; padding:5px 13px; font:600 13px var(--sub); cursor:pointer; }
+  .up-entry button:hover { background:rgba(122,162,255,.25); }
+  .up-ico { width:30px; height:30px; flex:0 0 auto; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--acc); color:var(--acc); font-weight:700; }
+  .up-alt { margin:6px 0 0; color:var(--dim); font-size:13px; } .up-entry > div { flex:1 1 300px; } .up-entry > .up-alt { flex:1 1 100%; margin:0 0 0 44px; } .up-alt a { font-weight:700; }
+  .upload-pick { margin-top:12px; }
+  .up-drop { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding:22px 16px; border:1.5px dashed rgba(122,162,255,.45); border-radius:14px; cursor:pointer; color:#cfd5e6; font-size:13px; line-height:1.55; transition:background .2s, border-color .2s; }
+  .up-drop:hover, .up-drop.over { background:rgba(122,162,255,.08); border-color:var(--acc); }
+  .up-drop b { color:var(--ink); font-size:15px; } .up-drop input { position:absolute; opacity:0; pointer-events:none; width:1px; }
+  .up-links { margin-top:10px; color:var(--dim); font-size:13px; } .up-links button { border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:5px 12px; font:600 12.5px var(--sub); cursor:pointer; margin-right:6px; }
+  .up-status { margin-top:10px; font-size:13.5px; color:#cfd5e6; } .up-status.err { color:var(--bad); } .up-status b { color:var(--ink); }
+  .up-status .spinner { margin-right:6px; }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -243,6 +256,9 @@
       <b>Rescue it</b><span class="d">Remove the star's rhythm first, then search again.</span><span class="go">Run →</span></button>
   </div>
   <div class="alt-start">Or <button id="preset-kepler" data-i="3">try a real pulsating Kepler star</button>, measured by NASA's Kepler telescope.</div>
+  <div class="up-entry"><span class="up-ico" aria-hidden="true">↑</span><div><b>Have your own light curve?</b> Search a star's brightness over time for planets: a CSV or text table, or a Kepler / TESS FITS file.
+    <button type="button" id="go-upload">Upload a light curve →</button></div>
+    <p class="up-alt">Looking to analyze a <b>spectrum</b> (starlight split into colors)? That's the <a href="/spectra/">Spectrum Lab →</a></p></div>
 
   <div id="s-inspect">
   <div class="step jstep"><i>1</i>INSPECT THE DATA</div>
@@ -260,9 +276,18 @@
     <button class="opt" data-star="quiet"><svg viewBox="0 0 100 26"><path d="M2 13H98" /></svg><b>Quiet star</b><span>Steady, like the Sun. The easy case.</span></button>
     <button class="opt" data-star="pulse"><svg viewBox="0 0 100 26"><path d="M2 13C6 3 10 3 14 13S22 23 26 13 34 3 38 13 46 23 50 13 58 3 62 13 70 23 74 13 82 3 86 13 94 23 98 13" /></svg><b>Pulsating star</b><span>Swells and shrinks every 4 hours, like a heartbeat.</span></button>
     <button class="opt" data-star="spots"><svg viewBox="0 0 100 26"><path d="M2 9C20 2 30 22 50 18S80 4 98 12" /></svg><b>Spotted star</b><span>Dark starspots turn into view as it spins every 3 days.</span></button>
+    <button class="opt" data-star="upload"><svg viewBox="0 0 100 26"><path d="M50 22V5M43 11l7-7 7 7M10 22h80" /></svg><b>Your own light curve</b><span>Upload a star's brightness over time and search it.</span></button>
     <button class="opt" data-star="kepler"><svg viewBox="0 0 100 26"><path d="M2 13l6-4 5 7 6-9 5 10 6-6 5 3 6-8 5 9 6-5 5 6 6-7 5 4 6-6 5 8 6-3 5 1" /></svg><b>Real Kepler star</b><span>Actual data from NASA's Kepler space telescope.</span></button>
   </div>
   <div id="source-hidden" hidden><button data-v="synthetic" class="on" aria-label="Simulated star"></button><button data-v="kepler" aria-label="Kepler star"></button></div>
+  <div id="upload-pick" class="upload-pick" hidden>
+    <label class="up-drop" id="up-drop"><input type="file" id="up-file" accept=".csv,.txt,.dat,.tsv,.tbl,.fits,.fit,.fts,.gz">
+      <span class="up-ico" aria-hidden="true">↑</span><b>Drop a light curve here, or <u>choose a file</u></b>
+      <span>A table of <b>time</b> (days) and <b>brightness</b> (flux, or magnitudes with a "mag" header), as CSV or text; or a Kepler, K2 or TESS FITS light-curve file. Your file stays on your device.</span></label>
+    <div class="up-links"><button type="button" id="up-example">Try an example</button><a href="data/example-lightcurve.csv" download>download it</a> (a real quiet Kepler star with a test planet we planted on a 5.73-day orbit).</div>
+    <div class="up-status" id="up-status" aria-live="polite"></div>
+    <p class="up-alt">This lab searches <b>brightness over time</b>. For a <b>spectrum</b> (brightness across colors), use the <a href="/spectra/">Spectrum Lab</a>.</p>
+  </div>
   <div id="kepler-pick" class="kepler-pick" hidden>
     <label for="kic">Which Kepler star?</label><select id="kic"></select>
     <div class="hint" id="kic-why"></div>
@@ -436,7 +461,9 @@ const STARS = {
   pulse: { source: "synthetic", varKind: "pulsation", varPeriodH: 4, varAmp: 300 },
   spots: { source: "synthetic", varKind: "spots", varPeriodH: 72, varAmp: 300 },
   kepler: { source: "kepler" },
+  upload: { source: "upload" },
 };
+let upload = null; // the visitor's light curve, once read: { time, flux, spanD, n, cadenceMin, label, source, ... }
 const state = { source: "synthetic", sizeMode: "snr", thresholds: {} };
 
 function seg(id, key, onChange) {
@@ -449,12 +476,14 @@ function setSeg(id, key, v) { $(id).querySelectorAll("button").forEach((b) => b.
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 function currentStar() {
   if (state.source === "kepler") return "kepler";
+  if (state.source === "upload") return "upload";
   const k = $("var_kind").value;
   return k === "none" ? "quiet" : k === "pulsation" ? "pulse" : "spots";
 }
 function syncVisibility() {
   $("synthetic-opts").hidden = state.source !== "synthetic";
   $("kepler-pick").hidden = state.source !== "kepler";
+  $("upload-pick").hidden = state.source !== "upload";
   $("var-params").hidden = $("var_kind").value === "none";
   $("planet-opts").hidden = !$("planet_on").checked;
   $("snr-box").hidden = state.sizeMode !== "snr";
@@ -472,13 +501,15 @@ function syncVisibility() {
   $("snr-hint").textContent = !on ? "No planet at all: a test of whether the search invents one (a false alarm)."
     : state.sizeMode === "radius" ? `A planet ${$("radius").value} times the size of Earth.`
     : `Signal-to-noise ${snr}: all its dips added together stand ${snr} times above the noise. Below about 8 is tough even on a quiet star.`;
-  const days = state.source === "kepler" ? 368 : +$("baseline").value, P = +$("period").value;
+  const days = state.source === "kepler" ? 368 : state.source === "upload" ? (upload ? Math.round(upload.spanD) : 0) : +$("baseline").value, P = +$("period").value;
   $("orbit-hint").textContent = `It passes in front of its star about ${Math.floor(days / P)} times in the ${days} days of data.`;
   pvSync(); predSync();
   if (!running) $("run").textContent = runLabel();
 }
 let running = false;
-const runLabel = () => $("planet_on").checked ? "Hide the planet and search →" : "Search the star →";
+const runLabel = () => state.source === "upload" && !upload ? "Upload a light curve first ↑"
+  : $("planet_on").checked ? (state.source === "upload" ? "Plant the test planet and search →" : "Hide the planet and search →")
+  : state.source === "upload" ? "Search your light curve →" : "Search the star →";
 
 // ---- The investigation journey (inspect -> predict -> reveal -> investigate the errors) and the prediction step.
 const journey = (n) => { try { window.ssJourney && window.ssJourney(n); } catch (e) { console.warn(e); } };
@@ -492,11 +523,14 @@ const PRED_OPTS = {
     opts: [["easy", "Yes, easily"], ["struggle", "It will struggle"], ["miss", "No, it will miss it"]] },
   none: { q: "Before you run it: will the search invent a planet that isn't there?",
     opts: [["yes", "Yes, it will invent one"], ["no", "No, it will find nothing"]] },
+  real: { q: "Before you run it: will the search find a repeating dip in your light curve?",
+    opts: [["rdip", "Yes, it will find one"], ["rnone", "No, nothing will stand out"]] },
 };
 const PRED_TXT = { easy: "You predicted it would find it easily", struggle: "You predicted it would struggle", miss: "You predicted it would miss",
-  yes: "You predicted it would invent a planet", no: "You predicted it wouldn't invent one" };
+  yes: "You predicted it would invent a planet", no: "You predicted it wouldn't invent one",
+  rdip: "You predicted it would find a repeating dip", rnone: "You predicted nothing would stand out" };
 const OUT_TXT = { easy: "found it", struggle: "found only an echo of it (the wrong multiple of its orbit)", miss: "missed it",
-  yes: "invented one (a false alarm)", no: "correctly found nothing" };
+  yes: "invented one (a false alarm)", no: "correctly found nothing", rdip: "found one", rnone: "found nothing that stood out" };
 // What each search outcome counts as, for grading a prediction. not_observable is not graded.
 const OUTCOME = { recovered: "easy", alias_half: "struggle", alias_double: "struggle", wrong_period: "miss", below_threshold: "miss",
   false_alarm: "yes", nothing_found: "no" };
@@ -508,7 +542,7 @@ function tally() {
 function tallyText() { const t = tally(); return t.total ? `Your predictions so far: ${t.right} of ${t.total} right.` : ""; }
 /** Re-draw the prediction choices when the question changes (planet hidden or not). */
 function predSync() {
-  const kind = $("planet_on").checked ? "planet" : "none";
+  const kind = $("planet_on").checked ? "planet" : state.source === "upload" ? "real" : "none";
   if (kind !== pred.kind) {
     pred.kind = kind; pred.choice = null;
     $("pred-q").textContent = PRED_OPTS[kind].q;
@@ -524,7 +558,9 @@ $("pred-opts").addEventListener("click", (e) => {
 /** After the verdict: compare the outcome with the visitor's prediction (if any) and keep score. */
 function showPrediction(d, req, choice) {
   const p = $("result").querySelector(".verdict h2 + p"); if (!p) return;
-  const out = OUTCOME[d.status], kindOk = choice && (req.planet.enabled ? ["easy", "struggle", "miss"] : ["yes", "no"]).includes(choice);
+  const real = req.source === "upload" && !req.planet.enabled;
+  const out = real ? { false_alarm: "rdip", nothing_found: "rnone" }[d.status] : OUTCOME[d.status];
+  const kindOk = choice && (req.planet.enabled ? ["easy", "struggle", "miss"] : real ? ["rdip", "rnone"] : ["yes", "no"]).includes(choice);
   let html;
   if (!kindOk) html = `<p class="pred-cmp">Next time, make a prediction before you run it and we'll keep score.${tallyText() ? `<small>${tallyText()}</small>` : ""}</p>`;
   else if (!out) html = `<p class="pred-cmp">${PRED_TXT[choice]}, but this setup couldn't be tested, so it doesn't count.${tallyText() ? `<small>${tallyText()}</small>` : ""}</p>`;
@@ -558,15 +594,19 @@ $("build-done").onclick = () => $("s-predict").scrollIntoView({ behavior: RM.mat
 function applyThreshold() {
   // Thresholds are calibrated per data length (SDE grows with the number of trial orbits):
   // the chosen length for simulated stars, ~368 days (Kepler quarters 2-5) for real ones.
-  const days = state.source === "kepler" ? "368" : $("baseline").value;
+  const keys = Object.keys(state.thresholds), span = upload ? upload.spanD : 120;
+  const days = state.source === "kepler" ? "368" : state.source === "upload" ? (keys.sort((a, b) => Math.abs(a - span) - Math.abs(b - span))[0] || "120") : $("baseline").value;
   const t = (state.thresholds[days] || {})[$("detrend").value];
   if (t) {
     $("threshold").value = t.toFixed(2);
-    $("thr-hint").textContent = `Set so only 1% of searches on noise-only stars (${days} days of data) beat it, for this method.`;
+    $("thr-hint").textContent = state.source === "upload"
+      ? `Calibrated on simulated Kepler-like noise (${days} days, the closest length to your ${upload ? upload.spanD.toFixed(0) : "?"} days): a guide for your data, not a guarantee.`
+      : `Set so only 1% of searches on noise-only stars (${days} days of data) beat it, for this method.`;
   }
 }
 function setStar(kind) {
   const s = STARS[kind];
+  if (kind === "upload" && state.source !== "upload") $("planet_on").checked = false; // real data: search it as it is, unless a test planet is asked for
   setSeg("source-hidden", "source", s.source);
   state.source = s.source;
   if (s.varKind) $("var_kind").value = s.varKind;
@@ -618,14 +658,15 @@ function pvFlux(t, c) {
 function pvSync() {
   const kind = currentStar(), on = $("planet_on").checked, snr = +$("snr").value, vh = Math.max(.5, +$("var_period_h").value || 4);
   const k = state.sizeMode === "radius" ? Math.min(.36, .07 + .035 * (+$("radius").value || 1)) : Math.min(.3, .06 + .007 * snr);
-  PV.cfg = { kind, on, k, m: Math.max(.12, Math.min(.9, +$("b").value || 0)), A: PV.A, kic: $("kic").value,
+  PV.cfg = { kind: kind === "upload" ? "kepler" : kind, on, k, m: Math.max(.12, Math.min(.9, +$("b").value || 0)), A: PV.A, kic: $("kic").value,
     T: 1.6 * Math.max(1, +$("period").value || 7.3) ** .55, Tp: .55 * Math.sqrt(vh), Tr: .9 * Math.sqrt(vh),
     amp: Math.max(.2, Math.min(1.6, (+$("var_amp").value || 0) / 300)), noise: .0016 * Math.min(3, (+$("noise").value || 150) / 150) };
   const chip = [...$("snr-chips").querySelectorAll("button")].find((b) => +b.dataset.snr && near(+b.dataset.snr, snr));
   const planet = !on ? "no planet" : state.sizeMode === "radius" ? `${$("radius").value}× Earth planet`
     : `${chip ? chip.textContent.toLowerCase() + " " : ""}planet (signal-to-noise ${snr})`;
   const star = { quiet: "Quiet star", pulse: `Pulsating star (every ${vh} h, ${$("var_amp").value} ppm)`, spots: `Spotted star (spins every ${+(vh / 24).toFixed(1)} days)`,
-    kepler: `Kepler star KIC ${$("kic").value || "…"}, drawn as a Sun-like star` }[kind];
+    kepler: `Kepler star KIC ${$("kic").value || "…"}, drawn as a Sun-like star`,
+    upload: upload ? `Your light curve: ${upload.label} (${upload.spanD.toFixed(0)} days), drawn as a Sun-like star` : "Your light curve (not uploaded yet)" }[kind];
   const txt = `${star} · ${planet}${on ? ` · ${$("period").value}-day year` : ""} · cleaning: ${CLEAN_NAMES[$("detrend").value] || $("detrend").value}`;
   $("pv-desc").textContent = txt; $("pv-cv").setAttribute("aria-label", `Animated illustration: ${txt}`);
   pvSpan(); if (!PV.raf) pvDraw(performance.now());
@@ -786,7 +827,10 @@ function request() {
     noisePpm: +$("noise").value, baselineD: +$("baseline").value, seed: +$("seed").value,
     planet: { enabled: $("planet_on").checked, sizeMode: state.sizeMode, snr: +$("snr").value,
               radiusEarth: +$("radius").value, periodD: +$("period").value, b: +$("b").value },
-    detrend: $("detrend").value, threshold: +$("threshold").value, periodMin: 1, periodMax: 30,
+    detrend: $("detrend").value, threshold: +$("threshold").value, periodMin: 1,
+    // An orbit needs at least two transits inside the data, so search up to half its length.
+    periodMax: state.source === "upload" && upload ? Math.max(2, Math.min(30, upload.spanD / 2)) : 30,
+    upload: state.source === "upload" && upload ? { time: upload.time, flux: upload.flux, label: upload.label } : undefined,
   };
 }
 
@@ -803,12 +847,13 @@ function layout(title, xt, yt, extra = {}) {
 const CFG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] };
 
 async function run() {
+  if (state.source === "upload" && !upload) { $("build").open = true; $("upload-pick").scrollIntoView({ behavior: RM.matches ? "auto" : "smooth", block: "center" }); $("up-file").click(); return; }
   const req = request(), choice = pred.choice;
   running = true; revealed = false; journey(3);
   $("run").disabled = true;
   $("run").textContent = "Searching…";
   $("result-area").hidden = false;
-  $("result").innerHTML = `<div class="verdict searching"><div class="mark"><span class="spinner"></span></div><div class="sv"><h2>Searching ${req.source === "kepler" ? "the Kepler data" : "the star's record"}…</h2>
+  $("result").innerHTML = `<div class="verdict searching"><div class="mark"><span class="spinner"></span></div><div class="sv"><h2>Searching ${req.source === "kepler" ? "the Kepler data" : req.source === "upload" ? "your light curve" : "the star's record"}…</h2>
     <p id="sv-msg">Planting your planet and cleaning the star's flicker…</p><canvas id="sv-cv" aria-hidden="true"></canvas>
     <div class="sv-row" aria-live="polite"><span id="sv-count"></span><span id="sv-best"></span></div></div></div>`;
   $("plots").classList.remove("reveal");
@@ -911,6 +956,31 @@ function reveal(d) {
   setTimeout(() => requestAnimationFrame(step), 120);
 }
 $("run").onclick = run;
+// ---- Your own light curve: read in the browser (nothing is uploaded anywhere).
+async function loadLightCurve(fileOrUrl) {
+  const st = $("up-status"); st.className = "up-status"; st.innerHTML = `<span class="spinner"></span>Reading your light curve…`;
+  try {
+    const { readLightCurve } = await import("./lightcurve.js");
+    const file = typeof fileOrUrl === "string" ? new File([await (await fetch(fileOrUrl)).blob()], fileOrUrl.split("/").pop()) : fileOrUrl;
+    const lc = await readLightCurve(file); upload = lc;
+    st.innerHTML = `✓ <b>${upload.label}</b>: ${upload.n.toLocaleString()} points over <b>${upload.spanD.toFixed(1)} days</b>, one every ${upload.cadenceMin < 10 ? upload.cadenceMin.toFixed(1) : Math.round(upload.cadenceMin)} min (from ${upload.source}).` +
+      `${upload.flagged ? ` ${upload.flagged.toLocaleString()} points flagged by the mission were left out.` : ""}${upload.binned ? " Averaged down to keep the browser responsive." : ""}${upload.note ? " " + upload.note : ""}` +
+      ` Orbits from 1 to ${Math.min(30, upload.spanD / 2).toFixed(1)} days will be searched.`;
+    setStar("upload"); applyThreshold(); syncVisibility();
+  } catch (e) { // keep any light curve already loaded
+    st.className = "up-status err"; st.textContent = String(e.message || e) + (upload ? ` Still using ${upload.label}.` : ""); syncVisibility();
+  }
+}
+$("up-file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) loadLightCurve(f); });
+$("up-example").onclick = () => loadLightCurve("data/example-lightcurve.csv");
+const drop = $("up-drop");
+["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) loadLightCurve(f); });
+$("go-upload").onclick = () => {
+  $("build").open = true; setStar("upload");
+  $("upload-pick").scrollIntoView({ behavior: RM.matches ? "auto" : "smooth", block: "center" });
+};
 let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
@@ -933,6 +1003,9 @@ const completeness = (snr) => SS0001.a * gammaP(SS0001.k, snr / SS0001.theta);
 
 function conclusion(d, req) {
   const star = currentStar(), prew = req.detrend.startsWith("prewhiten"), found = d.status === "recovered";
+  if (req.source === "upload") return req.planet.enabled
+    ? `You planted a test planet in your own data: ${found ? "<b>the search recovered it</b>, so a planet like this around your star would be findable" : "<b>the search missed it</b>, so a planet like this could hide in your star's light"}. This is exactly how SpaceSift measures what searches miss (experiment SS-0001 planted 10,000 planets on 200 Kepler stars). Repeat with different sizes and orbits to map your star's limits.`
+    : `With real data, nobody knows the right answer in advance, which is why a detection is only a <b>candidate</b>. Professionals rule out eclipsing binaries and instrument effects, then confirm with other telescopes. To learn what your star would let you find, plant a test planet (step B) and see if it comes back.`;
   if (!req.planet.enabled) return `With no planet hidden, any “detection” is a false alarm. The threshold is set so only <b>1%</b> of searches on quiet noise beat it; but on simulated flickering stars where cleaning fails (experiment SS-0002A), <b>60–100% of planet-free searches</b> beat it.`;
   if (star === "quiet") {
     if (req.planet.sizeMode !== "snr") return `On quiet stars the full experiment (SS-0001, 10,000 planets on 200 Kepler stars) finds half of planets at signal-to-noise about 11 and 96–97% of strong ones. Size by signal to see where your planet falls on that curve.`;
@@ -951,6 +1024,10 @@ function conclusion(d, req) {
 }
 function limits(req) {
   const star = currentStar(), out = ["<b>This is one run.</b> Random noise and transit timing can flip the outcome near the threshold; try “Same again, new random noise”."];
+  if (star === "upload") return ["The <b>detection line</b> is calibrated on simulated Kepler-like noise; your instrument, cadence and gaps may differ.",
+    "Times are assumed to be in <b>days</b>; orbits from 1 day to half your data's length are searched.",
+    "A repeating dip is a <b>candidate</b>, not a planet: eclipsing binaries and instrument effects can look the same.",
+    upload && upload.binned ? `Your file was long, so it was averaged down to ${upload.n.toLocaleString()} points to keep the browser responsive.` : "The search runs in your browser on the file you uploaded; nothing is sent anywhere."];
   if (star !== "quiet" || !req.planet.enabled) out.push("The <b>1% false-alarm threshold</b> is calibrated on quiet noise; it isn't reliable on flickering stars.");
   if (star === "pulse" || star === "spots") out.push("Simulated flicker is idealized (steady rhythms, white noise). Real stars are harder.");
   out.push("This browser version is a JavaScript port of the research pipeline, checked against it, with its own calibrated thresholds.");
@@ -970,19 +1047,29 @@ function nextSteps(d, req) {
   if (d.status === "recovered" && req.planet.sizeMode === "snr" && req.planet.snr > 6) out.push(["Make it harder", () => setSnr(req.planet.snr >= 12 ? 8.5 : 6)]);
   if (d.status === "recovered" && star === "quiet" && preset !== 0) out.push(["Try a pulsating star", () => setStar("pulse")]);
   if (d.status === "not_observable") out.push(["Use a shorter year (7.3 days)", () => { $("period").value = 7.3; syncVisibility(); }]);
-  if (d.status === "false_alarm" || d.status === "nothing_found") out.push(["Hide a planet this time", () => setSnr(12)]);
+  if (req.source === "upload" && !req.planet.enabled) out.push(["Plant a test planet in my data", () => setSnr(12)]);
+  else if (d.status === "false_alarm" || d.status === "nothing_found") out.push(["Hide a planet this time", () => setSnr(12)]);
   out.push(["Same again, new random noise", () => { $("seed").value = Math.floor(Math.random() * 100000); }]);
   return out;
 }
 
+// Real data has no known answer: a strong signal is a candidate (with its usual impostors), not "a false alarm".
+const REAL_STATUS = {
+  false_alarm: ["good", "★", "A repeating dip stands out", "Something dims this star on a regular orbit, strongly enough to clear the detection line. It could be a planet, or an eclipsing binary star, the star's own variability, or an instrument glitch. A planet's dip is shallow with a flat or rounded bottom; check the folded graph."],
+  nothing_found: ["warn", "–", "No repeating dip stood out", "Nothing cleared the detection line. That doesn't prove there's no planet: small planets, a single transit, or orbits longer than half your data can't be found this way. Plant a test planet to see what this star would let you find."],
+};
 function render(d, req) {
-  const [tone, mark, head, why] = STATUS[d.status] || ["warn", "?", d.status, ""];
+  const realData = req.source === "upload" && !req.planet.enabled;
+  const [tone, mark, head, why] = (realData && REAL_STATUS[d.status]) || STATUS[d.status] || ["warn", "?", d.status, ""];
   let extra = "";
   if (d.status === "wrong_period" && (req.varKind !== "none" || req.source === "kepler"))
     extra = req.detrend.startsWith("prewhiten")
       ? " Most likely the star's own flicker, which removing rhythms couldn't fully clear (it has many rhythms, or drifting spots)."
       : " Most likely the star's own flicker: it was louder than the planet.";
   if (d.status === "recovered" && d.candidate) extra = ` You hid it on a ${d.injection.period.toFixed(2)}-day orbit; the search said ${d.candidate.period.toFixed(2)} days.`;
+  if (req.source === "upload" && req.planet.enabled && d.status === "wrong_period")
+    extra = ` A signal already in your data (best orbit ${d.candidate.period.toFixed(3)} days) outranked the test planet. Try a test planet on a different orbit, or a stronger one.`;
+  if (realData && d.status === "false_alarm") extra = ` Best orbit: ${d.candidate.period.toFixed(3)} days, signal strength ${d.candidate.sde.toFixed(1)}.`;
   const inj = d.injection, c = d.candidate;
   const fact = (k, v) => `<span>${k}: <b>${v}</b></span>`;
   const facts = [];
