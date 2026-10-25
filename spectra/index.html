@@ -7,15 +7,15 @@
 <meta name="description" content="What is it made of? Read a star's temperature and ingredients, or an asteroid's rock type, from its light.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/shared/nav.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
 <style>
   /* Matches /shared/nav.css; cards are translucent so the shared sky shows through. */
-  :root { --bg:#04060d; --card:rgba(16,22,42,.72); --card2:rgba(11,16,32,.72); --ink:#eef2fc; --body:#c9d0e4; --dim:#7f88a6; --line:rgba(140,160,220,.16);
+  :root { --bg:#04060d; --card:rgba(16,22,42,.72); --card2:rgba(11,16,32,.72); --ink:#eef2fc; --body:#c9d0e4; --dim:#a3abc4; --line:rgba(140,160,220,.16);
           --acc:#7aa2ff; --on:rgba(122,162,255,.14); --hi:#4ade80; --mid:#fbbf24; --bad:#f87171;
-          /* Two fonts: Syncopate for titles and small section labels, Comfortaa for everything else. */
-          --title:"Syncopate",ui-sans-serif,sans-serif; --sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }
+          /* Two fonts: IBM Plex Mono for titles and small section labels, IBM Plex Sans for everything else. */
+          --title:"IBM Plex Mono",ui-sans-serif,sans-serif; --sub:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
   body { margin:0; background:transparent; color:var(--ink); font:15px/1.6 var(--sub); } /* sky comes from body.ss-page */
@@ -30,7 +30,7 @@
   .ss-start svg { max-width:220px; }
   .modebar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; margin:4px 0 18px; padding:10px 12px 10px 16px;
              border:1px solid var(--line); border-radius:14px; background:var(--card2); }
-  .modebar span { font:700 9.5px var(--title); letter-spacing:.26em; color:var(--acc); }
+  .modebar span { font:700 9.5px var(--title); letter-spacing:.06em; color:var(--acc); }
   #more-wrap { margin-top:46px; }
   .start-alt { margin:12px 0 26px; color:var(--dim); font-size:13.5px; }
   .start-alt a { font-weight:700; }
@@ -42,7 +42,7 @@
   .pick button:hover { border-color:#3a4570; }
   .pick button.on { border-color:var(--acc); background:var(--on); }
   .pick .ico { width:42px; height:42px; border-radius:50%; flex:0 0 auto; }
-  .pick b { display:block; font:700 13px var(--title); letter-spacing:.1em; }
+  .pick b { display:block; font:700 13px var(--title); letter-spacing:.06em; }
   .pick span { color:var(--dim); font-size:13px; line-height:1.4; }
   @media (max-width:560px) { .pick { grid-template-columns:1fr; } }
 
@@ -50,7 +50,7 @@
   .seg { display:inline-flex; border:1px solid var(--line); border-radius:999px; padding:3px; background:var(--card2); }
   .seg button { border:none; background:none; color:var(--dim); padding:6px 14px; border-radius:999px; cursor:pointer; font:600 13px var(--sub); }
   .seg button.on { background:var(--acc); color:#0b1020; }
-  .step { font:700 10px var(--title); letter-spacing:.14em; color:var(--dim); margin:26px 0 10px; }
+  .step { font:700 10px var(--title); letter-spacing:.06em; color:var(--dim); margin:26px 0 10px; }
 
   .chips { display:flex; flex-wrap:wrap; gap:8px; }
   .chips button { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--card); color:var(--ink);
@@ -80,7 +80,7 @@
   .answer { display:flex; gap:22px; align-items:center; border:1px solid var(--line); border-radius:16px; padding:22px;
             background:radial-gradient(circle at 77px 50%, var(--ag, transparent), transparent 260px), var(--card); transition:background .4s; }
   .orb { position:relative; width:110px; height:110px; border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
-         font:700 40px var(--sub); color:#8b93ad; }
+         font:700 40px var(--sub); color:#a3abc4; }
   .orb canvas { position:absolute; inset:-30%; width:160%; height:160%; pointer-events:none; }
   .orb span { position:relative; transition:opacity .3s; }
   .answer h2 { margin:0 0 6px; font:700 22px/1.3 var(--sub); }
@@ -133,7 +133,7 @@
   .clues { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
   @media (max-width:640px) { .clues { grid-template-columns:1fr; } }
   .clue { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
-  .clue .k { font:700 9.5px var(--title); letter-spacing:.12em; color:var(--dim); }
+  .clue .k { font:700 9.5px var(--title); letter-spacing:.06em; color:var(--dim); }
   .clue b { display:block; font-size:16px; margin:4px 0; }
   .clue p { margin:0; color:var(--dim); font-size:12.5px; line-height:1.55; }
   .plot { height:300px; overflow:hidden; }
@@ -141,7 +141,7 @@
   .info { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   @media (max-width:640px) { .info { grid-template-columns:1fr; } }
   .info div { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.5px; color:var(--body); line-height:1.6; }
-  .info b { display:block; font:700 9.5px var(--title); letter-spacing:.12em; color:var(--dim); margin-bottom:4px; }
+  .info b { display:block; font:700 9.5px var(--title); letter-spacing:.06em; color:var(--dim); margin-bottom:4px; }
 
   /* Quiz */
   .guess { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
@@ -439,7 +439,7 @@
     
     <button class="ss-start" data-go="quiz"><span class="n">TEST YOURSELF</span>
       <svg viewBox="0 0 200 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><defs><linearGradient id="sg-quiz" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset=".25" stop-color="#3b6cff"/><stop offset=".5" stop-color="#5be35b"/><stop offset=".75" stop-color="#ffb43c"/><stop offset="1" stop-color="#e8423a"/></linearGradient></defs>
-        <circle cx="17" cy="17" r="14" fill="#1d2440" stroke="#7aa2ff" stroke-width="1.2"/><text x="17" y="22.5" text-anchor="middle" fill="#eef2fc" font-family="Comfortaa,sans-serif" font-weight="700" font-size="16">?</text>
+        <circle cx="17" cy="17" r="14" fill="#1d2440" stroke="#7aa2ff" stroke-width="1.2"/><text x="17" y="22.5" text-anchor="middle" fill="#eef2fc" font-family="IBM Plex Sans,sans-serif" font-weight="700" font-size="16">?</text>
         <rect x="40" y="9" width="160" height="16" rx="4" fill="url(#sg-quiz)" opacity=".85"/><g fill="#04060d"><rect x="62" y="9" width="2.5" height="16"/><rect x="98" y="9" width="2" height="16"/><rect x="141" y="9" width="2.5" height="16"/><rect x="180" y="9" width="2" height="16"/></g></svg>
       <b>Guess the mystery star</b><span class="d">The guessing step as a game: a rainbow with no name attached. Read its lines and pick a type.</span><span class="go">Try it →</span></button>
     <button class="ss-start" data-go="ast"><span class="n">ASTEROIDS</span>
@@ -507,7 +507,7 @@ const shortName = (id) => S.PLAIN[id].name.replace(" (super-hot)", " II");
 function layout(xt, yt, extra = {}) {
   return Object.assign({
     margin: { l: 50, r: 10, t: 14, b: 42 }, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
-    font: { color: css("--dim"), size: 11, family: "Comfortaa, sans-serif" }, showlegend: false,
+    font: { color: css("--dim"), size: 11, family: "IBM Plex Sans, sans-serif" }, showlegend: false,
     xaxis: { title: { text: xt }, gridcolor: css("--line"), zeroline: false },
     yaxis: { title: { text: yt }, gridcolor: css("--line"), zeroline: false },
   }, extra);

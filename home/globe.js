@@ -61,7 +61,7 @@ function init() {
     hover = null;
     for (const q of proj) if (q.d > 0) { dot(ctx, q, 1, t); if (mouse && Math.hypot(mouse[0] - q.x, mouse[1] - q.y) < 12) hover = q; }
     // labels for the three likeliest
-    ctx.font = "600 11px Comfortaa, sans-serif";
+    ctx.font = "600 11px IBM Plex Sans, sans-serif";
     for (const q of proj) if (q.d > 0 && q.o.rank < 3 && q.o !== focus) { ctx.fillStyle = "#eef2fc"; ctx.globalAlpha = 0.85; ctx.fillText(q.o.desig, q.x + 10, q.y + 4); }
     ctx.globalAlpha = 1;
     const fq = focus && proj.find((q) => q.o === focus);
@@ -69,7 +69,7 @@ function init() {
       const pr = 14 + (reduce ? 0 : 3 * Math.sin(t * 0.005));
       ctx.strokeStyle = "#eef2fc"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(fq.x, fq.y, pr, 0, 6.283); ctx.stroke();
       for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + t * 0.0008; ctx.beginPath(); ctx.moveTo(fq.x + Math.cos(a) * (pr + 4), fq.y + Math.sin(a) * (pr + 4)); ctx.lineTo(fq.x + Math.cos(a) * (pr + 11), fq.y + Math.sin(a) * (pr + 11)); ctx.stroke(); }
-      ctx.fillStyle = "#eef2fc"; ctx.font = "700 12px Comfortaa, sans-serif"; ctx.fillText(fq.o.desig, fq.x + pr + 14, fq.y + 4);
+      ctx.fillStyle = "#eef2fc"; ctx.font = "700 12px IBM Plex Sans, sans-serif"; ctx.fillText(fq.o.desig, fq.x + pr + 14, fq.y + 4);
     }
     if (hover) { tip.hidden = false; tip.style.left = `${hover.x + 14}px`; tip.style.top = `${hover.y - 10}px`;
       tip.innerHTML = `<b>${hover.o.desig}</b><br>P(real NEO) ${hover.o.p.toFixed(2)} · brightness V ${hover.o.mag}`; cv.style.cursor = "pointer"; }

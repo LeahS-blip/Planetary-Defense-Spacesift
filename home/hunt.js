@@ -59,7 +59,7 @@ function init() {
     const { ctx, w, h } = fit($("hunt-raw")), y = data(), sc = star.hard && !clean ? 8 : 4.5;
     ctx.fillStyle = "rgba(201,208,228,.55)";
     for (let i = 0; i < y.length; i++) ctx.fillRect((star.t[i] / star.DAYS) * w - 0.7, h / 2 - (y[i] / sc) * (h / 2) - 0.7, 1.4, 1.4);
-    ctx.fillStyle = "#7f88a6"; ctx.font = "11px Comfortaa, sans-serif"; ctx.fillText("brightness over 90 days", 6, 13);
+    ctx.fillStyle = "#a3abc4"; ctx.font = "11px IBM Plex Sans, sans-serif"; ctx.fillText("brightness over 90 days", 6, 13);
   }
   function drawFold(P) {
     const { ctx, w, h } = fit($("hunt-fold")), y = data(), F = fold(y, P), sc = star.hard && !clean ? 8 : 4;
@@ -71,7 +71,7 @@ function init() {
     ctx.strokeStyle = good ? "#4ade80" : "#9fb6ff"; ctx.lineWidth = 2.2; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = good ? 12 : 6;
     const pts = []; for (let b = 0; b < NB; b++) if (F.n[b]) pts.push([X((b + 0.5) / NB), h / 2 - (F.s[b] / F.n[b] / sc) * (h / 2)]);
     pts.sort((a, b) => a[0] - b[0]); ctx.beginPath(); pts.forEach(([x, yy], i) => (i ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy))); ctx.stroke(); ctx.shadowBlur = 0;
-    ctx.fillStyle = "#7f88a6"; ctx.font = "11px Comfortaa, sans-serif"; ctx.fillText(`every point stacked on a ${P.toFixed(3)}-day orbit`, 6, 13);
+    ctx.fillStyle = "#a3abc4"; ctx.font = "11px IBM Plex Sans, sans-serif"; ctx.fillText(`every point stacked on a ${P.toFixed(3)}-day orbit`, 6, 13);
     // meter
     const k = Math.min(1, F.snr / 14);
     $("hunt-meter").style.setProperty("--k", k); $("hunt-meter").classList.toggle("good", good);
@@ -115,9 +115,9 @@ function init() {
     ctx.strokeStyle = "rgba(248,113,113,.6)"; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(0, Y(THRESH)); ctx.lineTo(w, Y(THRESH)); ctx.stroke(); ctx.setLineDash([]);
     ctx.strokeStyle = "#7aa2ff"; ctx.lineWidth = 1.2; ctx.beginPath(); pg.out.forEach(([P, s], i) => (i ? ctx.lineTo(X(P), Y(s)) : ctx.moveTo(X(P), Y(s)))); ctx.stroke();
     const mark = (P, col, label, up) => { ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X(P), 14); ctx.lineTo(X(P), h - 16); ctx.stroke();
-      ctx.fillStyle = col; ctx.font = "600 11px Comfortaa, sans-serif"; ctx.textAlign = X(P) > w - 90 ? "right" : "left"; ctx.fillText(label, X(P) + (ctx.textAlign === "right" ? -5 : 5), up ? 12 : 26); ctx.textAlign = "left"; };
+      ctx.fillStyle = col; ctx.font = "600 11px IBM Plex Sans, sans-serif"; ctx.textAlign = X(P) > w - 90 ? "right" : "left"; ctx.fillText(label, X(P) + (ctx.textAlign === "right" ? -5 : 5), up ? 12 : 26); ctx.textAlign = "left"; };
     mark(star.P, "#ffb45e", "the planet", true); mark(guess, "#eef2fc", "your answer", false);
-    ctx.fillStyle = "#7f88a6"; ctx.font = "10.5px Comfortaa, sans-serif"; ctx.fillText(`${PMIN} days`, 2, h - 3); ctx.textAlign = "right"; ctx.fillText(`${PMAX} days`, w - 2, h - 3); ctx.textAlign = "left";
+    ctx.fillStyle = "#a3abc4"; ctx.font = "10.5px IBM Plex Sans, sans-serif"; ctx.fillText(`${PMIN} days`, 2, h - 3); ctx.textAlign = "right"; ctx.fillText(`${PMAX} days`, w - 2, h - 3); ctx.textAlign = "left";
   }
   function claim() {
     const P = curP(), F = fold(data(), P), secs = (performance.now() - t0) / 1000, rel = (x) => Math.abs(P - x) / x;
@@ -166,9 +166,9 @@ function init() {
     const W = 1200, H = 630, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
     const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, "#0b1430"); bg.addColorStop(1, "#04060d"); g.fillStyle = bg; g.fillRect(0, 0, W, H);
     for (let i = 0; i < 260; i++) { g.globalAlpha = Math.random() * 0.7; g.fillStyle = "#dfe6ff"; g.fillRect(Math.random() * W, Math.random() * H, 1.5, 1.5); } g.globalAlpha = 1;
-    g.fillStyle = "#7aa2ff"; g.font = "700 22px Syncopate, sans-serif"; g.fillText("S P A C E S I F T", 70, 90);
-    g.fillStyle = "#eef2fc"; g.font = "700 64px Comfortaa, sans-serif"; g.fillText(`I found a planet in ${last.secs < 60 ? Math.round(last.secs) + " seconds" : Math.round(last.secs / 60) + " minutes"}.`, 70, 190);
-    g.fillStyle = "#c9d0e4"; g.font = "28px Comfortaa, sans-serif";
+    g.fillStyle = "#7aa2ff"; g.font = "700 22px IBM Plex Mono, sans-serif"; g.fillText("S P A C E S I F T", 70, 90);
+    g.fillStyle = "#eef2fc"; g.font = "700 64px IBM Plex Sans, sans-serif"; g.fillText(`I found a planet in ${last.secs < 60 ? Math.round(last.secs) + " seconds" : Math.round(last.secs / 60) + " minutes"}.`, 70, 190);
+    g.fillStyle = "#c9d0e4"; g.font = "28px IBM Plex Sans, sans-serif";
     g.fillText(`Hidden in ${last.mode === "flicker" ? "a flickering star" : "a star"}'s light, orbiting every ${last.P.toFixed(3)} days.`, 70, 245);
     const y = data(), F = fold(y, last.P), x0 = 70, x1 = W - 70, mid = 430, sc = 22, shift = (F.at + F.w / 2) / NB - 0.5;
     g.fillStyle = "rgba(201,208,228,.45)";
@@ -176,7 +176,7 @@ function init() {
     g.strokeStyle = "#4ade80"; g.lineWidth = 5; g.shadowColor = "#4ade80"; g.shadowBlur = 18; g.beginPath();
     const pts = []; for (let b = 0; b < NB; b++) if (F.n[b]) pts.push([x0 + ((((b + 0.5) / NB - shift) % 1 + 1) % 1) * (x1 - x0), mid - (F.s[b] / F.n[b]) * sc]);
     pts.sort((a, b) => a[0] - b[0]).forEach(([x, yy], i) => (i ? g.lineTo(x, yy) : g.moveTo(x, yy))); g.stroke(); g.shadowBlur = 0;
-    g.fillStyle = "#7f88a6"; g.font = "24px Comfortaa, sans-serif"; g.fillText("Can you beat me? spacesift.vercel.app/#hunt", 70, H - 50);
+    g.fillStyle = "#a3abc4"; g.font = "24px IBM Plex Sans, sans-serif"; g.fillText("Can you beat me? spacesift.vercel.app/#hunt", 70, H - 50);
     const blob = await new Promise((r) => c.toBlob(r, "image/png")), file = new File([blob], "spacesift-planet.png", { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text: "I found a hidden planet on SpaceSift. Can you beat my time?", url: location.origin + "/#hunt" }); return; } catch {} }
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "spacesift-planet.png"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);

@@ -59,11 +59,11 @@ def sky_map(objects, replay_label=""):
     for hh in range(0, 25, 4):                   # RA grid
         x, _ = xy(hh, 0)
         parts.append(f'<line x1="{x:.0f}" y1="{T}" x2="{x:.0f}" y2="{T+PH}" stroke="rgba(140,160,220,.10)" stroke-width="1"/>')
-        parts.append(f'<text x="{x:.0f}" y="{T+PH+16}" fill="#7f88a6" font-size="10" text-anchor="middle">{hh}h</text>')
+        parts.append(f'<text x="{x:.0f}" y="{T+PH+16}" fill="#a3abc4" font-size="10" text-anchor="middle">{hh}h</text>')
     for dd in range(-60, 61, 30):                # Dec grid
         _, y = xy(0, dd)
         parts.append(f'<line x1="{L}" y1="{y:.0f}" x2="{L+PW}" y2="{y:.0f}" stroke="rgba(140,160,220,.10)" stroke-width="1"/>')
-        parts.append(f'<text x="{L-6}" y="{y:.0f}" fill="#7f88a6" font-size="10" text-anchor="end" dominant-baseline="middle">{dd:+d}&#176;</text>')
+        parts.append(f'<text x="{L-6}" y="{y:.0f}" fill="#a3abc4" font-size="10" text-anchor="end" dominant-baseline="middle">{dd:+d}&#176;</text>')
     # ecliptic: equatorial coords of ecliptic latitude 0
     eps = math.radians(23.4393)
     pts = []
@@ -274,6 +274,18 @@ def main():
     except ValueError:
         pass
     sp_ = ho.get("split") or {}
+    def _day(x):  # "2026-10-01.3" -> days since the epoch
+        y, mo, d = str(x).split("-")
+        return datetime(int(y), int(mo), 1, tzinfo=timezone.utc).timestamp() / 86400 + float(d) - 1
+    def _days(sp):
+        try:
+            return round(_day(sp["test_dates"][1]) - _day(sp["test_dates"][0]))
+        except (KeyError, ValueError, IndexError):
+            return "?"
+    def _ci_txt(h):
+        c = (h or {}).get("auc_bootstrap_95ci") or {}
+        return (f"; 95% intervals {c['model'][0]:.2f}–{c['model'][1]:.2f} vs {c['baseline'][0]:.2f}–{c['baseline'][1]:.2f}"
+                if c.get("model") and c.get("baseline") else "")
     # Every page quotes the same evaluation: trained on earlier candidates, tested once on later ones.
     split_txt = (f"tested on {sp_['test_n']} candidates posted after {sp_['test_dates'][0][:10]}, "
                  f"trained on {sp_['train_n']} earlier ones" if sp_ else "tested on the newest 25% of candidates")
@@ -311,7 +323,9 @@ evaluation appears here when that finishes. Until then, treat the ranking with e
         eval_html = f"""<div class="sk">EVALUATION · ON CANDIDATES IT NEVER SAW</div><h2 id="eval">Is the model any good?</h2>
 <p class="lede">{"Yes, at ranking: " if (auc_m or 0) > (auc_b or 0) else "Not yet: "}on candidates it had never seen, posted after it was trained, it ranked real near-Earth objects
 above junk better than the digest2 score alone (ROC-AUC {ho['roc_auc']['model']:.2f} vs {ho['roc_auc']['baseline']:.2f}).
-At a cut-off that keeps 95% of real ones, it threw out {_pct(op95['model']['junk_excluded'])} of the junk; digest2 alone threw out {_pct(op95['baseline']['junk_excluded'])}.</p>
+At a cut-off that keeps 95% of real ones, it threw out {_pct(op95['model']['junk_excluded'])} of the junk; digest2 alone threw out {_pct(op95['baseline']['junk_excluded'])}.<br><span class="lede-note">Tested on {sp_['test_n']} candidates ({sp_['test_neo']} real) over {_days(sp_)} days{_ci_txt(ho)}.
+An early result: it is retrained and retested every Monday, and the numbers will move. The model sees digest2's scores plus context digest2 doesn't use
+(observatory, brightness, sky position, motion), so this measures whether that context helps, not a head-to-head of equals.</span></p>
 <details class="deep"><summary>Full held-out evaluation: confusion matrices, confidence intervals, calibration</summary>
 <div class="evalcard">
 <p>Trained on candidates discovered {sp['train_dates'][0]}–{sp['train_dates'][1]} ({sp['train_n']}), tested once on the
@@ -342,7 +356,8 @@ appear here after the next Monday retrain.</p></div>"""
            f"(digest2 alone: {_pct(op_b.get('non_neo_excluded_frac'))})." if auc_m is not None and auc_b is not None else
            "Its advantage over the digest2 score alone is not yet established.",
            "Probabilities are <b>not calibrated</b>: use them to order follow-up, not as odds.",
-           "Labels are noisy: some candidates marked “not confirmed” were real NEOs that were simply lost.",
+           "Labels are noisy: “real” means later designated a near-Earth object; everything else, including candidates nobody followed up (some of them real), counts as not real. That bias affects both the model and digest2.",
+           "Not a head-to-head: the model uses digest2's scores plus extra context (observatory, brightness, sky position, motion).",
            f"Trained on {res.get('n', '?')} candidates (last retrained {trained}; retrained every Monday); unusual candidates unlike past ones may be scored poorly.",
            "<b>Not an impact forecast:</b> a high score means “probably a real near-Earth object”, nothing about hitting Earth."]
     limits_html = ('<div class="ss-limits" style="margin:0 0 14px"><h4>BEFORE YOU ACT ON THIS RANKING</h4><ul>'
@@ -538,24 +553,25 @@ pipeline: the dangerous one is the one nobody has found yet.</p>"""
 <link rel="icon" href="data:image/svg+xml,{favicon}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/shared/nav.css">
 <style>
-:root {{ --bg:#04060d; --card:rgba(16,22,42,.72); --ink:#eef2fc; --dim:#7f88a6; --body:#c9d0e4; --line:rgba(140,160,220,.16);
+:root {{ --bg:#04060d; --card:rgba(16,22,42,.72); --ink:#eef2fc; --dim:#a3abc4; --body:#c9d0e4; --line:rgba(140,160,220,.16);
         --hi:#4ade80; --mid:#fbbf24; --lo:#64748b; --acc:#7aa2ff; }}
 * {{ box-sizing:border-box; margin:0; }}
 html {{ background:var(--bg); }}
-body {{ color:var(--ink); font:14px/1.55 "Comfortaa",ui-sans-serif,system-ui,sans-serif; }}
-svg text {{ font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }}
+body {{ color:var(--ink); font:14px/1.55 "IBM Plex Sans",ui-sans-serif,system-ui,sans-serif; }}
+svg text {{ font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif; }}
 .wrap {{ max-width:1180px; margin:0 auto; padding:0 clamp(16px,3vw,28px); }}
 main.wrap {{ padding-bottom:30px; }}
-h2 {{ font:700 clamp(19px,2vw,24px)/1.25 "Comfortaa",ui-sans-serif,sans-serif; color:var(--ink); margin:46px 0 14px; scroll-margin-top:64px; }}
+h2 {{ font:700 clamp(19px,2vw,24px)/1.25 "IBM Plex Sans",ui-sans-serif,sans-serif; color:var(--ink); margin:46px 0 14px; scroll-margin-top:64px; }}
+.lede-note {{ display:block; margin-top:8px; font-size:13.5px; color:var(--body); }}
 .lede {{ color:var(--body); font-size:15.5px; line-height:1.7; max-width:860px; margin:0 0 12px; }}
 .plainbox {{ margin-top:18px; }}
 .plainbox p {{ font-size:14.5px; }}
 .statgrid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr)); gap:12px; margin-top:16px; }}
 .stat {{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px 18px; }}
-.stat .v {{ font:700 28px "Syncopate",sans-serif; letter-spacing:.02em; }}
+.stat .v {{ font:700 28px "IBM Plex Mono",sans-serif; letter-spacing:.02em; }}
 .stat .l {{ color:var(--body); font-size:13px; margin-top:4px; }}
 .stat .s {{ color:var(--dim); font-size:11.5px; margin-top:6px; line-height:1.5; }}
 table {{ width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; font-size:13.5px; }}
@@ -573,15 +589,15 @@ tr:last-child td {{ border-bottom:none; }}
 .skycard svg {{ width:100%; height:auto; display:block; }}
 .skypair {{ display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:16px; align-items:start; }}
 @media (max-width:900px) {{ .skypair {{ grid-template-columns:minmax(0,1fr); }} }}
-.vlabel {{ font:700 9px "Syncopate",sans-serif; letter-spacing:.24em; color:var(--acc); margin:2px 0 8px; }}
+.vlabel {{ font:700 9px "IBM Plex Mono",sans-serif; letter-spacing:.06em; color:var(--acc); margin:2px 0 8px; }}
 .globe-stage {{ position:relative; }}
 #globe {{ width:100%; height:min(420px, 85vw); display:block; touch-action:none; cursor:grab; }}
 #globe-tip {{ position:absolute; z-index:2; pointer-events:none; padding:7px 10px; border-radius:8px; background:rgba(4,6,13,.92); border:1px solid var(--line); font-size:12px; color:var(--body); white-space:nowrap; }}
 #globe-tip b {{ color:var(--ink); }} #globe-tip[hidden], .globe-focus[hidden] {{ display:none; }}
 .globe-top {{ margin-top:8px; }}
 .globe-focus {{ border:1px solid rgba(122,162,255,.4); border-radius:14px; padding:12px 14px; margin-top:10px; background:rgba(122,162,255,.07); }}
-.gf-k {{ font:700 9px "Syncopate",sans-serif; letter-spacing:.26em; color:var(--acc); }}
-.gf-name {{ display:block; font:700 20px "Comfortaa",sans-serif; color:var(--ink); margin:4px 0 6px; }}
+.gf-k {{ font:700 9px "IBM Plex Mono",sans-serif; letter-spacing:.06em; color:var(--acc); }}
+.gf-name {{ display:block; font:700 20px "IBM Plex Sans",sans-serif; color:var(--ink); margin:4px 0 6px; }}
 .gf-row {{ display:flex; justify-content:space-between; gap:12px; font-size:12.5px; color:var(--dim); padding:4px 0; border-top:1px solid rgba(140,160,220,.1); }}
 .gf-row b {{ color:var(--ink); font-weight:600; text-align:right; }}
 .fu {{ display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; white-space:nowrap; color:var(--c); border:1px solid var(--c); background:rgba(255,255,255,.04); }}
@@ -593,7 +609,7 @@ th {{ position:relative; }}
 .hint:hover {{ color:var(--acc); border-color:var(--acc); }}
 .hint:hover::after {{ content:attr(data-tip); position:absolute; left:0; top:130%; z-index:20; width:210px; padding:8px 10px; background:#0e1430; color:#cdd5ee;
          border:1px solid #2a3358; border-radius:7px; font-size:11px; font-weight:400; line-height:1.45; text-align:left; white-space:normal; letter-spacing:normal;
-         text-transform:none; font-family:"Comfortaa",ui-sans-serif,system-ui,sans-serif; box-shadow:0 6px 18px rgba(0,0,0,.45); }}
+         text-transform:none; font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif; box-shadow:0 6px 18px rgba(0,0,0,.45); }}
 /* right-half columns: grow the tooltip leftward so the table's overflow:hidden can't clip it */
 .hint.r:hover::after {{ left:auto; right:0; }}
 .cols {{ display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:24px; align-items:start; }}
@@ -601,7 +617,7 @@ th {{ position:relative; }}
 .note {{ color:var(--dim); font-size:12px; margin-top:10px; line-height:1.6; }}
 footer {{ color:var(--dim); font-size:11.5px; padding-top:20px; padding-bottom:30px; border-top:1px solid var(--line); }}
 .searchwrap {{ display:flex; align-items:center; gap:10px; margin:0 0 10px; }}
-.tsearch {{ background:rgba(11,16,32,.8); border:1px solid var(--line); color:var(--ink); border-radius:999px; padding:8px 14px; font:13px "Comfortaa",ui-sans-serif,sans-serif; width:240px; max-width:60vw; }}
+.tsearch {{ background:rgba(11,16,32,.8); border:1px solid var(--line); color:var(--ink); border-radius:999px; padding:8px 14px; font:13px "IBM Plex Sans",ui-sans-serif,sans-serif; width:240px; max-width:60vw; }}
 .tsearch:focus {{ outline:none; border-color:var(--acc); }}
 .tsearch::placeholder {{ color:var(--dim); }}
 .scount {{ color:var(--dim); font-size:12px; white-space:nowrap; }}
@@ -611,14 +627,14 @@ footer {{ color:var(--dim); font-size:11.5px; padding-top:20px; padding-bottom:3
 .evalcard td, .evalcard th {{ text-align:center; }}
 .evalcard table {{ display:block; overflow-x:auto; }}
 details.deep {{ margin-top:14px; border:1px solid var(--line); border-radius:14px; background:rgba(11,16,32,.55); }}
-details.deep > summary {{ cursor:pointer; padding:14px 16px; font:600 14px "Comfortaa",sans-serif; color:var(--body); list-style:none; display:flex; justify-content:space-between; gap:12px; }}
+details.deep > summary {{ cursor:pointer; padding:14px 16px; font:600 14px "IBM Plex Sans",sans-serif; color:var(--body); list-style:none; display:flex; justify-content:space-between; gap:12px; }}
 details.deep > summary::-webkit-details-marker {{ display:none; }}
 details.deep > summary::after {{ content:"+"; color:var(--dim); font-size:18px; line-height:1; }}
 details.deep[open] > summary::after {{ content:"−"; }}
 details.deep > :not(summary) {{ margin-left:16px; margin-right:16px; }}
 details.deep > :last-child {{ margin-bottom:16px; }}
 details.deep .evalcard {{ margin-top:0; }}
-.sk {{ font:700 10px "Syncopate",sans-serif; letter-spacing:.3em; color:var(--acc); margin:52px 0 0; }}
+.sk {{ font:700 10px "IBM Plex Mono",sans-serif; letter-spacing:.06em; color:var(--acc); margin:52px 0 0; }}
 .sk + h2 {{ margin-top:10px; }}
 .legend {{ display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 2px 0; color:var(--body); font-size:12.5px; }}
 .legend span {{ display:inline-flex; align-items:center; gap:7px; }}
@@ -629,19 +645,19 @@ details.deep .evalcard {{ margin-top:0; }}
 footer a {{ color:var(--body); }}
 .calls {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,190px),1fr)); gap:10px; }}
 .call {{ border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:var(--card); display:flex; flex-direction:column; gap:8px; }}
-.call .cd {{ font:700 13px "Comfortaa",sans-serif; color:var(--acc); }}
+.call .cd {{ font:700 13px "IBM Plex Sans",sans-serif; color:var(--acc); }}
 .call dl {{ display:grid; grid-template-columns:auto auto; gap:2px 10px; margin:0; font-size:12.5px; color:var(--dim); }} .call dd {{ margin:0; color:var(--ink); text-align:right; }}
-.call .pick {{ display:flex; gap:6px; }} .call .pick button {{ flex:1; border:1px solid var(--line); border-radius:999px; background:none; color:var(--body); padding:6px 4px; font:600 12px "Comfortaa",sans-serif; cursor:pointer; }}
+.call .pick {{ display:flex; gap:6px; }} .call .pick button {{ flex:1; border:1px solid var(--line); border-radius:999px; background:none; color:var(--body); padding:6px 4px; font:600 12px "IBM Plex Sans",sans-serif; cursor:pointer; }}
 .call .pick button[aria-pressed="true"] {{ background:rgba(122,162,255,.2); color:var(--ink); border-color:var(--acc); }}
 .call .fate {{ font-size:12.5px; line-height:1.45; color:var(--body); }} .call.right {{ border-color:rgba(74,222,128,.6); }} .call.wrong {{ border-color:rgba(248,113,113,.6); }}
 .call .fate b {{ color:var(--ink); }}
 .callbar {{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin-top:14px; }}
-.cbtn {{ border:1px solid var(--line); border-radius:999px; background:none; color:var(--ink); padding:10px 18px; font:600 13.5px "Comfortaa",sans-serif; cursor:pointer; }}
+.cbtn {{ border:1px solid var(--line); border-radius:999px; background:none; color:var(--ink); padding:10px 18px; font:600 13.5px "IBM Plex Sans",sans-serif; cursor:pointer; }}
 .cbtn.primary {{ background:var(--ink); color:#04060d; border-color:var(--ink); font-weight:700; }} .cbtn:disabled {{ opacity:.45; cursor:default; }}
 #call-score {{ color:var(--body); font-size:14px; }} #call-score b {{ color:var(--ink); }}
 .errs {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,240px),1fr)); gap:12px; }}
 .err {{ border:1px solid rgba(248,113,113,.3); border-left:3px solid #f87171; border-radius:14px; padding:14px 16px; background:rgba(248,113,113,.05); }}
-.err b {{ display:block; font:700 30px "Syncopate",sans-serif; color:var(--ink); }} .err span {{ color:var(--body); font-size:13.5px; line-height:1.55; }} .err em {{ color:#fca5a5; font-style:normal; }}
+.err b {{ display:block; font:700 30px "IBM Plex Mono",sans-serif; color:var(--ink); }} .err span {{ color:var(--body); font-size:13.5px; line-height:1.55; }} .err em {{ color:#fca5a5; font-style:normal; }}
 </style>
 <script>window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};</script>
 <script defer src="/_vercel/insights/script.js"></script>

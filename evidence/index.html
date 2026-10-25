@@ -8,43 +8,43 @@
 <meta name="theme-color" content="#04060d">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/shared/nav.css">
 <style>
-  :root { --bg:#04060d; --panel:#0b1020; --card:#10162a; --ink:#eef2fc; --body:#c9d0e4; --dim:#7f88a6; --line:rgba(140,160,220,.16);
+  :root { --bg:#04060d; --panel:#0b1020; --card:#10162a; --ink:#eef2fc; --body:#c9d0e4; --dim:#a3abc4; --line:rgba(140,160,220,.16);
           --acc:#7aa2ff; --good:#4ade80; --warn:#fbbf24; --bad:#f87171;
           --c1:#5b86f0; --c2:#c47a38; --c3:#9a62d4; --c4:#36a48c;
-          --title:"Syncopate",ui-sans-serif,sans-serif; --sub:"Comfortaa",ui-sans-serif,system-ui,sans-serif; }
+          --title:"IBM Plex Mono",ui-sans-serif,sans-serif; --sub:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif; }
   * { box-sizing:border-box; }
-  body { margin:0; background:radial-gradient(1200px 600px at 70% -10%, #13204a 0%, rgba(4,6,13,0) 60%), var(--bg); color:var(--ink); font:16px/1.65 var(--sub); }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.65 var(--sub); }
   a { color:var(--acc); }
   main { max-width:1120px; margin:0 auto; padding:110px clamp(16px,4vw,40px) 80px; }
-  .eyebrow { font:700 10.5px var(--title); letter-spacing:.36em; color:var(--acc); }
+  .eyebrow { font:700 10.5px var(--title); letter-spacing:.06em; color:var(--acc); }
   h1 { font:700 clamp(32px,5vw,62px)/1.08 var(--sub); margin:16px 0 18px; letter-spacing:-.015em; max-width:900px; }
   .lead { color:var(--body); font-size:clamp(16px,1.6vw,19px); max-width:780px; margin:0; }
   .glance { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px; margin:48px 0 26px; }
   @media (max-width:900px) { .glance { grid-template-columns:repeat(2, minmax(0,1fr)); } }
   @media (max-width:560px) { .glance { grid-template-columns:minmax(0,1fr); } }
   .g { border:1px solid var(--line); border-radius:18px; padding:20px; background:linear-gradient(160deg, rgba(122,162,255,.08), rgba(255,255,255,.01)); }
-  .g h3 { margin:0 0 10px; font:700 9.5px var(--title); letter-spacing:.3em; color:var(--acc); }
+  .g h3 { margin:0 0 10px; font:700 9.5px var(--title); letter-spacing:.06em; color:var(--acc); }
   .g p { margin:0; color:var(--body); font-size:14.5px; line-height:1.6; } .g b { color:var(--ink); }
   .protocol { display:flex; flex-wrap:wrap; gap:8px; align-items:center; color:var(--dim); font-size:13px; margin-bottom:60px; }
   .protocol span { border:1px solid var(--line); border-radius:999px; padding:4px 12px; color:var(--body); }
 
   section.inv { border-top:1px solid var(--line); padding:56px 0 20px; scroll-margin-top:70px; }
   .inv-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px 30px; align-items:flex-end; margin-bottom:26px; }
-  .inv-head .k { font:700 10px var(--title); letter-spacing:.32em; color:var(--acc); }
+  .inv-head .k { font:700 10px var(--title); letter-spacing:.06em; color:var(--acc); }
   .inv-head h2 { margin:10px 0 0; font:700 clamp(26px,3.4vw,40px)/1.15 var(--sub); max-width:720px; }
   .inv-head a.open { white-space:nowrap; text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:9px 16px; color:var(--ink); font-size:14px; }
   .inv-head a.open:hover { border-color:var(--acc); }
   .verdict { border-radius:16px; padding:16px 18px; margin:0 0 26px; border:1px solid var(--line); background:var(--card); font-size:16px; line-height:1.65; }
   .verdict b { color:var(--ink); }
-  .verdict .tag { display:inline-block; font:700 9px var(--title); letter-spacing:.26em; padding:4px 8px; border-radius:6px; margin-right:10px; vertical-align:2px; }
+  .verdict .tag { display:inline-block; font:700 9px var(--title); letter-spacing:.06em; padding:4px 8px; border-radius:6px; margin-right:10px; vertical-align:2px; }
   .tag.good { background:rgba(74,222,128,.14); color:var(--good); } .tag.mixed { background:rgba(251,191,36,.14); color:var(--warn); }
   .facts3 { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; margin-bottom:26px; }
   @media (max-width:820px) { .facts3 { grid-template-columns:minmax(0,1fr); } }
   .fact { border:1px solid var(--line); border-radius:14px; padding:16px; background:rgba(16,22,42,.6); }
-  .fact h4 { margin:0 0 8px; font:700 9px var(--title); letter-spacing:.28em; color:var(--dim); }
+  .fact h4 { margin:0 0 8px; font:700 9px var(--title); letter-spacing:.06em; color:var(--dim); }
   .fact p { margin:0; color:var(--body); font-size:14.5px; line-height:1.6; }
   .charts { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; margin-bottom:22px; }
   @media (max-width:860px) { .charts { grid-template-columns:minmax(0,1fr); } }
@@ -67,7 +67,7 @@
   .two { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; margin-bottom:22px; }
   @media (max-width:860px) { .two { grid-template-columns:minmax(0,1fr); } }
   .box { border:1px solid var(--line); border-radius:14px; padding:16px 18px; background:rgba(16,22,42,.6); }
-  .box h4 { margin:0 0 10px; font:700 9.5px var(--title); letter-spacing:.28em; color:var(--acc); }
+  .box h4 { margin:0 0 10px; font:700 9.5px var(--title); letter-spacing:.06em; color:var(--acc); }
   .box ul { margin:0; padding-left:18px; color:var(--body); font-size:14.5px; line-height:1.65; } .box li { margin-bottom:6px; } .box b { color:var(--ink); }
   pre { margin:0; background:#060914; border:1px solid var(--line); border-radius:12px; padding:14px; overflow-x:auto; font:12.5px/1.6 ui-monospace,Consolas,monospace; color:#cfd8ff; }
   details summary { cursor:pointer; color:var(--acc); font-size:14px; margin:6px 0 10px; }
@@ -82,10 +82,11 @@
   details.method > summary::after { content:"+"; color:var(--dim); font-size:20px; line-height:1; }
   details.method[open] > summary::after { content:"−"; }
   details.method[open] { padding-bottom:18px; }
-  .rerun h4 { margin:14px 0 10px; font:700 9.5px var(--title); letter-spacing:.28em; color:var(--acc); }
+  .rerun h4 { margin:14px 0 10px; font:700 9.5px var(--title); letter-spacing:.06em; color:var(--acc); }
   .two .ss-limits { border-radius:14px; }
   footer { border-top:1px solid var(--line); margin-top:50px; padding-top:20px; color:var(--dim); font-size:13px; }
   .correction { margin:0 0 22px; } .correction p { margin:0; }
+  .about-test { margin:0 0 18px; } .about-test li { margin-bottom:8px; line-height:1.6; } .about-test li b { color:var(--ink); }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -181,7 +182,8 @@ node --test spectra/test/            # parsers, template library, picture reader
     <div class="ss-limits correction"><h4>CORRECTION · 11 OCTOBER 2026</h4><p>The first retrain on 11 October reported a ROC-AUC of 0.97. That number was wrong: some inputs described how each candidate changed on the confirmation page <b>until it left</b>, and leaving the page is the outcome itself, so the model was partly reading the answer. Those inputs are now excluded, and the model only sees what is known when a candidate is first posted. Every number on this page and the dashboard comes from the corrected evaluation.</p></div>
     <div class="results"><div class="rrow"><figure><h5>Ranking quality on newer candidates</h5><div class="sub" id="ast-split-sub">ROC-AUC on the held-out time split (0.5 = coin flip)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span></div><div id="ch-ast-auc"><span class="ss-skel block" aria-label="Loading chart"></span></div>
         <figcaption id="ast-auc-cap">The one evaluation quoted everywhere on SpaceSift: trained on older candidates, tested once on newer ones it never saw.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="pl-auc">Pick one real NEO and one non-NEO at random: how often does the model score the real one higher? 0.5 is a coin flip, 1.0 is perfect.</p></aside></div><div class="rrow"><figure><h5>Junk excluded while keeping real NEOs</h5><div class="sub">Share of non-NEOs dropped at a strict setting (≥99% of real NEOs kept)</div><div class="legend"><span><i style="background:var(--c1)"></i>Model</span><span><i style="background:var(--c2)"></i>digest2 alone</span><span><i style="background:transparent;border:1px dashed var(--dim)"></i>A&amp;A 2025 benchmark</span></div><div id="ch-ast-excl"><span class="ss-skel block" aria-label="Loading chart"></span></div>
-        <figcaption id="ast-excl-cap">This is the operating point that matters for observers: drop as much junk as possible without losing real objects.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="pl-excl">Observers need to drop as much junk as possible without losing real NEOs.</p></aside></div></div><div class="two">
+        <figcaption id="ast-excl-cap">This is the operating point that matters for observers: drop as much junk as possible without losing real objects.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="pl-excl">Observers need to drop as much junk as possible without losing real NEOs.</p></aside></div></div><div class="box about-test" id="ast-about" hidden><h4>ABOUT THIS TEST</h4><ul id="ast-about-list"></ul></div>
+    <div class="two">
       <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul id="ast-errors"></ul></div>
       <div class="ss-limits"><h4>LIMITATIONS</h4><ul>
         <li><b>Labels are noisy:</b> “not confirmed” includes some real NEOs that were simply lost; “designated other” is assumed not to be an NEO.</li>
@@ -354,6 +356,21 @@ if (tr && !tr.inputs) {
               `<li><b>Calibration:</b> not yet measured; the model trains with balanced class weights, so treat its numbers as a ranking.</li>`);
   }
   $("ast-errors").innerHTML = errs.join("");
+  // About this test: the questions a careful reader asks before trusting the numbers above.
+  if (sp && tr.inputs) {
+    const day = (x) => { const [y, mo, d] = String(x).split("-"); return Date.UTC(+y, +mo - 1, 1) / 864e5 + parseFloat(d) - 1; };
+    const days = Math.round(day(sp.test_dates[1]) - day(sp.test_dates[0])), fmtD = (x) => new Date(day(x) * 864e5).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+    const npos = sp.test_neo, nneg = sp.test_n - sp.test_neo, miss99 = Math.floor(npos * 0.01);
+    $("ast-about-list").innerHTML = [
+      `<b>How many are real?</b> ${npos} of the ${sp.test_n} test candidates became confirmed near-Earth objects; ${nneg} did not. Enough to measure ranking, but each percentage point at the extremes is only a handful of objects: at ≥99% of real objects kept, the model may miss at most ${miss99 || 1}.`,
+      ci ? `<b>How certain?</b> 95% bootstrap intervals: ROC-AUC ${ci.model[0].toFixed(2)}–${ci.model[1].toFixed(2)} for the model, ${ci.baseline[0].toFixed(2)}–${ci.baseline[1].toFixed(2)} for digest2 alone; the gap is ${ci.difference[0].toFixed(2)} to ${ci.difference[1].toFixed(2)}.` : "",
+      `<b>How long?</b> One window of ${days} days (${fmtD(sp.test_dates[0])} to ${fmtD(sp.test_dates[1])}), after training on ${sp.train_n} earlier candidates. Survey conditions change with the season and the Moon, so this is an early result: the model is retrained and retested every Monday as outcomes accrue, and these numbers will move.`,
+      `<b>Is the comparison fair?</b> Not head-to-head. The model is given digest2's own scores <i>plus</i> information digest2 doesn't use: which observatory reported the candidate, its brightness, sky position and motion, and how it was observed. The fair question is "does adding that context to digest2 help?", and on this window it does.`,
+      `<b>How are "real" labels assigned?</b> Real means later designated a near-Earth object in a Minor Planet Center circular. Everything else counts as not real, including candidates that were never confirmed, some of which were real objects nobody followed up. Candidates that observers skip are more likely to stay unconfirmed, which can make either method look right for skipping them. This bias affects both methods.`,
+      `<b>Which thresholds are honest?</b> The ≥99% chart above sets its cut-off on the test candidates themselves, so it is optimistic. The confusion matrix below uses a cut-off chosen on earlier data only.`,
+    ].filter(Boolean).map((x) => `<li>${x}</li>`).join("");
+    $("ast-about").hidden = false;
+  }
 }
 // Anything still showing a placeholder here failed to load: say so instead of shimmering forever.
 for (const el of document.querySelectorAll(".verdict, [id^='ch-']")) if (el.querySelector(".ss-skel")) el.innerHTML = `<p class="muted" style="margin:8px 0">Couldn't load this result. Try reloading the page.</p>`;

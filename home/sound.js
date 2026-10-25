@@ -77,7 +77,7 @@ function sonify(bins, reps = 2) {
 function setOn(v) {
   on = v;
   try { localStorage.setItem("ss-sound", v ? "on" : "off"); } catch {}
-  btn.setAttribute("aria-pressed", String(v)); btn.querySelector("span:last-child").textContent = v ? "Sound on" : "Sound off";
+  btn.setAttribute("aria-pressed", String(v)); btn.querySelector("span:last-child").textContent = v ? "Sound: on" : "Sound: off";
   if (v) { const a = ctx(); out.gain.cancelScheduledValues(a.currentTime); out.gain.setTargetAtTime(1, a.currentTime, 0.3); startPad(); plink(note(7), 0.05, 0.9); plink(note(9), 0.04, 1.1, 0.5, 0.09); }
   else if (ac) { out.gain.cancelScheduledValues(ac.currentTime); out.gain.setTargetAtTime(0, ac.currentTime, 0.15); stopPad(); }
 }
@@ -104,7 +104,7 @@ addEventListener("ss-sound", (e) => {
 });
 btn.hidden = false;
 btn.addEventListener("click", () => setOn(!on));
-btn.setAttribute("aria-pressed", String(on)); btn.querySelector("span:last-child").textContent = on ? "Sound on" : "Sound off";
+btn.setAttribute("aria-pressed", String(on)); btn.querySelector("span:last-child").textContent = on ? "Sound: on" : "Sound: off";
 // Browsers only allow audio after a gesture: if sound was left on, start it at the first click or key.
 if (on) { const go = (e) => { if (btn.contains(e.target)) { on = false; } else setOn(true); removeEventListener("pointerdown", go); removeEventListener("keydown", go); }; addEventListener("pointerdown", go); addEventListener("keydown", go); }
 export const soundOn = () => on;
