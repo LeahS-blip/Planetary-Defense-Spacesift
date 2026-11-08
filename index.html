@@ -120,6 +120,12 @@ try {
   .fs { color:var(--body); font-size:14px; line-height:1.6; } .fs b { color:var(--ink); }
   .fgo { margin-top:auto; color:var(--acc); font-size:14px; font-weight:700; }
   .found .protocol { color:var(--body); font-size:15px; margin:30px 0 0; } .found .protocol b { color:var(--ink); }
+  /* Physics labs: the same detection questions, applied to established discoveries */
+  .found.physics { padding-top:10vh; }
+  .found.physics .found-head p { color:var(--body); font-size:clamp(15px,1.4vw,18px); max-width:760px; margin:-4vh 0 5vh; }
+  .found-grid.two-up { grid-template-columns:repeat(2, minmax(0,1fr)); }
+  @media (max-width:900px) { .found-grid.two-up { grid-template-columns:minmax(0,1fr); } }
+  .ftag.lab { background:rgba(183,156,255,.16); color:#b79cff; }
   /* Stats bento */
   .bento { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); grid-auto-rows:minmax(220px, auto); gap:16px; }
   .tile { position:relative; overflow:hidden; border:1px solid var(--line); border-radius:22px; padding:clamp(22px,2.4vw,34px);
@@ -438,6 +444,21 @@ try {
     </div>
   </section>
 
+  <section class="found physics" id="physics" aria-label="Physics labs">
+    <div class="found-head reveal"><div class="kicker">PHYSICS LABS</div><h2>The same question, asked of famous discoveries.</h2>
+      <p>How do we know black holes collide, or that galaxies are full of unseen mass? Run the analysis yourself, with the same four steps, and see where it breaks.</p></div>
+    <div class="found-grid two-up">
+      <a class="fcard reveal" href="/gw/"><div class="ftop"><span class="fk">GRAVITATIONAL WAVES</span><span class="ftag lab">PHYSICS LAB</span></div>
+        <b class="fnum">Find the chirp <small>two black holes merging, buried in noise</small></b>
+        <span class="fs">Slide templates across detector data the way LIGO does, then run <b>600 searches with known answers</b> to measure false alarms and missed mergers. Simulated noise; modelled on GW150914.</span>
+        <span class="fgo">Open the Gravitational Wave Lab →</span></a>
+      <a class="fcard reveal" href="/darkmatter/"><div class="ftop"><span class="fk">DARK MATTER</span><span class="ftag lab">PHYSICS LAB</span></div>
+        <b class="fnum">Weigh a galaxy <small>with 175 real rotation curves</small></b>
+        <span class="fs">Can the stars and gas we see explain how fast galaxies spin? Fit visible matter against a dark halo on <b>real SPARC data</b>, then find the galaxies where both models fail.</span>
+        <span class="fgo">Open Dark Matter Detective →</span></a>
+    </div>
+  </section>
+
   <div class="ticker" aria-label="Live numbers from SpaceSift"><div class="track" id="ticker-track"></div></div>
 
   <section class="statement" aria-label="What SpaceSift is">
@@ -584,7 +605,7 @@ try {
   </section>
 
   <section class="why">
-    <div class="reveal"><h3>WHAT IT IS</h3><p>Three free tools and the open experiments behind them: a lab for hiding planets and testing the search, a lab for reading what stars and asteroids are made of, and a live ranking of new asteroid candidates.</p></div>
+    <div class="reveal"><h3>WHAT IT IS</h3><p>Three free tools and the open experiments behind them: a lab for hiding planets and testing the search, a lab for reading what stars and asteroids are made of, and a live ranking of new asteroid candidates. Plus two physics labs, on gravitational waves and dark matter, that apply the same tests to famous discoveries.</p></div>
     <div class="reveal"><h3>WHO IT'S FOR</h3><p>Students, observers and anyone curious how we know what's out there, not just the headline results. Every number comes from code and data you can rerun.</p></div>
     <div class="reveal"><h3>WHY IT MATTERS</h3><p>A missed planet looks exactly like no planet, so counts of how common worlds are depend on knowing what searches miss. And a new asteroid that isn't followed up in time can be lost.</p></div>
   </section>
@@ -594,7 +615,7 @@ try {
   <div class="finale">
     <h2 class="reveal">Look up.</h2>
     <p class="reveal">Any star you can see could hide a planet that today's searches would miss, and tonight's sky holds asteroids nobody has confirmed yet. Pick an investigation.</p>
-    <div class="tools reveal"><a href="/lab/">Transit Lab →</a><a href="/spectra/">Spectrum Lab →</a><a href="/outputs/dashboard.html">Asteroid Watch →</a><a href="/evidence/">The evidence →</a></div>
+    <div class="tools reveal"><a href="/lab/">Transit Lab →</a><a href="/spectra/">Spectrum Lab →</a><a href="/outputs/dashboard.html">Asteroid Watch →</a><a href="/gw/">Gravitational waves →</a><a href="/darkmatter/">Dark matter →</a><a href="/evidence/">The evidence →</a></div>
   </div>
   <div class="fine"><span>SpaceSift · open code and data on <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">GitHub</a></span><span>Data: NASA Kepler (MAST), Minor Planet Center, Sloan Digital Sky Survey</span></div>
 </footer>

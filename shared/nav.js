@@ -14,6 +14,8 @@
     transit: ["exp", "EXPERIMENT", "<b>Test a planet search yourself.</b> Each run is one example; the conclusions come from thousands of runs.", "/evidence/#transit", "What the experiments found →"],
     spectra: ["exp", "EXPERIMENT", "<b>See how light reveals what stars and asteroids are made of</b>, or analyze your own spectrum.", "/evidence/#spectra", "How accurate is it? →"],
     asteroids: ["live", "LIVE DATA", "<b>Inspect the candidates awaiting confirmation right now.</b> Updated twice a day. A ranking of how likely each is real, not an impact forecast.", "/evidence/#asteroids", "How good is the model? →"],
+    gw: ["exp", "PHYSICS LAB", "<b>Search for merging black holes the way LIGO does</b>, then measure how often the search is right.", "/lab/", "Same method as the Transit Lab →"],
+    darkmatter: ["exp", "PHYSICS LAB", "<b>Test whether visible matter explains how real galaxies spin</b>, using 175 measured rotation curves.", "#errors", "Where the models fail →"],
     evidence: ["report", "REPORT", "<b>What the investigations found</b>, in plain words first, with full methods, errors and limits below.", "", ""],
   };
   const logo = '<svg width="20" height="20" viewBox="0 0 100 100" aria-hidden="true"><g stroke-linecap="round"><line x1="10" y1="82" x2="44" y2="66" stroke="#3d4a75" stroke-width="8"/><line x1="18" y1="66" x2="52" y2="50" stroke="#5b6b9e" stroke-width="8"/><line x1="30" y1="52" x2="58" y2="39" stroke="#8b9cc7" stroke-width="8"/><circle cx="70" cy="38" r="20" fill="#eef2fc"/></g></svg>';
@@ -25,7 +27,8 @@
     '<a class="ss-brand" href="' + (home ? "#top" : "/") + '">' + logo + "<b>SPACESIFT</b><span>the science of detection</span></a>" +
     "<nav>" +
     items.map(([k, href, n, t, extra]) => '<a href="' + href + '"' + (k === active ? ' class="on" aria-current="page"' : "") + ' title="Investigation ' + n + ": " + t + '"><i>' + n + '</i><span class="t">' + t + "</span>" + extra + "</a>").join("") +
-    '<span class="ss-sep"></span><a class="ev' + (active === "evidence" ? " on" : "") + '" href="/evidence/"' + (active === "evidence" ? ' aria-current="page"' : "") + ">Evidence</a>" +
+    '<span class="ss-sep"></span><a href="/#physics"' + (active === "gw" || active === "darkmatter" ? ' class="on"' : "") + ' title="Physics labs: gravitational waves and dark matter"><i>◇</i><span class="t">Physics labs</span></a>' +
+    '<a class="ev' + (active === "evidence" ? " on" : "") + '" href="/evidence/"' + (active === "evidence" ? ' aria-current="page"' : "") + ">Evidence</a>" +
     "</nav></div>" +
     (m ? '<div class="ss-mode ' + (m[0] === "exp" ? "" : m[0]) + '"><span class="ss-pill ' + m[0] + '">' + m[1] + "</span><span>" + m[2] + "</span>" + (m[3] ? '<a href="' + m[3] + '">' + m[4] + "</a>" : "") + "</div>" : "");
   // Live pages say how fresh their data is. Captures run twice a day; past 18 hours, say it may be late.

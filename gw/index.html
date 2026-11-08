@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gravitational Wave Lab · SpaceSift</title>
+<meta name="description" content="Find two black holes colliding in detector noise with the same matched-filter search LIGO uses, then measure how often it is right.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/nav.css">
+<link rel="stylesheet" href="/shared/physlab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
+</head>
+<body>
+<div id="ss-nav" data-active="gw"></div>
+<header class="ss-head">
+  <div class="ss-kicker">PHYSICS LAB · GRAVITATIONAL WAVES</div>
+  <div class="ss-head-row"><h1>Gravitational Wave Lab</h1><nav class="ss-tabs"><a href="#about">How it works</a></nav></div>
+  <p class="ss-q">When two black holes spiral together they shake spacetime, and LIGO feels it as a stretch smaller than a proton. <b>Can you find the collision buried in the noise, and how often does the search get it wrong?</b></p>
+</header>
+
+<nav class="ss-journey" id="journey" aria-label="How this investigation works">
+  <a href="#inspect" data-s="1"><i>1</i><b>Inspect the data</b><span>Four seconds of detector noise</span></a>
+  <a href="#predict" data-s="2"><i>2</i><b>Make a prediction</b><span>Is there a merger? How heavy?</span></a>
+  <a href="#reveal" data-s="3"><i>3</i><b>Reveal the evidence</b><span>Run the template search</span></a>
+  <a href="#errors" data-s="4"><i>4</i><b>Investigate the errors</b><span>600 searches with known answers</span></a>
+</nav>
+
+<main>
+  <!-- 1 ------------------------------------------------------------------ -->
+  <section class="step" id="inspect">
+    <div class="step-n">STEP 1 · INSPECT THE DATA</div>
+    <h2>Four seconds from a detector</h2>
+    <p class="lede">Each stretch of data is simulated detector noise. Some stretches also hide the chirp of two black holes merging. Pick one to start.</p>
+    <div class="ss-starts" id="presets"></div>
+    <div class="chart-card">
+      <div class="chart-head"><span id="data-label">Detector strain (whitened)</span>
+        <label class="toggle"><input type="checkbox" id="smooth-toggle"> Smooth it</label></div>
+      <div id="chart-data" class="chart"></div>
+      <p class="cap">Strain is how much the detector's arms stretch, divided by their length. The data are <b>whitened</b>: rescaled so noise at every frequency has the same strength, which is how LIGO's searches see it. One unit on this axis is the typical noise level.</p>
+    </div>
+    <div class="ss-plain"><h4>WHAT TO LOOK FOR</h4><p>A merger is a <b>chirp</b>: a wave that rises in both pitch and loudness over a second or two, then stops when the black holes merge. Only the loudest chirps are visible by eye. Try smoothing the data. Can you see anything?</p></div>
+  </section>
+
+  <!-- 2 ------------------------------------------------------------------ -->
+  <section class="step" id="predict">
+    <div class="step-n">STEP 2 · MAKE A PREDICTION</div>
+    <h2>Is there a merger in this stretch?</h2>
+    <div class="choice" id="guess">
+      <button data-g="yes">Yes, two black holes merged</button>
+      <button data-g="no">No, it's just noise</button>
+    </div>
+    <p class="lede">Now try what the search does: slide a <b>template</b>, a predicted chirp for one chirp mass, along the data. Where it lines up with a hidden signal, the match score (signal-to-noise ratio, SNR) jumps.</p>
+    <div class="slider-row">
+      <label for="mc">Template chirp mass</label>
+      <input type="range" id="mc" min="15" max="60" step="0.5" value="30">
+      <output id="mc-out">30 M<sub>☉</sub></output>
+    </div>
+    <p class="hint" id="mc-hint"></p>
+    <div class="two">
+      <div class="chart-card"><div class="chart-head"><span>Your template</span></div><div id="chart-tpl" class="chart small"></div></div>
+      <div class="chart-card"><div class="chart-head"><span>Match score along the data</span><b id="tpl-peak"></b></div><div id="chart-tplsnr" class="chart small"></div></div>
+    </div>
+    <div class="ss-plain"><h4>CHIRP MASS</h4><p>The <b>chirp mass</b> M<sub>c</sub> = (m<sub>1</sub>m<sub>2</sub>)<sup>3/5</sup>/(m<sub>1</sub>+m<sub>2</sub>)<sup>1/5</sup> sets how fast the pitch rises. Lighter pairs chirp slowly and spend longer in the detector's band. Heavier pairs sweep up in a fraction of a second and merge at a lower pitch. Two 35 M<sub>☉</sub> black holes have M<sub>c</sub> ≈ 30 M<sub>☉</sub>.</p></div>
+  </section>
+
+  <!-- 3 ------------------------------------------------------------------ -->
+  <section class="step" id="reveal">
+    <div class="step-n">STEP 3 · REVEAL THE EVIDENCE</div>
+    <h2>Run the full template search</h2>
+    <p class="lede">The search tries <b>48 templates</b> from 15 to 60 M<sub>☉</sub> at every start time and keeps the loudest match. It reports a detection when that SNR passes <b id="thr-txt">5.4</b>, the level that pure noise passes in only 1% of stretches (calibrated on 2,000 noise-only stretches).</p>
+    <button class="ss-btn" id="run">Run the search</button>
+    <div id="reveal-out" hidden>
+      <div class="verdict" id="verdict"></div>
+      <div class="two">
+        <div class="chart-card"><div class="chart-head"><span>Loudest match for each template</span></div><div id="chart-bank" class="chart small"></div></div>
+        <div class="chart-card"><div class="chart-head"><span>Best template's match score over time</span></div><div id="chart-bestsnr" class="chart small"></div></div>
+      </div>
+      <div class="chart-card"><div class="chart-head"><span>Data with the best-fitting chirp, and the truth</span></div><div id="chart-fit" class="chart"></div>
+        <p class="cap">Grey: the data, smoothed. Blue: the template the search picked, scaled to fit. Green: the signal that was actually hidden (shown only after the search).</p></div>
+    </div>
+  </section>
+
+  <!-- 4 ------------------------------------------------------------------ -->
+  <section class="step" id="errors">
+    <div class="step-n">STEP 4 · INVESTIGATE THE ERRORS</div>
+    <h2>One search proves nothing. Run 600.</h2>
+    <p class="lede">The only way to know how good a search is: hide signals you know about and count how often it finds them, and run it on pure noise and count how often it is fooled. LIGO does this with millions of fake signals. This runs <b>200 noise-only stretches</b> and <b>400 with a hidden merger</b> at SNR 3 to 12, right in your browser.</p>
+    <button class="ss-btn" id="run-many">Run 600 searches</button> <span class="progress" id="prog"></span>
+    <div id="errors-out" hidden>
+      <div class="ss-plain" id="err-plain"></div>
+      <div class="two">
+        <div class="chart-card"><div class="chart-head"><span>Found, by how loud the signal was</span></div><div id="chart-eff" class="chart small"></div>
+          <p class="cap">Fraction of hidden mergers detected, with 95% intervals. Dashed: the threshold.</p></div>
+        <div class="chart-card"><div class="chart-head"><span>Noise alone: the loudest match</span></div><div id="chart-null" class="chart small"></div>
+          <p class="cap">How loud pure noise gets. Anything right of the line is a false alarm.</p></div>
+      </div>
+      <div class="chart-card"><div class="chart-head"><span>How well the chirp mass is measured</span></div><div id="chart-mc" class="chart small"></div>
+        <p class="cap">Recovered minus true chirp mass, for detected signals. Faint signals are measured less precisely.</p></div>
+    </div>
+    <div class="ss-limits"><h4>LIMITS OF THIS LAB</h4><ul>
+      <li><b>Simulated, idealised noise.</b> Real detector noise has <b>glitches</b>: short bursts that can mimic chirps. That is why LIGO demands SNR around 8 or more and checks two detectors at once, not 5.4 in one.</li>
+      <li><b>Inspiral only.</b> Templates use the leading-order (Newtonian) chirp and stop at the last stable orbit. Real templates include higher-order relativity, spin, unequal masses, the merger and the ringdown.</li>
+      <li><b>One detector, 4 seconds.</b> False-alarm rates here are per 4-second stretch. LIGO quotes them per year of data, which needs much higher thresholds.</li>
+      <li><b>Not real LIGO data (yet).</b> The loud preset is modelled on GW150914 (network SNR 24, chirp mass about 30 M<sub>☉</sub>), but the noise is simulated.</li>
+    </ul></div>
+  </section>
+
+  <!-- about --------------------------------------------------------------- -->
+  <section class="step about" id="about">
+    <div class="step-n">HOW IT WORKS</div>
+    <h2>The physics and the search</h2>
+    <div class="cols">
+      <div><h3>The chirp</h3>
+        <p>General relativity predicts that an orbiting pair radiates gravitational waves at twice its orbital frequency and loses energy, so it spirals in. To leading order, with τ the time left before merger and T = GM<sub>c</sub>/c³:</p>
+        <p class="eq">f(τ) = (1/π) · (5 / 256τ)<sup>3/8</sup> · T<sup>−5/8</sup></p>
+        <p>The amplitude grows as f<sup>2/3</sup>. The signal ends near the innermost stable orbit, f<sub>ISCO</sub> = c³ / (6<sup>3/2</sup>πGM), about 64 Hz for a 69 M<sub>☉</sub> pair.</p></div>
+      <div><h3>The matched filter</h3>
+        <p>For known signal shapes in Gaussian noise, the best possible detector is to correlate the data with a template of the expected signal. The SNR at each start time is</p>
+        <p class="eq">ρ(t₀) = |⟨d, h(t − t₀)⟩| / ‖h‖</p>
+        <p>using two copies of the template a quarter-cycle apart, so the unknown phase doesn't matter. It is computed for every start time at once with a Fourier transform. A signal hidden at optimal SNR ρ gives a peak near ρ.</p></div>
+      <div><h3>Same idea as finding planets</h3>
+        <p>This is the same problem as SpaceSift's <a href="/lab/">Transit Lab</a>: a repeating box-shaped dip there, a chirp here, both buried in noise and found by sliding a template across the data. Both are judged the same way: a threshold set from noise alone, then <b>completeness</b> measured with signals of known strength.</p>
+        <p>References: Abbott et al. 2016, <i>Phys. Rev. Lett.</i> 116, 061102 (GW150914). Allen et al. 2012, <i>Phys. Rev. D</i> 85, 122006 (FINDCHIRP).</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="pl-foot"><a href="/">← SpaceSift home</a><span>Engine: <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift/blob/main/gw/gw.js">gw/gw.js</a> · tests in gw/test/</span></footer>
+
+<script src="/shared/nav.js"></script>
+<script type="module">
+import * as G from "/gw/gw.js";
+
+const THRESHOLD = 5.4; // 99th percentile of the loudest noise-only trigger, 2,000 stretches (gw/test/calibrate.mjs)
+const C = { ink: "#eef2fc", body: "#c9d0e4", dim: "#a3abc4", line: "rgba(140,160,220,.16)", acc: "#7aa2ff", hi: "#4ade80", warn: "#fbbf24", bad: "#f87171", data: "#5b6275" };
+const $ = (id) => document.getElementById(id);
+const time = Array.from({ length: G.N }, (_, i) => i / G.FS);
+const layout = (extra = {}) => ({
+  paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { family: "IBM Plex Sans, sans-serif", color: C.dim, size: 12 },
+  margin: { l: 48, r: 14, t: 8, b: 40 }, showlegend: false,
+  xaxis: { gridcolor: C.line, zerolinecolor: C.line, ...(extra.xaxis || {}) }, yaxis: { gridcolor: C.line, zerolinecolor: C.line, ...(extra.yaxis || {}) },
+  ...Object.fromEntries(Object.entries(extra).filter(([k]) => k !== "xaxis" && k !== "yaxis")),
+});
+const cfg = { displayModeBar: false, responsive: true };
+const plot = (id, traces, lay) => Plotly.react(id, traces, layout(lay), cfg);
+
+// Templates are prepared lazily, once.
+let templates = null;
+const getTemplates = () => (templates ||= G.bank(48).map(G.prepare));
+
+const PRESETS = [
+  { key: "loud", n: "LOUD", t: "A GW150914-like merger", d: "Chirp mass 30 M☉ at SNR 24, as loud as LIGO's first detection.", mc: 30, snr: 24, seed: 150914 },
+  { key: "typical", n: "TYPICAL", t: "A typical detection", d: "SNR 9: invisible by eye, easy for the search.", mc: 22, snr: 9, seed: 42 },
+  { key: "faint", n: "FAINT", t: "Right at the edge", d: "SNR 5.5. Sometimes found, sometimes not.", mc: 45, snr: 5.5, seed: 7 },
+  { key: "mystery", n: "MYSTERY", t: "Mystery stretch", d: "Might hold a merger, might be pure noise. You decide.", mystery: true },
+];
+let current = null, guess = null;
+
+function makeData(p) {
+  if (!p.mystery) return { ...G.simulate({ seed: p.seed, mc: p.mc, snr: p.snr }), preset: p };
+  const seed = (Math.random() * 1e9) | 0, r = G.rng(seed);
+  const hasSignal = r() < 0.5;
+  return { ...G.simulate({ seed, mc: hasSignal ? 15 + r() * 45 : null, snr: hasSignal ? 4 + r() * 8 : 0 }), preset: p };
+}
+
+function renderPresets() {
+  $("presets").innerHTML = PRESETS.map((p, i) =>
+    `<button class="ss-start${i === 0 ? " primary" : ""}" data-k="${p.key}"><span class="n">${p.n}</span><b>${p.t}</b><span class="d">${p.d}</span><span class="go">Load it →</span></button>`).join("");
+  $("presets").querySelectorAll("button").forEach((b) => b.onclick = () => load(PRESETS.find((p) => p.key === b.dataset.k), b));
+}
+
+function load(p, btn) {
+  current = makeData(p); guess = null;
+  document.querySelectorAll("#presets button").forEach((b) => b.classList.toggle("done", b === btn));
+  document.querySelectorAll("#guess button").forEach((b) => b.classList.remove("on"));
+  $("reveal-out").hidden = true;
+  $("data-label").textContent = "Detector strain (whitened) · " + p.t;
+  drawData(); updateTemplate();
+  window.ssJourney(1);
+}
+
+function drawData() {
+  const sm = $("smooth-toggle").checked, y = sm ? G.smooth(current.data, 9) : current.data;
+  plot("chart-data", [{ x: time, y: Array.from(y), mode: "lines", line: { color: sm ? C.body : C.data, width: 1 }, hoverinfo: "skip" }],
+    { xaxis: { title: { text: "time (s)" } }, yaxis: { title: { text: "strain (noise units)" }, range: sm ? [-2.5, 2.5] : [-5, 5] } });
+}
+
+// Step 2: one template, slid along the data.
+let tplTimer = 0;
+function updateTemplate() {
+  const mc = +$("mc").value;
+  $("mc-out").innerHTML = mc.toFixed(1) + " M<sub>☉</sub>";
+  const h = G.chirp(mc);
+  $("mc-hint").textContent = `This chirp lasts ${h.duration.toFixed(2)} s from 25 Hz and ends at ${h.fEnd.toFixed(0)} Hz, when the black holes reach their last stable orbit (total mass ${G.totalMass(mc).toFixed(0)} M☉).`;
+  plot("chart-tpl", [{ x: Array.from({ length: h.len }, (_, i) => i / G.FS), y: Array.from(h.c), mode: "lines", line: { color: C.acc, width: 1.2 }, hoverinfo: "skip" }],
+    { xaxis: { title: { text: "time from 25 Hz (s)" } }, yaxis: { showticklabels: false } });
+  clearTimeout(tplTimer);
+  tplTimer = setTimeout(() => {
+    if (!current) return;
+    const rho = G.filter(G.dataSpectrum(current.data), G.prepare(mc));
+    let m = 0, at = 0; for (let t = 0; t < rho.length; t++) if (rho[t] > m) { m = rho[t]; at = t; }
+    $("tpl-peak").textContent = "peak " + m.toFixed(1);
+    $("tpl-peak").className = m > THRESHOLD ? "good" : "";
+    const tx = Array.from({ length: rho.length }, (_, i) => (i + h.len) / G.FS); // plotted at the would-be merger time
+    plot("chart-tplsnr", [
+      { x: tx, y: Array.from(rho), mode: "lines", line: { color: C.acc, width: 1.2 }, hovertemplate: "merger at %{x:.2f} s<br>SNR %{y:.1f}<extra></extra>" },
+      { x: [0, 4], y: [THRESHOLD, THRESHOLD], mode: "lines", line: { color: C.warn, dash: "dash", width: 1 }, hoverinfo: "skip" },
+    ], { xaxis: { title: { text: "merger time if this were a signal (s)" }, range: [0, 4] }, yaxis: { title: { text: "SNR" }, rangemode: "tozero" } });
+    if (guess) window.ssJourney(2);
+  }, 60);
+}
+
+// Step 3: the full search.
+function runSearch() {
+  if (!current) return;
+  const { best, peaks } = G.search(current.data, getTemplates());
+  const det = best.snr > THRESHOLD, truth = current.truth;
+  const real = !!truth;
+  const right = guess ? ((guess === "yes") === real) : null;
+  let kind;
+  if (det && real) kind = ["good", "Detected, and it's real", `The search found a chirp of ${best.mc.toFixed(1)} M☉ merging at ${best.merger.toFixed(2)} s, SNR ${best.snr.toFixed(1)}. The hidden signal: ${truth.mc.toFixed(1)} M☉ at ${truth.merger.toFixed(2)} s, SNR ${truth.snr.toFixed(1)}.`];
+  else if (det && !real) kind = ["bad", "False alarm", `Pure noise reached SNR ${best.snr.toFixed(1)}. With a 1% false-alarm threshold this happens in about 1 stretch in 100. Real searches check a second detector to rule this out.`];
+  else if (!det && real) kind = ["warn", "Missed", `A merger was hidden here (${truth.mc.toFixed(1)} M☉, SNR ${truth.snr.toFixed(1)}), but the loudest match was only ${best.snr.toFixed(1)}. A missed signal looks exactly like no signal.`];
+  else kind = ["good", "Nothing found, and nothing was there", `The loudest match in pure noise was ${best.snr.toFixed(1)}, below the threshold of ${THRESHOLD}.`];
+  $("verdict").className = "verdict " + kind[0];
+  $("verdict").innerHTML = `<b>${kind[1]}</b><p>${kind[2]}</p>` + (right === null ? "" : `<p class="you">Your prediction: <b>${guess === "yes" ? "a merger" : "just noise"}</b>, ${right ? "correct." : "not this time."}</p>`);
+
+  plot("chart-bank", [
+    { x: peaks.map((p) => p.mc), y: peaks.map((p) => p.snr), mode: "lines+markers", line: { color: C.acc, width: 1.2 }, marker: { size: 4 }, hovertemplate: "%{x:.1f} M☉: SNR %{y:.1f}<extra></extra>" },
+    { x: [15, 60], y: [THRESHOLD, THRESHOLD], mode: "lines", line: { color: C.warn, dash: "dash", width: 1 }, hoverinfo: "skip" },
+    ...(real ? [{ x: [truth.mc, truth.mc], y: [0, Math.max(...peaks.map((p) => p.snr)) * 1.05], mode: "lines", line: { color: C.hi, width: 1.5 }, hoverinfo: "skip" }] : []),
+  ], { xaxis: { title: { text: "template chirp mass (M☉)" } }, yaxis: { title: { text: "loudest SNR" }, rangemode: "tozero" } });
+
+  const rho = G.filter(G.dataSpectrum(current.data), best.tpl);
+  plot("chart-bestsnr", [
+    { x: Array.from({ length: rho.length }, (_, i) => (i + best.tpl.len) / G.FS), y: Array.from(rho), mode: "lines", line: { color: C.acc, width: 1.2 }, hoverinfo: "skip" },
+    { x: [0, 4], y: [THRESHOLD, THRESHOLD], mode: "lines", line: { color: C.warn, dash: "dash", width: 1 }, hoverinfo: "skip" },
+  ], { xaxis: { title: { text: "merger time (s)" }, range: [0, 4] }, yaxis: { title: { text: "SNR" }, rangemode: "tozero" } });
+
+  const fit = G.bestFitWave(current.data, best.mc, best.start);
+  const traces = [
+    { x: time, y: Array.from(G.smooth(current.data, 9)), mode: "lines", line: { color: C.data, width: 1 }, hoverinfo: "skip" },
+    { x: time, y: Array.from(fit), mode: "lines", line: { color: C.acc, width: 1.4 }, hoverinfo: "skip" },
+  ];
+  if (real) { const w = new Float64Array(G.N); for (let i = 0; i < truth.wave.length && truth.start + i < G.N; i++) w[truth.start + i] = truth.amp * truth.wave[i]; traces.push({ x: time, y: Array.from(w), mode: "lines", line: { color: C.hi, width: 1.2 }, opacity: 0.8, hoverinfo: "skip" }); }
+  const zoom = real ? [Math.max(0, truth.start / G.FS - 0.2), Math.min(4, truth.merger + 0.2)] : [Math.max(0, best.start / G.FS - 0.2), Math.min(4, best.merger + 0.2)];
+  plot("chart-fit", traces, { xaxis: { title: { text: "time (s)" }, range: zoom }, yaxis: { title: { text: "strain (noise units)" } } });
+  $("reveal-out").hidden = false;
+  window.ssJourney(3);
+}
+
+// Step 4: many searches with known answers, run in small batches so the page stays responsive.
+async function runMany() {
+  const btn = $("run-many"); btn.disabled = true;
+  const tpls = getTemplates(), SNRS = [3, 4, 5, 6, 7, 8, 10, 12], PER = 50, NOISE = 200;
+  const jobs = [];
+  for (let i = 0; i < NOISE; i++) jobs.push({ seed: 700000 + i });
+  SNRS.forEach((snr, j) => { for (let i = 0; i < PER; i++) jobs.push({ seed: 800000 + j * 1000 + i, snr }); });
+  const out = [];
+  for (let i = 0; i < jobs.length; i++) {
+    const j = jobs[i], r = G.rng(j.seed * 7 + 3);
+    const mc = j.snr ? 15 + r() * 45 : null;
+    const sim = G.simulate({ seed: j.seed, mc, snr: j.snr || 0 });
+    const { best } = G.search(sim.data, tpls);
+    out.push({ snr: j.snr || 0, mc, found: best.snr, foundMc: best.mc, merger: best.merger, trueMerger: sim.truth?.merger });
+    if (i % 10 === 9) { $("prog").textContent = `${i + 1} / ${jobs.length}`; await new Promise((res) => setTimeout(res)); }
+  }
+  $("prog").textContent = "done"; btn.disabled = false; btn.textContent = "Run again";
+  showErrors(out, SNRS);
+}
+
+function showErrors(out, SNRS) {
+  const noise = out.filter((o) => !o.snr).map((o) => o.found);
+  const fa = noise.filter((s) => s > THRESHOLD).length;
+  // A detection only counts if the merger time is right (within 0.1 s); otherwise the search found noise, not the signal.
+  const eff = SNRS.map((snr) => {
+    const g = out.filter((o) => o.snr === snr), k = g.filter((o) => o.found > THRESHOLD && Math.abs(o.merger - o.trueMerger) < 0.1).length;
+    return { snr, k, n: g.length, p: k / g.length, ci: G.wilson(k, g.length) };
+  });
+  const half = eff.find((e) => e.p >= 0.5);
+  const det = out.filter((o) => o.snr && o.found > THRESHOLD && Math.abs(o.merger - o.trueMerger) < 0.1);
+  const err = det.map((o) => o.foundMc - o.mc);
+  const bySnr = (lo, hi) => { const e = det.filter((o) => o.snr >= lo && o.snr < hi).map((o) => Math.abs(o.foundMc - o.mc) / o.mc); return e.length ? G.quantile(e, 0.5) : NaN; };
+
+  $("err-plain").innerHTML = `<h4>WHAT YOUR 600 SEARCHES FOUND</h4>
+    <p><b>False alarms:</b> ${fa} of ${noise.length} noise-only stretches (${(100 * fa / noise.length).toFixed(1)}%) passed the threshold. It was set for 1%, so this checks the calibration.</p>
+    <p><b>Completeness:</b> the search found ${half ? `at least half the mergers from <b>SNR ${half.snr}</b>` : "fewer than half the mergers at every SNR tried"}, and ${(100 * eff.at(-1).p).toFixed(0)}% at SNR ${eff.at(-1).snr}. At SNR ${eff[1].snr} it found only ${(100 * eff[1].p).toFixed(0)}%: those signals are as loud as the noise's own peaks, so they are lost.</p>
+    <p><b>Measurement:</b> for detected mergers the median chirp-mass error was ${(100 * bySnr(0, 7)).toFixed(0)}% at SNR under 7 and ${(100 * bySnr(7, 99)).toFixed(0)}% at SNR 7 and above. A louder signal is measured more precisely, not just found more often.</p>`;
+
+  plot("chart-eff", [
+    { x: eff.map((e) => e.snr), y: eff.map((e) => e.p), mode: "lines+markers", line: { color: C.acc }, marker: { size: 6 },
+      error_y: { type: "data", symmetric: false, array: eff.map((e) => e.ci[1] - e.p), arrayminus: eff.map((e) => e.p - e.ci[0]), color: C.acc, thickness: 1 },
+      hovertemplate: "SNR %{x}: %{y:.0%} found<extra></extra>" },
+    { x: [THRESHOLD, THRESHOLD], y: [0, 1], mode: "lines", line: { color: C.warn, dash: "dash", width: 1 }, hoverinfo: "skip" },
+  ], { xaxis: { title: { text: "SNR of the hidden merger" } }, yaxis: { title: { text: "fraction found" }, range: [0, 1.05], tickformat: ".0%" } });
+
+  plot("chart-null", [
+    { x: noise, type: "histogram", marker: { color: C.data, line: { color: C.dim, width: 0.5 } }, xbins: { size: 0.1 }, hovertemplate: "SNR %{x}: %{y}<extra></extra>" },
+  ], { xaxis: { title: { text: "loudest SNR in pure noise" } }, yaxis: { title: { text: "stretches" } },
+       shapes: [{ type: "line", x0: THRESHOLD, x1: THRESHOLD, yref: "paper", y0: 0, y1: 1, line: { color: C.warn, dash: "dash", width: 1 } }] });
+
+  plot("chart-mc", [
+    { x: det.map((o) => o.snr + (Math.random() - 0.5) * 0.5), y: err, mode: "markers", marker: { color: C.acc, size: 5, opacity: 0.6 }, hovertemplate: "SNR %{x:.0f}: off by %{y:.1f} M☉<extra></extra>" },
+  ], { xaxis: { title: { text: "SNR of the hidden merger" } }, yaxis: { title: { text: "recovered − true chirp mass (M☉)" }, zeroline: true, zerolinecolor: C.dim } });
+  $("errors-out").hidden = false;
+  window.ssJourney(4);
+}
+
+$("thr-txt").textContent = THRESHOLD;
+$("smooth-toggle").onchange = drawData;
+$("mc").oninput = updateTemplate;
+document.querySelectorAll("#guess button").forEach((b) => b.onclick = () => {
+  guess = b.dataset.g; document.querySelectorAll("#guess button").forEach((x) => x.classList.toggle("on", x === b)); window.ssJourney(2);
+});
+$("run").onclick = runSearch;
+$("run-many").onclick = runMany;
+renderPresets();
+load(PRESETS[0], document.querySelector("#presets button"));
+</script>
+</body>
+</html>

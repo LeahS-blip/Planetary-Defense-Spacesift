@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dark Matter Detective · SpaceSift</title>
+<meta name="description" content="Do galaxies spin too fast for what we can see? Test visible matter against 175 measured rotation curves, and see where every model fails.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2210%22%20y1%3D%2282%22%20x2%3D%2244%22%20y2%3D%2266%22%20stroke%3D%22%233d4a75%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2218%22%20y1%3D%2266%22%20x2%3D%2252%22%20y2%3D%2250%22%20stroke%3D%22%235b6b9e%22%20stroke-width%3D%227%22/%3E%3Cline%20x1%3D%2230%22%20y1%3D%2252%22%20x2%3D%2258%22%20y2%3D%2239%22%20stroke%3D%22%238b9cc7%22%20stroke-width%3D%227%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2238%22%20r%3D%2220%22%20fill%3D%22%23eef2fc%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/nav.css">
+<link rel="stylesheet" href="/shared/physlab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
+<style>
+  .picker { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:4px 0 6px; color:var(--ss-dim); font-size:13.5px; }
+  .picker select { background:rgba(11,16,32,.9); color:var(--ss-ink); border:1px solid var(--ss-line); border-radius:8px; padding:7px 10px; font:14px var(--ss-sub); max-width:100%; }
+  .facts { display:flex; flex-wrap:wrap; gap:8px 22px; margin:8px 0 0; color:var(--ss-dim); font-size:13.5px; }
+  .facts b { color:var(--ss-ink); font:600 14px var(--ss-title); }
+  .budget { display:grid; grid-template-columns:auto 1fr auto; gap:6px 12px; align-items:center; margin:14px 0 4px; font-size:13.5px; color:var(--ss-body); }
+  .budget .bar { height:14px; border-radius:3px; background:rgba(140,160,220,.12); overflow:hidden; }
+  .budget .bar i { display:block; height:100%; }
+  .budget b { font:600 13.5px var(--ss-title); color:var(--ss-ink); text-align:right; }
+  .worst { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 0; }
+  .worst button { background:rgba(255,255,255,.025); border:1px solid var(--ss-line); color:var(--ss-ink); border-radius:8px; padding:6px 10px; font:13px var(--ss-sub); cursor:pointer; }
+  .worst button:hover { border-color:rgba(122,162,255,.55); }
+  .worst button span { color:var(--ss-dim); margin-left:6px; font-family:var(--ss-title); font-size:12px; }
+</style>
+</head>
+<body>
+<div id="ss-nav" data-active="darkmatter"></div>
+<header class="ss-head">
+  <div class="ss-kicker">PHYSICS LAB · DARK MATTER</div>
+  <div class="ss-head-row"><h1>Dark Matter Detective</h1><nav class="ss-tabs"><a href="#about">How it works</a></nav></div>
+  <p class="ss-q">Stars far from a galaxy's centre should orbit slowly, the way Neptune orbits slower than Earth. In real galaxies they don't. <b>Can the matter we see explain how 175 real galaxies spin, and if not, how much is missing?</b></p>
+</header>
+
+<nav class="ss-journey" id="journey" aria-label="How this investigation works">
+  <a href="#inspect" data-s="1"><i>1</i><b>Inspect the data</b><span>A galaxy's measured spin</span></a>
+  <a href="#predict" data-s="2"><i>2</i><b>Make a prediction</b><span>Is visible matter enough?</span></a>
+  <a href="#reveal" data-s="3"><i>3</i><b>Reveal the evidence</b><span>Fit both models</span></a>
+  <a href="#errors" data-s="4"><i>4</i><b>Investigate the errors</b><span>All 153 good galaxies</span></a>
+</nav>
+
+<main>
+  <section class="step" id="inspect">
+    <div class="step-n">STEP 1 · INSPECT THE DATA</div>
+    <h2>How fast does a galaxy spin?</h2>
+    <p class="lede">Radio telescopes measure the <b>Doppler shift</b> of hydrogen gas across a galaxy's disk. That gives the speed at which material orbits at each distance from the centre: the galaxy's <b>rotation curve</b>. Every point here is a real measurement.</p>
+    <div class="ss-starts" id="presets"></div>
+    <div class="picker"><label for="gal">Or pick any of the 175 galaxies:</label><select id="gal"></select></div>
+    <div class="chart-card">
+      <div class="chart-head"><span id="gal-label">Rotation curve</span></div>
+      <div id="chart-obs" class="chart"></div>
+      <div class="facts" id="facts"></div>
+    </div>
+    <div class="ss-plain"><h4>WHAT TO LOOK FOR</h4><p>If most of a galaxy's mass sits where its light is, near the centre, then far out the speed should <b>fall</b> with distance, as v ∝ 1/√r, just like the planets. Does it?</p></div>
+  </section>
+
+  <section class="step" id="predict">
+    <div class="step-n">STEP 2 · MAKE A PREDICTION</div>
+    <h2>Add up what we can see</h2>
+    <p class="lede">The dashed curves are the speeds the visible matter alone would produce: <b>gas</b> (from its radio emission) and <b>stars</b> (from infrared light). How much mass the stars have per unit of light, the <b>mass-to-light ratio Υ</b>, is uncertain, so it's your dial. Stellar-population models put it near 0.5 at this wavelength. Turn it up to give visible matter its best chance.</p>
+    <div class="slider-row">
+      <label for="ups">Stellar mass-to-light ratio Υ</label>
+      <input type="range" id="ups" min="-1.3" max="1" step="0.01" value="-0.301">
+      <output id="ups-out">0.50</output>
+    </div>
+    <p class="hint" id="ups-hint"></p>
+    <div class="chart-card"><div class="chart-head"><span>Measured vs visible matter</span><b id="vis-chi"></b></div><div id="chart-vis" class="chart"></div></div>
+    <div class="choice" id="guess">
+      <button data-g="enough">Visible matter explains it</button>
+      <button data-g="missing">Something unseen is needed</button>
+    </div>
+  </section>
+
+  <section class="step" id="reveal">
+    <div class="step-n">STEP 3 · REVEAL THE EVIDENCE</div>
+    <h2>Fit both explanations</h2>
+    <p class="lede">Model A uses <b>visible matter only</b>, with Υ free to take whatever value fits best, even impossibly high ones. Model B fixes the stars at Υ = 0.5 and adds a <b>dark halo</b>: a sphere of unseen mass whose density and size are fitted. The fit quality is reduced χ²: about 1 means the model matches within the measurement errors.</p>
+    <button class="ss-btn" id="run">Fit both models</button>
+    <div id="reveal-out" hidden>
+      <div class="verdict" id="verdict"></div>
+      <div class="chart-card"><div class="chart-head"><span>Best fits</span></div><div id="chart-fit" class="chart"></div>
+        <p class="cap">Grey points: measured. Orange: best visible-only fit. Blue: visible matter + dark halo. Purple dashed: the halo's own contribution.</p></div>
+      <div class="chart-card"><div class="chart-head"><span id="budget-head">Mass budget</span></div><div class="budget" id="budget"></div>
+        <p class="cap">Total mass inside the last measured point, from M = v²r/G, compared with visible mass at Υ = 0.5.</p></div>
+    </div>
+  </section>
+
+  <section class="step" id="errors">
+    <div class="step-n">STEP 4 · INVESTIGATE THE ERRORS</div>
+    <h2>One galaxy proves nothing. Fit 153.</h2>
+    <p class="lede">The SPARC catalogue has 175 galaxies. The standard quality cut keeps <b>153</b> with reliable data and inclination of at least 30°. This fits both models to every one of them, in your browser.</p>
+    <button class="ss-btn" id="run-many">Fit all 153 galaxies</button> <span class="progress" id="prog"></span>
+    <div id="errors-out" hidden>
+      <div class="ss-plain" id="err-plain"></div>
+      <div class="two">
+        <div class="chart-card"><div class="chart-head"><span>How much mass is missing</span></div><div id="chart-ratio" class="chart small"></div>
+          <p class="cap">Total ÷ visible mass inside each galaxy's last measured point. 1 means nothing is missing.</p></div>
+        <div class="chart-card"><div class="chart-head"><span>Which model fits, galaxy by galaxy</span></div><div id="chart-chi" class="chart small"></div>
+          <p class="cap">Each dot is a galaxy. Above the line, the halo fits better. Dashed lines: reduced χ² of 5, a poor fit.</p></div>
+      </div>
+      <div class="chart-card"><div class="chart-head"><span>The pattern behind it: the radial acceleration relation</span></div><div id="chart-rar" class="chart"></div>
+        <p class="cap">Every measured point from the 153 galaxies: the acceleration we measure, against what visible matter alone should produce. Dotted: no missing mass. Purple: the fit by McGaugh, Lelli &amp; Schombert (2016). The gap opens below about 10<sup>−10</sup> m/s².</p></div>
+      <div class="ss-plain"><h4>WHERE THE HALO MODEL FAILS TOO</h4><p id="worst-txt"></p><div class="worst" id="worst"></div></div>
+    </div>
+    <div class="ss-limits"><h4>LIMITS OF THIS LAB</h4><ul>
+      <li><b>Rotation curves show that mass is missing, not what it is.</b> The case for dark matter being a new kind of particle comes from other evidence too: the cosmic microwave background, galaxy clusters such as the Bullet Cluster, and gravitational lensing.</li>
+      <li><b>Modified gravity is a live alternative for galaxies.</b> MOND changes the law of gravity below about 10<sup>−10</sup> m/s² and fits rotation curves well. The tight relation in the last chart is what it predicts. It struggles with clusters and the cosmic microwave background.</li>
+      <li><b>One halo shape.</b> The cored isothermal halo is a convenient choice. The NFW profile from cosmological simulations is steeper in the centre and fits many dwarf galaxies worse: the "cusp–core" problem.</li>
+      <li><b>Errors not included.</b> Uncertainties in distance and inclination, gas pressure and non-circular motions near the centre are not propagated. Some poor fits come from these, not from the models.</li>
+    </ul></div>
+  </section>
+
+  <section class="step about" id="about">
+    <div class="step-n">HOW IT WORKS</div>
+    <h2>The physics and the data</h2>
+    <div class="cols">
+      <div><h3>Orbits weigh mass</h3>
+        <p>For a circular orbit, gravity provides the centripetal force, so the speed at radius r measures the mass inside it:</p>
+        <p class="eq">v² / r = G M(&lt;r) / r²  →  M(&lt;r) = v² r / G</p>
+        <p>Visible components add in quadrature: V<sub>bar</sub>² = V<sub>gas</sub>² + Υ<sub>disk</sub>V<sub>disk</sub>² + Υ<sub>bulge</sub>V<sub>bulge</sub>², with Υ<sub>bulge</sub> = 1.4 Υ<sub>disk</sub>.</p></div>
+      <div><h3>The dark halo</h3>
+        <p>A pseudo-isothermal sphere, ρ(r) = ρ₀ / (1 + (r/r<sub>c</sub>)²), gives</p>
+        <p class="eq">V<sub>halo</sub>² = 4πGρ₀r<sub>c</sub>² [1 − (r<sub>c</sub>/r) arctan(r/r<sub>c</sub>)]</p>
+        <p>which rises and then flattens: exactly the shape the visible matter can't produce. Fits search ρ₀ and r<sub>c</sub> on a grid to minimise χ².</p></div>
+      <div><h3>The data</h3>
+        <p><b>SPARC</b>: 175 disk galaxies with Spitzer 3.6 μm photometry and HI/Hα rotation curves. Lelli, McGaugh &amp; Schombert 2016, <i>AJ</i> 152, 157. Radial acceleration relation: McGaugh, Lelli &amp; Schombert 2016, <i>PRL</i> 117, 201101.</p>
+        <p>The first flat rotation curves: Rubin, Ford &amp; Thonnard 1980. NGC 3198's classic analysis: van Albada et al. 1985.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="pl-foot"><a href="/">← SpaceSift home</a><span>Data: <a href="https://astroweb.cwru.edu/SPARC/">SPARC</a> · engine: <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift/blob/main/darkmatter/dm.js">darkmatter/dm.js</a></span></footer>
+
+<script src="/shared/nav.js"></script>
+<script type="module">
+import * as D from "/darkmatter/dm.js";
+
+const C = { ink: "#eef2fc", body: "#c9d0e4", dim: "#a3abc4", line: "rgba(140,160,220,.16)", acc: "#7aa2ff", hi: "#4ade80", warn: "#fbbf24", vis: "#fb923c", halo: "#b79cff", gas: "#5eead4", star: "#fde68a", data: "#c9d0e4" };
+const $ = (id) => document.getElementById(id);
+const layout = (extra = {}) => ({
+  paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { family: "IBM Plex Sans, sans-serif", color: C.dim, size: 12 },
+  margin: { l: 52, r: 14, t: 8, b: 42 }, showlegend: false,
+  xaxis: { gridcolor: C.line, zerolinecolor: C.line, ...(extra.xaxis || {}) }, yaxis: { gridcolor: C.line, zerolinecolor: C.line, ...(extra.yaxis || {}) },
+  ...Object.fromEntries(Object.entries(extra).filter(([k]) => k !== "xaxis" && k !== "yaxis")),
+});
+const cfg = { displayModeBar: false, responsive: true };
+const plot = (id, traces, lay) => Plotly.react(id, traces, layout(lay), cfg);
+const fmtM = (m) => { const e = Math.floor(Math.log10(m)); return `${(m / 10 ** e).toFixed(1)}×10<sup>${e}</sup> M☉`; };
+
+const PRESETS = [
+  { name: "NGC3198", n: "CLASSIC", t: "NGC 3198", d: "The textbook flat rotation curve. A spiral 45 million light-years away." },
+  { name: "DDO154", n: "DWARF", t: "DDO 154", d: "A faint, gas-rich dwarf galaxy. Almost all of it is unseen." },
+  { name: "UGC02885", n: "GIANT", t: "UGC 2885", d: "One of the largest spiral galaxies known, spinning at 300 km/s." },
+  { name: "NGC2403", n: "NEARBY", t: "NGC 2403", d: "A nearby spiral with a long, precise rotation curve." },
+];
+
+let data, gal, yd = D.Y_DISK, guess = null, surveyCache = null;
+const obsTrace = (g) => ({ x: g.rows.map((r) => r[0]), y: g.rows.map((r) => r[1]), mode: "markers", marker: { color: C.data, size: 6 },
+  error_y: { type: "data", array: g.rows.map((r) => r[2]), color: "rgba(201,208,228,.5)", thickness: 1, width: 0 }, hovertemplate: "%{x:.1f} kpc: %{y:.0f} km/s<extra>measured</extra>" });
+const rotAxes = (g) => ({ xaxis: { title: { text: "distance from centre (kpc)" }, rangemode: "tozero" },
+  yaxis: { title: { text: "orbital speed (km/s)" }, range: [0, 1.25 * Math.max(...g.rows.map((r) => r[1] + r[2]))] } });
+
+function pick(name) {
+  gal = data.galaxies.find((g) => g.name === name);
+  $("gal").value = name; guess = null; yd = D.Y_DISK;
+  $("ups").value = Math.log10(yd);
+  document.querySelectorAll("#presets button").forEach((b) => b.classList.toggle("done", b.dataset.k === name));
+  document.querySelectorAll("#guess button").forEach((b) => b.classList.remove("on"));
+  $("reveal-out").hidden = true;
+  const ly = (gal.D * 3.2616).toFixed(0);
+  $("gal-label").textContent = `Rotation curve · ${gal.name}`;
+  $("facts").innerHTML = `<span>Distance <b>${gal.D} Mpc</b> (${ly} million light-years)</span><span>Measured out to <b>${gal.rows.at(-1)[0]} kpc</b></span><span>Points <b>${gal.rows.length}</b></span>` +
+    (D.quality(gal) ? "" : `<span style="color:var(--ss-warn)">Below the quality cut (flag ${gal.Q}, inclination ${gal.inc}°): treat with care</span>`);
+  plot("chart-obs", [obsTrace(gal)], rotAxes(gal));
+  drawVisible();
+  window.ssJourney(1);
+}
+
+function drawVisible() {
+  const g = gal, R = g.rows.map((r) => r[0]);
+  const gas = g.rows.map((r) => Math.sign(r[3]) * Math.abs(r[3]));
+  const stars = g.rows.map((r) => Math.sqrt(Math.max(0, yd * r[4] * Math.abs(r[4]) + 1.4 * yd * r[5] * Math.abs(r[5]))));
+  const vis = g.rows.map((r) => D.vbar(r, yd));
+  let chi = 0; g.rows.forEach((r, i) => chi += ((r[1] - vis[i]) / r[2]) ** 2);
+  const rchi = chi / Math.max(1, g.rows.length - 1), last = g.rows.at(-1);
+  $("ups-out").textContent = yd.toFixed(2);
+  $("vis-chi").textContent = `reduced χ² ${rchi < 100 ? rchi.toFixed(1) : rchi.toFixed(0)}`;
+  $("ups-hint").innerHTML = `At the last point (${last[0]} kpc), visible matter predicts <b>${D.vbar(last, yd).toFixed(0)} km/s</b>; the measured speed is <b>${last[1].toFixed(0)} km/s</b>.` +
+    (yd > D.Y_MAX_PLAUSIBLE ? ` <span style="color:var(--ss-warn)">Υ above 1 is more mass per unit light than any normal stellar population at 3.6 μm.</span>` : "");
+  plot("chart-vis", [
+    obsTrace(g),
+    { x: R, y: gas, mode: "lines", line: { color: C.gas, dash: "dot", width: 1.5 }, hovertemplate: "%{y:.0f} km/s<extra>gas</extra>" },
+    { x: R, y: stars, mode: "lines", line: { color: C.star, dash: "dot", width: 1.5 }, hovertemplate: "%{y:.0f} km/s<extra>stars</extra>" },
+    { x: R, y: vis, mode: "lines", line: { color: C.vis, width: 2.2 }, hovertemplate: "%{y:.0f} km/s<extra>all visible</extra>" },
+  ], { ...rotAxes(g), showlegend: true, legend: { orientation: "h", y: 1.12, font: { color: C.body } },
+       annotations: [] });
+  // name the traces for the legend
+  const el = $("chart-vis"); ["measured", "gas", "stars", "all visible matter"].forEach((n, i) => { el.data[i].name = n; }); Plotly.redraw(el);
+}
+
+function reveal() {
+  const vis = D.fitVisible(gal), halo = D.fitHalo(gal), b = D.budget(gal), R = gal.rows.map((r) => r[0]);
+  const real = halo.rchi2 < vis.rchi2 / 2;
+  const right = guess ? ((guess === "missing") === real) : null;
+  const verdict = real ? ["good", "Visible matter isn't enough"] : ["warn", "Visible matter does about as well here"];
+  $("verdict").className = "verdict " + verdict[0];
+  $("verdict").innerHTML = `<b>${verdict[1]}</b>
+    <p>Visible matter alone, at its best-fitting Υ = <b>${vis.yd.toFixed(2)}</b>${vis.yd > D.Y_MAX_PLAUSIBLE ? " (implausibly high)" : ""}: reduced χ² <b>${vis.rchi2.toFixed(1)}</b>.
+       With a dark halo (ρ₀ = ${halo.rho0.toExponential(1)} M☉/kpc³, core ${halo.rc.toFixed(1)} kpc): reduced χ² <b>${halo.rchi2.toFixed(1)}</b>.</p>` +
+    (right === null ? "" : `<p class="you">Your prediction: <b>${guess === "missing" ? "something unseen" : "visible matter is enough"}</b>, ${right ? "consistent with the fits." : "not what the fits say."}</p>`);
+  const vh = gal.rows.map((r) => Math.sqrt(D.vhalo2(r[0], halo.rho0, halo.rc)));
+  plot("chart-fit", [
+    obsTrace(gal),
+    { x: R, y: gal.rows.map((r) => D.vbar(r, vis.yd)), mode: "lines", line: { color: C.vis, width: 2 }, hovertemplate: "%{y:.0f} km/s<extra>visible only</extra>" },
+    { x: R, y: gal.rows.map((r) => D.vtot(r, D.Y_DISK, halo.rho0, halo.rc)), mode: "lines", line: { color: C.acc, width: 2.2 }, hovertemplate: "%{y:.0f} km/s<extra>visible + halo</extra>" },
+    { x: R, y: vh, mode: "lines", line: { color: C.halo, dash: "dash", width: 1.5 }, hovertemplate: "%{y:.0f} km/s<extra>halo alone</extra>" },
+  ], rotAxes(gal));
+  const mx = b.total;
+  $("budget-head").textContent = `Mass budget inside ${b.r} kpc`;
+  $("budget").innerHTML =
+    `<span>Visible</span><span class="bar"><i style="width:${(100 * b.visible / mx).toFixed(1)}%;background:${C.vis}"></i></span><b>${fmtM(b.visible)}</b>` +
+    `<span>Total</span><span class="bar"><i style="width:100%;background:${C.acc}"></i></span><b>${fmtM(b.total)}</b>` +
+    `<span>Unseen</span><span></span><b>${(100 * Math.max(0, b.darkFrac)).toFixed(0)}%</b>`;
+  $("reveal-out").hidden = false;
+  window.ssJourney(3);
+}
+
+async function runMany() {
+  const btn = $("run-many"); btn.disabled = true; $("prog").innerHTML = '<span class="ss-spinner"></span> fitting…';
+  await new Promise((r) => setTimeout(r, 30));
+  const s = surveyCache ||= D.survey(data.galaxies);
+  $("prog").textContent = ""; btn.disabled = false;
+  const n = s.length, visBad = s.filter((x) => x.vis.rchi2 > 5), haloBad = s.filter((x) => x.halo.rchi2 > 5);
+  const highY = s.filter((x) => x.vis.yd > D.Y_MAX_PLAUSIBLE).length, haloBetter = s.filter((x) => x.halo.rchi2 < x.vis.rchi2).length;
+  const ratios = s.map((x) => x.budget.ratio), pct = (k) => `${Math.round(100 * k / n)}%`;
+  $("err-plain").innerHTML = `<h4>WHAT 153 GALAXIES SHOW</h4>
+    <p><b>Mass is missing almost everywhere.</b> In the median galaxy, the mass inside the last measured point is <b>${D.quantile(ratios, 0.5).toFixed(1)} times</b> the visible mass. ${pct(ratios.filter((r) => r > 2).length)} need at least twice as much.</p>
+    <p><b>Even with the stars' mass dialled up, visible matter fails.</b> Visible matter alone fits poorly (reduced χ² above 5) in ${visBad.length} of ${n} galaxies (${pct(visBad.length)}). To get its best fit it needs Υ above 1 in ${highY} (${pct(highY)}), more than stars can supply.</p>
+    <p><b>A dark halo fits better in ${haloBetter} of ${n}</b>, but it isn't perfect: it still fits poorly in ${haloBad.length} (${pct(haloBad.length)}).</p>`;
+
+  plot("chart-ratio", [{ x: ratios.map((r) => Math.log10(r)), type: "histogram", xbins: { size: 0.1 }, marker: { color: C.acc, line: { color: C.ink, width: 0.3 } }, hovertemplate: "%{y} galaxies<extra></extra>" }],
+    { xaxis: { title: { text: "total ÷ visible mass" }, tickvals: [0, 0.301, 0.699, 1, 1.301, 1.699], ticktext: ["1", "2", "5", "10", "20", "50"] }, yaxis: { title: { text: "galaxies" } },
+      shapes: [{ type: "line", x0: 0, x1: 0, yref: "paper", y0: 0, y1: 1, line: { color: C.warn, dash: "dash", width: 1 } }] });
+
+  const lv = s.map((x) => Math.log10(x.vis.rchi2)), lh = s.map((x) => Math.log10(x.halo.rchi2));
+  const lo = Math.min(...lh, ...lv) - 0.2, hi = Math.max(...lh, ...lv) + 0.2;
+  plot("chart-chi", [
+    { x: lh, y: lv, text: s.map((x) => x.name), mode: "markers", marker: { color: s.map((x) => x.halo.rchi2 < x.vis.rchi2 ? C.acc : C.vis), size: 6, opacity: 0.8 }, hovertemplate: "%{text}<extra></extra>" },
+    { x: [lo, hi], y: [lo, hi], mode: "lines", line: { color: C.dim, width: 1 }, hoverinfo: "skip" },
+  ], { xaxis: { title: { text: "reduced χ², visible + halo" }, tickvals: [-1, 0, 1, 2, 3], ticktext: ["0.1", "1", "10", "100", "1000"], range: [lo, hi] },
+       yaxis: { title: { text: "reduced χ², visible only" }, tickvals: [-1, 0, 1, 2, 3], ticktext: ["0.1", "1", "10", "100", "1000"], range: [lo, hi] },
+       shapes: [{ type: "line", x0: Math.log10(5), x1: Math.log10(5), y0: lo, y1: hi, line: { color: C.warn, dash: "dash", width: 1 } },
+                { type: "line", y0: Math.log10(5), y1: Math.log10(5), x0: lo, x1: hi, line: { color: C.warn, dash: "dash", width: 1 } }] });
+
+  const pts = data.galaxies.filter(D.quality).flatMap((g) => D.rar(g));
+  const gx = Array.from({ length: 60 }, (_, i) => 10 ** (-12.5 + i * 4 / 59));
+  plot("chart-rar", [
+    { x: pts.map((p) => p.gbar), y: pts.map((p) => p.gobs), mode: "markers", type: "scattergl", marker: { color: C.acc, size: 3, opacity: 0.35 }, hoverinfo: "skip" },
+    { x: gx, y: gx, mode: "lines", line: { color: C.dim, dash: "dot", width: 1.2 }, hoverinfo: "skip" },
+    { x: gx, y: gx.map(D.rarFit), mode: "lines", line: { color: C.halo, width: 2 }, hoverinfo: "skip" },
+  ], { xaxis: { type: "log", title: { text: "acceleration from visible matter (m/s²)" }, range: [-12.5, -8.5], exponentformat: "power" },
+       yaxis: { type: "log", title: { text: "measured acceleration (m/s²)" }, range: [-12, -8.5], exponentformat: "power" } });
+  $("chart-rar").previousElementSibling.firstElementChild.textContent = `The pattern behind it: ${pts.length.toLocaleString()} points, one relation`;
+
+  const worst = [...s].sort((a, b) => b.halo.rchi2 - a.halo.rchi2).slice(0, 6);
+  $("worst-txt").innerHTML = `These galaxies fit worst even with a dark halo. Inspect them: look for wiggles from spiral arms or bars, a steep inner rise, or a halo shape the cored profile can't follow. A model that never fails would be suspicious.`;
+  $("worst").innerHTML = worst.map((w) => `<button data-n="${w.name}">${w.name}<span>χ² ${w.halo.rchi2.toFixed(0)}</span></button>`).join("");
+  $("worst").querySelectorAll("button").forEach((b) => b.onclick = () => { pick(b.dataset.n); $("inspect").scrollIntoView({ behavior: "smooth" }); });
+  $("errors-out").hidden = false; btn.textContent = "Fitted";
+  window.ssJourney(4);
+}
+
+data = await (await fetch("/darkmatter/data/sparc.json")).json();
+const names = data.galaxies.map((g) => g.name);
+$("gal").innerHTML = names.map((n) => `<option value="${n}">${n}${D.quality(data.galaxies.find((g) => g.name === n)) ? "" : " (low quality)"}</option>`).join("");
+$("gal").onchange = () => pick($("gal").value);
+$("presets").innerHTML = PRESETS.map((p, i) => `<button class="ss-start${i === 0 ? " primary" : ""}" data-k="${p.name}"><span class="n">${p.n}</span><b>${p.t}</b><span class="d">${p.d}</span><span class="go">Load it →</span></button>`).join("");
+$("presets").querySelectorAll("button").forEach((b) => b.onclick = () => pick(b.dataset.k));
+$("ups").oninput = () => { yd = 10 ** +$("ups").value; drawVisible(); window.ssJourney(2); };
+document.querySelectorAll("#guess button").forEach((b) => b.onclick = () => { guess = b.dataset.g; document.querySelectorAll("#guess button").forEach((x) => x.classList.toggle("on", x === b)); window.ssJourney(2); });
+$("run").onclick = reveal;
+$("run-many").onclick = runMany;
+pick("NGC3198");
+</script>
+</body>
+</html>
