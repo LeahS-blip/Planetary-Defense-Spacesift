@@ -13,6 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly.min.js"></script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to the lab</a>
 <div id="ss-nav" data-active="gw"></div>
 <header class="ss-head">
   <div class="ss-kicker">PHYSICS LAB · GRAVITATIONAL WAVES</div>
@@ -27,7 +28,7 @@
   <a href="#errors" data-s="4"><i>4</i><b>Investigate the errors</b><span>600 searches with known answers</span></a>
 </nav>
 
-<main>
+<main id="main" tabindex="-1">
   <!-- 1 ------------------------------------------------------------------ -->
   <section class="step" id="inspect">
     <div class="step-n">STEP 1 · INSPECT THE DATA</div>
@@ -40,23 +41,48 @@
       <div id="chart-data" class="chart"></div>
       <p class="cap">Strain is how much the detector's arms stretch, divided by their length. The data are <b>whitened</b>: rescaled so noise at every frequency has the same strength, which is how LIGO's searches see it. One unit on this axis is the typical noise level.</p>
     </div>
-    <div class="ss-plain"><h4>WHAT TO LOOK FOR</h4><p>A merger is a <b>chirp</b>: a wave that rises in both pitch and loudness over a second or two, then stops when the black holes merge. Only the loudest chirps are visible by eye. Try smoothing the data. Can you see anything?</p></div>
+    <div class="tool" id="listen" role="group" aria-labelledby="listen-h">
+      <h3 id="listen-h">Listen to it</h3>
+      <p>Gravitational waves from black holes fall in the range of human hearing. Pitches here are raised 4×, so they land where small speakers can play them (the data also play 4× faster). A merger sounds like a rising <b>whoop</b>. Smoothing, if it's on, takes out the hiss.</p>
+      <div class="row">
+        <button type="button" id="play-data" aria-pressed="false">▶ Play the data</button>
+        <button type="button" id="play-tpl" aria-pressed="false">▶ Play a 30 M☉ chirp</button>
+        <span class="note" id="sound-note"></span>
+      </div>
+    </div>
+    <div class="tool" id="make" role="group" aria-labelledby="make-h">
+      <h3 id="make-h">Hide your own merger</h3>
+      <p>Choose how heavy and how loud, then try to find it. Set loudness to 0 for pure noise.</p>
+      <div class="slider-row">
+        <label for="inj-mc">Chirp mass</label>
+        <input type="range" id="inj-mc" min="15" max="60" step="1" value="35">
+        <output id="inj-mc-out" for="inj-mc">35 M<sub>☉</sub></output>
+      </div>
+      <div class="slider-row">
+        <label for="inj-snr">Loudness (SNR)</label>
+        <input type="range" id="inj-snr" min="0" max="25" step="0.5" value="8">
+        <output id="inj-snr-out" for="inj-snr">8</output>
+      </div>
+      <div class="row"><button type="button" id="inj-go">Hide it in new noise</button><span class="note" id="inj-note">SNR 8 is about as quiet as LIGO will claim a detection.</span></div>
+    </div>
+    <div class="ss-plain"><h4>WHAT TO LOOK FOR</h4><p>A merger is a <b>chirp</b>: a wave that rises in both pitch and loudness over a second or two, then stops when the black holes merge. Only the loudest chirps are visible by eye. Try smoothing the data, or listen. Can you find anything?</p></div>
   </section>
 
   <!-- 2 ------------------------------------------------------------------ -->
   <section class="step" id="predict">
     <div class="step-n">STEP 2 · MAKE A PREDICTION</div>
     <h2>Is there a merger in this stretch?</h2>
-    <div class="choice" id="guess">
-      <button data-g="yes">Yes, two black holes merged</button>
-      <button data-g="no">No, it's just noise</button>
+    <div class="choice" id="guess" role="group" aria-label="Your prediction">
+      <button type="button" data-g="yes" aria-pressed="false">Yes, two black holes merged</button>
+      <button type="button" data-g="no" aria-pressed="false">No, it's just noise</button>
     </div>
     <p class="lede">Now try what the search does: slide a <b>template</b>, a predicted chirp for one chirp mass, along the data. Where it lines up with a hidden signal, the match score (signal-to-noise ratio, SNR) jumps.</p>
     <div class="slider-row">
       <label for="mc">Template chirp mass</label>
-      <input type="range" id="mc" min="15" max="60" step="0.5" value="30">
-      <output id="mc-out">30 M<sub>☉</sub></output>
+      <input type="range" id="mc" min="15" max="60" step="0.5" value="30" aria-describedby="mc-hint">
+      <output id="mc-out" for="mc">30 M<sub>☉</sub></output>
     </div>
+    <p class="keys">Keyboard: <kbd>←</kbd> <kbd>→</kbd> step by 0.5 M☉, <kbd>Page Up</kbd> <kbd>Page Down</kbd> jump further. The score is read out when you stop.</p>
     <p class="hint" id="mc-hint"></p>
     <div class="two">
       <div class="chart-card"><div class="chart-head"><span>Your template</span></div><div id="chart-tpl" class="chart small"></div></div>
@@ -78,7 +104,10 @@
         <div class="chart-card"><div class="chart-head"><span>Best template's match score over time</span></div><div id="chart-bestsnr" class="chart small"></div></div>
       </div>
       <div class="chart-card"><div class="chart-head"><span>Data with the best-fitting chirp, and the truth</span></div><div id="chart-fit" class="chart"></div>
-        <p class="cap">Grey: the data, smoothed. Blue: the template the search picked, scaled to fit. Green: the signal that was actually hidden (shown only after the search).</p></div>
+        <p class="cap">Grey: the data, smoothed. Blue: the template the search picked, scaled to fit. Green dashed: the signal that was actually hidden (shown only after the search).</p></div>
+      <div class="tool" role="group" aria-label="Listen to the result">
+        <div class="row"><button type="button" id="play-fit" aria-pressed="false">▶ Play the chirp the search found</button><button type="button" id="play-truth" aria-pressed="false">▶ Play what was really hidden</button></div>
+      </div>
     </div>
   </section>
 
@@ -132,6 +161,7 @@
 <script src="/shared/nav.js"></script>
 <script type="module">
 import * as G from "/gw/gw.js";
+import { describe, table, announce, pressed } from "/shared/physlab.js";
 
 const THRESHOLD = 5.4; // 99th percentile of the loudest noise-only trigger, 2,000 stretches (gw/test/calibrate.mjs)
 const C = { ink: "#eef2fc", body: "#c9d0e4", dim: "#a3abc4", line: "rgba(140,160,220,.16)", acc: "#7aa2ff", hi: "#4ade80", warn: "#fbbf24", bad: "#f87171", data: "#5b6275" };
@@ -156,9 +186,55 @@ const PRESETS = [
   { key: "faint", n: "FAINT", t: "Right at the edge", d: "SNR 5.5. Sometimes found, sometimes not.", mc: 45, snr: 5.5, seed: 7 },
   { key: "mystery", n: "MYSTERY", t: "Mystery stretch", d: "Might hold a merger, might be pure noise. You decide.", mystery: true },
 ];
-let current = null, guess = null;
+let current = null, guess = null, lastBest = null;
+const f1 = (x) => x.toFixed(1), f2 = (x) => x.toFixed(2);
+
+// Sound: the data are sampled at 1,024 Hz; played back at 4,096 Hz they run 4x faster and 4x higher,
+// which moves a 30-150 Hz chirp up to 120-600 Hz where laptop and phone speakers work.
+const SPEED = 4;
+let actx = null, playing = null;
+function stopSound() {
+  if (!playing) return;
+  try { playing.src.stop(); } catch {}
+  pressed([playing.btn], null);
+  playing = null;
+}
+// A single chirp, synthesised at audio rate from the same frequency law as the templates: real duration,
+// pitch raised 4x. (Played from the 1,024 Hz samples at 4x speed it would last a tenth of a second.)
+const AUDIO_RATE = 22050;
+function chirpSound(mc) {
+  const tau0 = G.tauOfF(G.F_LOW, mc), tauEnd = G.tauOfF(G.fIsco(mc), mc), n = Math.floor((tau0 - tauEnd) * AUDIO_RATE);
+  const out = new Float32Array(n + Math.floor(0.15 * AUDIO_RATE)); // a little silence after the merger
+  let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const f = G.fOfTau(tau0 - i / AUDIO_RATE, mc);
+    ph += 2 * Math.PI * f * SPEED / AUDIO_RATE;
+    out[i] = Math.pow(f, 2 / 3) * Math.sin(ph);
+  }
+  return { samples: out, rate: AUDIO_RATE };
+}
+function play(sound, btn) {
+  const again = playing && playing.btn === btn;
+  stopSound();
+  if (again) return; // second press stops
+  actx ||= new (window.AudioContext || window.webkitAudioContext)();
+  actx.resume?.();
+  const { samples, rate = G.FS * SPEED } = sound.samples ? sound : { samples: sound };
+  const n = samples.length, buf = actx.createBuffer(1, n, rate), ch = buf.getChannelData(0);
+  let peak = 1e-9; for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(samples[i]));
+  const fade = Math.min(200, n / 4);
+  for (let i = 0; i < n; i++) ch[i] = 0.8 * (samples[i] / peak) * Math.min(1, i / fade, (n - 1 - i) / fade);
+  const src = actx.createBufferSource(), gain = actx.createGain();
+  gain.gain.value = 0.35; src.buffer = buf; src.connect(gain).connect(actx.destination);
+  src.onended = () => { if (playing?.src === src) stopSound(); };
+  src.start(); playing = { src, btn };
+  pressed([btn], btn);
+  $("sound-note").textContent = `Playing ${(n / rate).toFixed(1)} s. Press again to stop.`;
+}
+const dataForEars = () => $("smooth-toggle").checked ? G.smooth(current.data, 9) : current.data;
 
 function makeData(p) {
+  if (p.custom) { const seed = (Math.random() * 1e9) | 0; return { ...G.simulate({ seed, mc: p.snr > 0 ? p.mc : null, snr: p.snr }), preset: p }; }
   if (!p.mystery) return { ...G.simulate({ seed: p.seed, mc: p.mc, snr: p.snr }), preset: p };
   const seed = (Math.random() * 1e9) | 0, r = G.rng(seed);
   const hasSignal = r() < 0.5;
@@ -167,24 +243,29 @@ function makeData(p) {
 
 function renderPresets() {
   $("presets").innerHTML = PRESETS.map((p, i) =>
-    `<button class="ss-start${i === 0 ? " primary" : ""}" data-k="${p.key}"><span class="n">${p.n}</span><b>${p.t}</b><span class="d">${p.d}</span><span class="go">Load it →</span></button>`).join("");
+    `<button type="button" class="ss-start${i === 0 ? " primary" : ""}" data-k="${p.key}" aria-pressed="false"><span class="n">${p.n}</span><b>${p.t}</b><span class="d">${p.d}</span><span class="go" aria-hidden="true">Load it →</span></button>`).join("");
   $("presets").querySelectorAll("button").forEach((b) => b.onclick = () => load(PRESETS.find((p) => p.key === b.dataset.k), b));
 }
 
 function load(p, btn) {
-  current = makeData(p); guess = null;
-  document.querySelectorAll("#presets button").forEach((b) => b.classList.toggle("done", b === btn));
-  document.querySelectorAll("#guess button").forEach((b) => b.classList.remove("on"));
+  stopSound();
+  current = makeData(p); guess = null; lastBest = null;
+  document.querySelectorAll("#presets button").forEach((b) => { b.classList.toggle("done", b === btn); b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+  pressed(document.querySelectorAll("#guess button"), null);
   $("reveal-out").hidden = true;
   $("data-label").textContent = "Detector strain (whitened) · " + p.t;
   drawData(); updateTemplate();
   window.ssJourney(1);
+  return p.t;
 }
 
 function drawData() {
   const sm = $("smooth-toggle").checked, y = sm ? G.smooth(current.data, 9) : current.data;
-  plot("chart-data", [{ x: time, y: Array.from(y), mode: "lines", line: { color: sm ? C.body : C.data, width: 1 }, hoverinfo: "skip" }],
+  plot("chart-data", [{ x: time, y: Array.from(y), mode: "lines", line: { color: sm ? C.body : C.data, width: 1 }, hovertemplate: "%{x:.3f} s: %{y:.2f}<extra></extra>" }],
     { xaxis: { title: { text: "time (s)" } }, yaxis: { title: { text: "strain (noise units)" }, range: sm ? [-2.5, 2.5] : [-5, 5] } });
+  let m = 0, at = 0; for (let i = 0; i < y.length; i++) if (Math.abs(y[i]) > m) { m = Math.abs(y[i]); at = i; }
+  describe("chart-data", "Detector strain over four seconds",
+    `${G.N.toLocaleString()} measurements over 4 seconds${sm ? ", smoothed" : ""}. It looks like random noise; the biggest swing is ${f1(m)} noise units at ${f2(at / G.FS)} s. Listening is another way to search it.`);
 }
 
 // Step 2: one template, slid along the data.
@@ -192,7 +273,10 @@ let tplTimer = 0;
 function updateTemplate() {
   const mc = +$("mc").value;
   $("mc-out").innerHTML = mc.toFixed(1) + " M<sub>☉</sub>";
+  $("mc").setAttribute("aria-valuetext", `${f1(mc)} solar masses`);
+  $("play-tpl").textContent = `▶ Play a ${f1(mc)} M☉ chirp`;
   const h = G.chirp(mc);
+  describe("chart-tpl", "Template chirp", `A wave ${f2(h.duration)} s long that speeds up from 25 Hz to ${h.fEnd.toFixed(0)} Hz and grows louder, then stops.`);
   $("mc-hint").textContent = `This chirp lasts ${h.duration.toFixed(2)} s from 25 Hz and ends at ${h.fEnd.toFixed(0)} Hz, when the black holes reach their last stable orbit (total mass ${G.totalMass(mc).toFixed(0)} M☉).`;
   plot("chart-tpl", [{ x: Array.from({ length: h.len }, (_, i) => i / G.FS), y: Array.from(h.c), mode: "lines", line: { color: C.acc, width: 1.2 }, hoverinfo: "skip" }],
     { xaxis: { title: { text: "time from 25 Hz (s)" } }, yaxis: { showticklabels: false } });
@@ -208,14 +292,20 @@ function updateTemplate() {
       { x: tx, y: Array.from(rho), mode: "lines", line: { color: C.acc, width: 1.2 }, hovertemplate: "merger at %{x:.2f} s<br>SNR %{y:.1f}<extra></extra>" },
       { x: [0, 4], y: [THRESHOLD, THRESHOLD], mode: "lines", line: { color: C.warn, dash: "dash", width: 1 }, hoverinfo: "skip" },
     ], { xaxis: { title: { text: "merger time if this were a signal (s)" }, range: [0, 4] }, yaxis: { title: { text: "SNR" }, rangemode: "tozero" } });
+    const above = m > THRESHOLD;
+    describe("chart-tplsnr", "Match score along the data", `Highest match ${f1(m)} at a merger time of ${f2((at + h.len) / G.FS)} s, ${above ? "above" : "below"} the detection threshold of ${THRESHOLD}.`);
     if (guess) window.ssJourney(2);
+    clearTimeout(sayTimer);
+    sayTimer = setTimeout(() => { if (document.activeElement === $("mc")) announce(`${f1(mc)} solar masses: peak match ${f1(m)}, ${above ? "above" : "below"} threshold.`); }, 700);
   }, 60);
 }
+let sayTimer = 0;
 
 // Step 3: the full search.
 function runSearch() {
   if (!current) return;
   const { best, peaks } = G.search(current.data, getTemplates());
+  lastBest = best;
   const det = best.snr > THRESHOLD, truth = current.truth;
   const real = !!truth;
   const right = guess ? ((guess === "yes") === real) : null;
@@ -232,8 +322,11 @@ function runSearch() {
     { x: [15, 60], y: [THRESHOLD, THRESHOLD], mode: "lines", line: { color: C.warn, dash: "dash", width: 1 }, hoverinfo: "skip" },
     ...(real ? [{ x: [truth.mc, truth.mc], y: [0, Math.max(...peaks.map((p) => p.snr)) * 1.05], mode: "lines", line: { color: C.hi, width: 1.5 }, hoverinfo: "skip" }] : []),
   ], { xaxis: { title: { text: "template chirp mass (M☉)" } }, yaxis: { title: { text: "loudest SNR" }, rangemode: "tozero" } });
+  describe("chart-bank", "Loudest match for each template", `The best template is ${f1(best.mc)} solar masses with a match of ${f1(best.snr)}.${real ? ` The true chirp mass, ${f1(truth.mc)}, is marked in green.` : ""}`);
+  table("chart-bank", "Loudest match for each of the 48 templates", ["chirp mass (M☉)", "loudest SNR"], peaks.map((p) => [f1(p.mc), f2(p.snr)]));
 
   const rho = G.filter(G.dataSpectrum(current.data), best.tpl);
+  describe("chart-bestsnr", "Best template's match over time", `One sharp peak of ${f1(best.snr)} at ${f2(best.merger)} s; elsewhere the score wanders at the noise level, around 1 to 3.`);
   plot("chart-bestsnr", [
     { x: Array.from({ length: rho.length }, (_, i) => (i + best.tpl.len) / G.FS), y: Array.from(rho), mode: "lines", line: { color: C.acc, width: 1.2 }, hoverinfo: "skip" },
     { x: [0, 4], y: [THRESHOLD, THRESHOLD], mode: "lines", line: { color: C.warn, dash: "dash", width: 1 }, hoverinfo: "skip" },
@@ -241,13 +334,20 @@ function runSearch() {
 
   const fit = G.bestFitWave(current.data, best.mc, best.start);
   const traces = [
-    { x: time, y: Array.from(G.smooth(current.data, 9)), mode: "lines", line: { color: C.data, width: 1 }, hoverinfo: "skip" },
-    { x: time, y: Array.from(fit), mode: "lines", line: { color: C.acc, width: 1.4 }, hoverinfo: "skip" },
+    { x: time, y: Array.from(G.smooth(current.data, 9)), name: "data, smoothed", mode: "lines", line: { color: C.data, width: 1 }, hoverinfo: "skip" },
+    { x: time, y: Array.from(fit), name: "best template", mode: "lines", line: { color: C.acc, width: 1.4 }, hoverinfo: "skip" },
   ];
-  if (real) { const w = new Float64Array(G.N); for (let i = 0; i < truth.wave.length && truth.start + i < G.N; i++) w[truth.start + i] = truth.amp * truth.wave[i]; traces.push({ x: time, y: Array.from(w), mode: "lines", line: { color: C.hi, width: 1.2 }, opacity: 0.8, hoverinfo: "skip" }); }
+  if (real) { const w = new Float64Array(G.N); for (let i = 0; i < truth.wave.length && truth.start + i < G.N; i++) w[truth.start + i] = truth.amp * truth.wave[i]; traces.push({ x: time, y: Array.from(w), name: "what was hidden", mode: "lines", line: { color: C.hi, width: 1.4, dash: "dash" }, hoverinfo: "skip" }); }
   const zoom = real ? [Math.max(0, truth.start / G.FS - 0.2), Math.min(4, truth.merger + 0.2)] : [Math.max(0, best.start / G.FS - 0.2), Math.min(4, best.merger + 0.2)];
-  plot("chart-fit", traces, { xaxis: { title: { text: "time (s)" }, range: zoom }, yaxis: { title: { text: "strain (noise units)" } } });
+  plot("chart-fit", traces, { xaxis: { title: { text: "time (s)" }, range: zoom }, yaxis: { title: { text: "strain (noise units)" } },
+    showlegend: true, legend: { orientation: "h", y: 1.14, font: { color: C.body } } });
+  describe("chart-fit", "Data with the best-fitting chirp", real
+    ? `The template the search picked ${Math.abs(best.merger - truth.merger) < 0.1 ? "lines up with" : "does not line up with"} the hidden signal, which merges at ${f2(truth.merger)} s.`
+    : `Nothing was hidden here, so the template is fitting a random wiggle in the noise.`);
+  $("play-truth").disabled = !real;
+  $("play-truth").textContent = real ? "▶ Play what was really hidden" : "Nothing was hidden here";
   $("reveal-out").hidden = false;
+  announce(`${kind[1]}. ${kind[2]}`);
   window.ssJourney(3);
 }
 
@@ -266,8 +366,9 @@ async function runMany() {
     const { best } = G.search(sim.data, tpls);
     out.push({ snr: j.snr || 0, mc, found: best.snr, foundMc: best.mc, merger: best.merger, trueMerger: sim.truth?.merger });
     if (i % 10 === 9) { $("prog").textContent = `${i + 1} / ${jobs.length}`; await new Promise((res) => setTimeout(res)); }
+    if (i % 150 === 149 && i < jobs.length - 1) announce(`${i + 1} of ${jobs.length} searches done`);
   }
-  $("prog").textContent = "done"; btn.disabled = false; btn.textContent = "Run again";
+  $("prog").textContent = "Done: 600 searches"; btn.disabled = false; btn.textContent = "Run again";
   showErrors(out, SNRS);
 }
 
@@ -304,7 +405,13 @@ function showErrors(out, SNRS) {
   plot("chart-mc", [
     { x: det.map((o) => o.snr + (Math.random() - 0.5) * 0.5), y: err, mode: "markers", marker: { color: C.acc, size: 5, opacity: 0.6 }, hovertemplate: "SNR %{x:.0f}: off by %{y:.1f} M☉<extra></extra>" },
   ], { xaxis: { title: { text: "SNR of the hidden merger" } }, yaxis: { title: { text: "recovered − true chirp mass (M☉)" }, zeroline: true, zerolinecolor: C.dim } });
+
+  describe("chart-eff", "Fraction of hidden mergers found", eff.map((e) => `SNR ${e.snr}: ${Math.round(100 * e.p)}%`).join(", ") + ".");
+  table("chart-eff", "Hidden mergers found at each loudness", ["SNR", "found", "of", "fraction", "95% interval"], eff.map((e) => [e.snr, e.k, e.n, `${Math.round(100 * e.p)}%`, `${Math.round(100 * e.ci[0])}–${Math.round(100 * e.ci[1])}%`]));
+  describe("chart-null", "Loudest match in pure noise", `Pure noise usually peaks between ${f1(G.quantile(noise, 0.1))} and ${f1(G.quantile(noise, 0.9))}. ${fa} of ${noise.length} stretches crossed the threshold of ${THRESHOLD}.`);
+  describe("chart-mc", "Chirp-mass error for detected mergers", `Errors are widest for faint signals and shrink as the signal gets louder. Median error ${(100 * bySnr(0, 7)).toFixed(0)}% below SNR 7 and ${(100 * bySnr(7, 99)).toFixed(0)}% above.`);
   $("errors-out").hidden = false;
+  announce(`600 searches finished. ${fa} false alarms in ${noise.length} noise-only stretches. ${half ? `At least half the mergers found from SNR ${half.snr}.` : ""}`);
   window.ssJourney(4);
 }
 
@@ -312,8 +419,30 @@ $("thr-txt").textContent = THRESHOLD;
 $("smooth-toggle").onchange = drawData;
 $("mc").oninput = updateTemplate;
 document.querySelectorAll("#guess button").forEach((b) => b.onclick = () => {
-  guess = b.dataset.g; document.querySelectorAll("#guess button").forEach((x) => x.classList.toggle("on", x === b)); window.ssJourney(2);
+  guess = b.dataset.g; pressed(document.querySelectorAll("#guess button"), b); window.ssJourney(2);
 });
+$("play-data").onclick = () => play(dataForEars(), $("play-data"));
+$("play-tpl").onclick = () => play(chirpSound(+$("mc").value), $("play-tpl"));
+$("play-fit").onclick = () => lastBest && play(chirpSound(lastBest.mc), $("play-fit"));
+$("play-truth").onclick = () => current?.truth && play(chirpSound(current.truth.mc), $("play-truth"));
+const injLabel = () => {
+  const mc = +$("inj-mc").value, snr = +$("inj-snr").value;
+  $("inj-mc-out").innerHTML = `${mc} M<sub>☉</sub>`; $("inj-snr-out").textContent = snr ? snr : "none";
+  $("inj-mc").setAttribute("aria-valuetext", `${mc} solar masses`);
+  $("inj-snr").setAttribute("aria-valuetext", snr ? `SNR ${snr}` : "no merger, pure noise");
+  $("inj-note").textContent = snr === 0 ? "Pure noise: anything the search finds is a false alarm."
+    : snr < 5 ? "Fainter than the noise's own peaks: the search will usually miss it."
+    : snr < 8 ? "Near the edge: sometimes found, sometimes not."
+    : snr < 15 ? "Invisible by eye, but the search should find it."
+    : "Loud enough to see, and maybe hear.";
+};
+$("inj-mc").oninput = $("inj-snr").oninput = injLabel;
+$("inj-go").onclick = () => {
+  const mc = +$("inj-mc").value, snr = +$("inj-snr").value;
+  const t = load({ key: "custom", custom: true, n: "YOURS", t: "Your hidden merger", mc, snr }, null);
+  announce(`New data loaded: ${t}. Now make your prediction, or run the search.`);
+};
+injLabel();
 $("run").onclick = runSearch;
 $("run-many").onclick = runMany;
 renderPresets();

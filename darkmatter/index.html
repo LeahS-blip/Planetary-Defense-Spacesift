@@ -27,6 +27,7 @@
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to the lab</a>
 <div id="ss-nav" data-active="darkmatter"></div>
 <header class="ss-head">
   <div class="ss-kicker">PHYSICS LAB · DARK MATTER</div>
@@ -41,10 +42,10 @@
   <a href="#errors" data-s="4"><i>4</i><b>Investigate the errors</b><span>All 153 good galaxies</span></a>
 </nav>
 
-<main>
+<main id="main" tabindex="-1">
   <section class="step" id="inspect">
     <div class="step-n">STEP 1 · INSPECT THE DATA</div>
-    <h2>How fast does a galaxy spin?</h2>
+    <h2 id="inspect-h" tabindex="-1">How fast does a galaxy spin?</h2>
     <p class="lede">Radio telescopes measure the <b>Doppler shift</b> of hydrogen gas across a galaxy's disk. That gives the speed at which material orbits at each distance from the centre: the galaxy's <b>rotation curve</b>. Every point here is a real measurement.</p>
     <div class="ss-starts" id="presets"></div>
     <div class="picker"><label for="gal">Or pick any of the 175 galaxies:</label><select id="gal"></select></div>
@@ -62,14 +63,15 @@
     <p class="lede">The dashed curves are the speeds the visible matter alone would produce: <b>gas</b> (from its radio emission) and <b>stars</b> (from infrared light). How much mass the stars have per unit of light, the <b>mass-to-light ratio Υ</b>, is uncertain, so it's your dial. Stellar-population models put it near 0.5 at this wavelength. Turn it up to give visible matter its best chance.</p>
     <div class="slider-row">
       <label for="ups">Stellar mass-to-light ratio Υ</label>
-      <input type="range" id="ups" min="-1.3" max="1" step="0.01" value="-0.301">
-      <output id="ups-out">0.50</output>
+      <input type="range" id="ups" min="-1.3" max="1" step="0.01" value="-0.301" aria-describedby="ups-hint">
+      <output id="ups-out" for="ups">0.50</output>
     </div>
+    <p class="keys">Keyboard: <kbd>←</kbd> <kbd>→</kbd> fine steps, <kbd>Page Up</kbd> <kbd>Page Down</kbd> bigger ones. The fit is read out when you stop.</p>
     <p class="hint" id="ups-hint"></p>
     <div class="chart-card"><div class="chart-head"><span>Measured vs visible matter</span><b id="vis-chi"></b></div><div id="chart-vis" class="chart"></div></div>
-    <div class="choice" id="guess">
-      <button data-g="enough">Visible matter explains it</button>
-      <button data-g="missing">Something unseen is needed</button>
+    <div class="choice" id="guess" role="group" aria-label="Your prediction">
+      <button type="button" data-g="enough" aria-pressed="false">Visible matter explains it</button>
+      <button type="button" data-g="missing" aria-pressed="false">Something unseen is needed</button>
     </div>
   </section>
 
@@ -77,11 +79,26 @@
     <div class="step-n">STEP 3 · REVEAL THE EVIDENCE</div>
     <h2>Fit both explanations</h2>
     <p class="lede">Model A uses <b>visible matter only</b>, with Υ free to take whatever value fits best, even impossibly high ones. Model B fixes the stars at Υ = 0.5 and adds a <b>dark halo</b>: a sphere of unseen mass whose density and size are fitted. The fit quality is reduced χ²: about 1 means the model matches within the measurement errors.</p>
+    <div class="tool" id="build" role="group" aria-labelledby="build-h">
+      <h3 id="build-h">First, build a halo yourself</h3>
+      <p>Stars are fixed at Υ = 0.5. Add an invisible sphere of mass and shape it until the blue curve runs through the points. Then see if the computer can beat you.</p>
+      <div class="slider-row">
+        <label for="h-rho">Central density ρ₀</label>
+        <input type="range" id="h-rho" min="5" max="10" step="0.02" value="7.3">
+        <output id="h-rho-out" for="h-rho"></output>
+      </div>
+      <div class="slider-row">
+        <label for="h-rc">Core size r<sub>c</sub></label>
+        <input type="range" id="h-rc" min="-1" max="1.7" step="0.01" value="0.3">
+        <output id="h-rc-out" for="h-rc"></output>
+      </div>
+      <div class="chart-card"><div class="chart-head"><span>Your model</span><b class="score" id="h-score"></b></div><div id="chart-mine" class="chart"></div></div>
+    </div>
     <button class="ss-btn" id="run">Fit both models</button>
     <div id="reveal-out" hidden>
       <div class="verdict" id="verdict"></div>
       <div class="chart-card"><div class="chart-head"><span>Best fits</span></div><div id="chart-fit" class="chart"></div>
-        <p class="cap">Grey points: measured. Orange: best visible-only fit. Blue: visible matter + dark halo. Purple dashed: the halo's own contribution.</p></div>
+        <p class="cap">Grey points: measured. Orange dotted: best visible-only fit. Blue: visible matter + dark halo. Purple dashed: the halo's own contribution.</p></div>
       <div class="chart-card"><div class="chart-head"><span id="budget-head">Mass budget</span></div><div class="budget" id="budget"></div>
         <p class="cap">Total mass inside the last measured point, from M = v²r/G, compared with visible mass at Υ = 0.5.</p></div>
     </div>
@@ -98,7 +115,7 @@
         <div class="chart-card"><div class="chart-head"><span>How much mass is missing</span></div><div id="chart-ratio" class="chart small"></div>
           <p class="cap">Total ÷ visible mass inside each galaxy's last measured point. 1 means nothing is missing.</p></div>
         <div class="chart-card"><div class="chart-head"><span>Which model fits, galaxy by galaxy</span></div><div id="chart-chi" class="chart small"></div>
-          <p class="cap">Each dot is a galaxy. Above the line, the halo fits better. Dashed lines: reduced χ² of 5, a poor fit.</p></div>
+          <p class="cap">Each dot is a galaxy. Above the line, the halo fits better. Dashed lines: reduced χ² of 5, a poor fit. <b>Click a dot</b> to open that galaxy.</p></div>
       </div>
       <div class="chart-card"><div class="chart-head"><span>The pattern behind it: the radial acceleration relation</span></div><div id="chart-rar" class="chart"></div>
         <p class="cap">Every measured point from the 153 galaxies: the acceleration we measure, against what visible matter alone should produce. Dotted: no missing mass. Purple: the fit by McGaugh, Lelli &amp; Schombert (2016). The gap opens below about 10<sup>−10</sup> m/s².</p></div>
@@ -136,6 +153,7 @@
 <script src="/shared/nav.js"></script>
 <script type="module">
 import * as D from "/darkmatter/dm.js";
+import { describe, table, announce, pressed, scrollToEl } from "/shared/physlab.js";
 
 const C = { ink: "#eef2fc", body: "#c9d0e4", dim: "#a3abc4", line: "rgba(140,160,220,.16)", acc: "#7aa2ff", hi: "#4ade80", warn: "#fbbf24", vis: "#fb923c", halo: "#b79cff", gas: "#5eead4", star: "#fde68a", data: "#c9d0e4" };
 const $ = (id) => document.getElementById(id);
@@ -156,7 +174,18 @@ const PRESETS = [
   { name: "NGC2403", n: "NEARBY", t: "NGC 2403", d: "A nearby spiral with a long, precise rotation curve." },
 ];
 
-let data, gal, yd = D.Y_DISK, guess = null, surveyCache = null;
+let data, gal, yd = D.Y_DISK, guess = null, surveyCache = null, sayTimer = 0, chiBound = false;
+const fitWord = (r) => r < 2 ? "a good fit" : r < 5 ? "a fair fit" : "a poor fit";
+const fmtChi = (r) => r < 100 ? r.toFixed(1) : r.toFixed(0);
+const say = (el, msg) => { clearTimeout(sayTimer); sayTimer = setTimeout(() => { if (document.activeElement === el) announce(msg); }, 700); };
+// Shape of a rotation curve in words: rising, flat or falling over the outer half.
+function shape(g) {
+  const rows = g.rows, n = rows.length, mid = rows[Math.floor(n / 2)], last = rows[n - 1];
+  const ch = (last[1] - mid[1]) / mid[1];
+  const peak = rows.reduce((a, r) => r[1] > a[1] ? r : a);
+  const outer = ch > 0.1 ? "keeps rising" : ch < -0.1 ? "falls" : "stays nearly flat";
+  return `The speed climbs to about ${peak[1].toFixed(0)} km/s by ${peak[0].toFixed(1)} kpc, and over the outer half it ${outer} (${ch >= 0 ? "+" : ""}${(100 * ch).toFixed(0)}% from ${mid[0].toFixed(1)} to ${last[0].toFixed(1)} kpc).`;
+}
 const obsTrace = (g) => ({ x: g.rows.map((r) => r[0]), y: g.rows.map((r) => r[1]), mode: "markers", marker: { color: C.data, size: 6 },
   error_y: { type: "data", array: g.rows.map((r) => r[2]), color: "rgba(201,208,228,.5)", thickness: 1, width: 0 }, hovertemplate: "%{x:.1f} kpc: %{y:.0f} km/s<extra>measured</extra>" });
 const rotAxes = (g) => ({ xaxis: { title: { text: "distance from centre (kpc)" }, rangemode: "tozero" },
@@ -166,16 +195,43 @@ function pick(name) {
   gal = data.galaxies.find((g) => g.name === name);
   $("gal").value = name; guess = null; yd = D.Y_DISK;
   $("ups").value = Math.log10(yd);
-  document.querySelectorAll("#presets button").forEach((b) => b.classList.toggle("done", b.dataset.k === name));
-  document.querySelectorAll("#guess button").forEach((b) => b.classList.remove("on"));
+  document.querySelectorAll("#presets button").forEach((b) => { const on = b.dataset.k === name; b.classList.toggle("done", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
+  pressed(document.querySelectorAll("#guess button"), null);
   $("reveal-out").hidden = true;
   const ly = (gal.D * 3.2616).toFixed(0);
   $("gal-label").textContent = `Rotation curve · ${gal.name}`;
   $("facts").innerHTML = `<span>Distance <b>${gal.D} Mpc</b> (${ly} million light-years)</span><span>Measured out to <b>${gal.rows.at(-1)[0]} kpc</b></span><span>Points <b>${gal.rows.length}</b></span>` +
     (D.quality(gal) ? "" : `<span style="color:var(--ss-warn)">Below the quality cut (flag ${gal.Q}, inclination ${gal.inc}°): treat with care</span>`);
   plot("chart-obs", [obsTrace(gal)], rotAxes(gal));
+  describe("chart-obs", `Rotation curve of ${gal.name}`, `${gal.rows.length} measured points out to ${gal.rows.at(-1)[0]} kpc. ${shape(gal)}`);
+  table("chart-obs", `Measured rotation curve of ${gal.name}`, ["radius (kpc)", "speed (km/s)", "± error", "gas", "stellar disk", "bulge"],
+    gal.rows.map((r) => [r[0].toFixed(2), r[1].toFixed(1), r[2].toFixed(1), r[3].toFixed(1), r[4].toFixed(1), r[5].toFixed(1)]));
   drawVisible();
+  drawMine();
   window.ssJourney(1);
+}
+
+// Step 3 warm-up: the reader shapes a halo by hand.
+function drawMine() {
+  const rho0 = 10 ** +$("h-rho").value, rc = 10 ** +$("h-rc").value, g = gal, R = g.rows.map((r) => r[0]);
+  let chi = 0; g.rows.forEach((r) => chi += ((r[1] - D.vtot(r, D.Y_DISK, rho0, rc)) / r[2]) ** 2);
+  const rchi = chi / Math.max(1, g.rows.length - 2);
+  $("h-rho-out").innerHTML = `${(rho0 / 10 ** Math.floor(Math.log10(rho0))).toFixed(1)}×10<sup>${Math.floor(Math.log10(rho0))}</sup>`;
+  $("h-rc-out").textContent = `${rc.toFixed(rc < 1 ? 2 : 1)} kpc`;
+  $("h-rho").setAttribute("aria-valuetext", `${rho0.toExponential(1)} solar masses per cubic kiloparsec`);
+  $("h-rc").setAttribute("aria-valuetext", `${rc.toFixed(1)} kiloparsecs`);
+  $("h-score").textContent = `reduced χ² ${fmtChi(rchi)}`;
+  $("h-score").className = "score " + (rchi < 2 ? "good" : rchi < 5 ? "warn" : "bad");
+  plot("chart-mine", [
+    { ...obsTrace(g), name: "measured" },
+    { x: R, y: g.rows.map((r) => D.vbar(r, D.Y_DISK)), name: "visible (Υ = 0.5)", mode: "lines", line: { color: C.vis, width: 1.6, dash: "dot" }, hovertemplate: "%{y:.0f} km/s<extra>visible</extra>" },
+    { x: R, y: g.rows.map((r) => Math.sqrt(D.vhalo2(r[0], rho0, rc))), name: "your halo", mode: "lines", line: { color: C.halo, width: 1.5, dash: "dash" }, hovertemplate: "%{y:.0f} km/s<extra>your halo</extra>" },
+    { x: R, y: g.rows.map((r) => D.vtot(r, D.Y_DISK, rho0, rc)), name: "visible + your halo", mode: "lines", line: { color: C.acc, width: 2.2 }, hovertemplate: "%{y:.0f} km/s<extra>total</extra>" },
+  ], { ...rotAxes(g), showlegend: true, legend: { orientation: "h", y: 1.14, font: { color: C.body } } });
+  const last = g.rows.at(-1), vlast = D.vtot(last, D.Y_DISK, rho0, rc);
+  const msg = `Reduced chi-squared ${fmtChi(rchi)}, ${fitWord(rchi)}. At the last point your model gives ${vlast.toFixed(0)} km/s against ${last[1].toFixed(0)} measured.`;
+  describe("chart-mine", "Your halo model", msg);
+  return { rchi, msg };
 }
 
 function drawVisible() {
@@ -186,7 +242,10 @@ function drawVisible() {
   let chi = 0; g.rows.forEach((r, i) => chi += ((r[1] - vis[i]) / r[2]) ** 2);
   const rchi = chi / Math.max(1, g.rows.length - 1), last = g.rows.at(-1);
   $("ups-out").textContent = yd.toFixed(2);
-  $("vis-chi").textContent = `reduced χ² ${rchi < 100 ? rchi.toFixed(1) : rchi.toFixed(0)}`;
+  $("ups").setAttribute("aria-valuetext", `Upsilon ${yd.toFixed(2)}`);
+  $("vis-chi").textContent = `reduced χ² ${fmtChi(rchi)}`;
+  say($("ups"), `Upsilon ${yd.toFixed(2)}: reduced chi-squared ${fmtChi(rchi)}, ${fitWord(rchi)}. Visible matter gives ${D.vbar(last, yd).toFixed(0)} km/s at the last point, measured ${last[1].toFixed(0)}.`);
+  describe("chart-vis", "Measured speeds against visible matter", `With Upsilon ${yd.toFixed(2)}, visible matter predicts ${D.vbar(last, yd).toFixed(0)} km/s at ${last[0]} kpc where ${last[1].toFixed(0)} is measured. Reduced chi-squared ${fmtChi(rchi)}, ${fitWord(rchi)}.`);
   $("ups-hint").innerHTML = `At the last point (${last[0]} kpc), visible matter predicts <b>${D.vbar(last, yd).toFixed(0)} km/s</b>; the measured speed is <b>${last[1].toFixed(0)} km/s</b>.` +
     (yd > D.Y_MAX_PLAUSIBLE ? ` <span style="color:var(--ss-warn)">Υ above 1 is more mass per unit light than any normal stellar population at 3.6 μm.</span>` : "");
   plot("chart-vis", [
@@ -202,28 +261,34 @@ function drawVisible() {
 
 function reveal() {
   const vis = D.fitVisible(gal), halo = D.fitHalo(gal), b = D.budget(gal), R = gal.rows.map((r) => r[0]);
+  const mine = drawMine().rchi;
+  const vsYou = mine <= halo.rchi2 * 1.05 ? `Your hand-built halo (reduced χ² <b>${fmtChi(mine)}</b>) matched the computer's. Nicely done.`
+    : `Your hand-built halo scored <b>${fmtChi(mine)}</b>; the computer's best is ${halo.rchi2.toFixed(1)}. Try its values: ρ₀ = ${halo.rho0.toExponential(1)}, r<sub>c</sub> = ${halo.rc.toFixed(1)} kpc.`;
   const real = halo.rchi2 < vis.rchi2 / 2;
   const right = guess ? ((guess === "missing") === real) : null;
   const verdict = real ? ["good", "Visible matter isn't enough"] : ["warn", "Visible matter does about as well here"];
   $("verdict").className = "verdict " + verdict[0];
   $("verdict").innerHTML = `<b>${verdict[1]}</b>
     <p>Visible matter alone, at its best-fitting Υ = <b>${vis.yd.toFixed(2)}</b>${vis.yd > D.Y_MAX_PLAUSIBLE ? " (implausibly high)" : ""}: reduced χ² <b>${vis.rchi2.toFixed(1)}</b>.
-       With a dark halo (ρ₀ = ${halo.rho0.toExponential(1)} M☉/kpc³, core ${halo.rc.toFixed(1)} kpc): reduced χ² <b>${halo.rchi2.toFixed(1)}</b>.</p>` +
+       With a dark halo (ρ₀ = ${halo.rho0.toExponential(1)} M☉/kpc³, core ${halo.rc.toFixed(1)} kpc): reduced χ² <b>${halo.rchi2.toFixed(1)}</b>.</p>
+    <p class="you">${vsYou}</p>` +
     (right === null ? "" : `<p class="you">Your prediction: <b>${guess === "missing" ? "something unseen" : "visible matter is enough"}</b>, ${right ? "consistent with the fits." : "not what the fits say."}</p>`);
   const vh = gal.rows.map((r) => Math.sqrt(D.vhalo2(r[0], halo.rho0, halo.rc)));
   plot("chart-fit", [
-    obsTrace(gal),
-    { x: R, y: gal.rows.map((r) => D.vbar(r, vis.yd)), mode: "lines", line: { color: C.vis, width: 2 }, hovertemplate: "%{y:.0f} km/s<extra>visible only</extra>" },
-    { x: R, y: gal.rows.map((r) => D.vtot(r, D.Y_DISK, halo.rho0, halo.rc)), mode: "lines", line: { color: C.acc, width: 2.2 }, hovertemplate: "%{y:.0f} km/s<extra>visible + halo</extra>" },
-    { x: R, y: vh, mode: "lines", line: { color: C.halo, dash: "dash", width: 1.5 }, hovertemplate: "%{y:.0f} km/s<extra>halo alone</extra>" },
-  ], rotAxes(gal));
+    { ...obsTrace(gal), name: "measured" },
+    { x: R, y: gal.rows.map((r) => D.vbar(r, vis.yd)), name: "visible only", mode: "lines", line: { color: C.vis, width: 2, dash: "dot" }, hovertemplate: "%{y:.0f} km/s<extra>visible only</extra>" },
+    { x: R, y: gal.rows.map((r) => D.vtot(r, D.Y_DISK, halo.rho0, halo.rc)), name: "visible + halo", mode: "lines", line: { color: C.acc, width: 2.2 }, hovertemplate: "%{y:.0f} km/s<extra>visible + halo</extra>" },
+    { x: R, y: vh, name: "halo alone", mode: "lines", line: { color: C.halo, dash: "dash", width: 1.5 }, hovertemplate: "%{y:.0f} km/s<extra>halo alone</extra>" },
+  ], { ...rotAxes(gal), showlegend: true, legend: { orientation: "h", y: 1.14, font: { color: C.body } } });
+  describe("chart-fit", "Best fits of both models", `Visible matter alone, at its best Upsilon of ${vis.yd.toFixed(2)}, gives reduced chi-squared ${vis.rchi2.toFixed(1)}, ${fitWord(vis.rchi2)}. Adding a dark halo gives ${halo.rchi2.toFixed(1)}, ${fitWord(halo.rchi2)}.`);
   const mx = b.total;
   $("budget-head").textContent = `Mass budget inside ${b.r} kpc`;
   $("budget").innerHTML =
-    `<span>Visible</span><span class="bar"><i style="width:${(100 * b.visible / mx).toFixed(1)}%;background:${C.vis}"></i></span><b>${fmtM(b.visible)}</b>` +
-    `<span>Total</span><span class="bar"><i style="width:100%;background:${C.acc}"></i></span><b>${fmtM(b.total)}</b>` +
+    `<span>Visible</span><span class="bar" aria-hidden="true"><i style="width:${(100 * b.visible / mx).toFixed(1)}%;background:${C.vis}"></i></span><b>${fmtM(b.visible)}</b>` +
+    `<span>Total</span><span class="bar" aria-hidden="true"><i style="width:100%;background:${C.acc}"></i></span><b>${fmtM(b.total)}</b>` +
     `<span>Unseen</span><span></span><b>${(100 * Math.max(0, b.darkFrac)).toFixed(0)}%</b>`;
   $("reveal-out").hidden = false;
+  announce(`${verdict[1]}. Visible matter alone: reduced chi-squared ${vis.rchi2.toFixed(1)}. With a dark halo: ${halo.rchi2.toFixed(1)}. Yours: ${fmtChi(mine)}. About ${(100 * Math.max(0, b.darkFrac)).toFixed(0)}% of the mass is unseen.`);
   window.ssJourney(3);
 }
 
@@ -264,24 +329,43 @@ async function runMany() {
        yaxis: { type: "log", title: { text: "measured acceleration (m/s²)" }, range: [-12, -8.5], exponentformat: "power" } });
   $("chart-rar").previousElementSibling.firstElementChild.textContent = `The pattern behind it: ${pts.length.toLocaleString()} points, one relation`;
 
+  const med = D.quantile(ratios, 0.5);
+  describe("chart-ratio", "How much mass is missing", `Total over visible mass ranges from ${D.quantile(ratios, 0.05).toFixed(1)} to ${D.quantile(ratios, 0.95).toFixed(0)} for most galaxies, with a median of ${med.toFixed(1)}. Very few sit at 1, where nothing is missing.`);
+  describe("chart-chi", "Fit quality, galaxy by galaxy", `${haloBetter} of ${n} galaxies sit above the diagonal, where the halo fits better. Use the table below or click a dot to open a galaxy.`);
+  table("chart-chi", "Fit quality for every galaxy", ["galaxy", "χ² visible only", "χ² with halo", "total ÷ visible", "open"],
+    [...s].sort((a, b) => a.name.localeCompare(b.name)).map((x) => [x.name, fmtChi(x.vis.rchi2), fmtChi(x.halo.rchi2), x.budget.ratio.toFixed(1), `<button type="button" class="open" data-n="${x.name}" aria-label="Open ${x.name}">Open</button>`]));
+  if (!chiBound) { chiBound = true; $("chart-chi").on("plotly_click", (ev) => { const p = ev.points?.[0]; if (p && p.curveNumber === 0) openGalaxy(p.text); }); }
+  describe("chart-rar", "Radial acceleration relation", `${pts.length.toLocaleString()} points form one narrow band. Where visible matter's pull is strong, above about 10 to the minus 9 metres per second squared, measured and predicted agree. Below about 10 to the minus 10 the measured pull is consistently larger: that's where the missing mass shows.`);
+
   const worst = [...s].sort((a, b) => b.halo.rchi2 - a.halo.rchi2).slice(0, 6);
   $("worst-txt").innerHTML = `These galaxies fit worst even with a dark halo. Inspect them: look for wiggles from spiral arms or bars, a steep inner rise, or a halo shape the cored profile can't follow. A model that never fails would be suspicious.`;
-  $("worst").innerHTML = worst.map((w) => `<button data-n="${w.name}">${w.name}<span>χ² ${w.halo.rchi2.toFixed(0)}</span></button>`).join("");
-  $("worst").querySelectorAll("button").forEach((b) => b.onclick = () => { pick(b.dataset.n); $("inspect").scrollIntoView({ behavior: "smooth" }); });
+  $("worst").innerHTML = worst.map((w) => `<button type="button" data-n="${w.name}" aria-label="Open ${w.name}, halo reduced chi-squared ${w.halo.rchi2.toFixed(0)}">${w.name}<span aria-hidden="true">χ² ${w.halo.rchi2.toFixed(0)}</span></button>`).join("");
+  $("worst").querySelectorAll("button").forEach((b) => b.onclick = () => openGalaxy(b.dataset.n));
   $("errors-out").hidden = false; btn.textContent = "Fitted";
+  announce(`153 galaxies fitted. Median galaxy has ${med.toFixed(1)} times its visible mass. Visible matter alone fits poorly in ${visBad.length}; a dark halo fits poorly in ${haloBad.length}.`);
   window.ssJourney(4);
 }
 
 data = await (await fetch("/darkmatter/data/sparc.json")).json();
 const names = data.galaxies.map((g) => g.name);
 $("gal").innerHTML = names.map((n) => `<option value="${n}">${n}${D.quality(data.galaxies.find((g) => g.name === n)) ? "" : " (low quality)"}</option>`).join("");
-$("gal").onchange = () => pick($("gal").value);
-$("presets").innerHTML = PRESETS.map((p, i) => `<button class="ss-start${i === 0 ? " primary" : ""}" data-k="${p.name}"><span class="n">${p.n}</span><b>${p.t}</b><span class="d">${p.d}</span><span class="go">Load it →</span></button>`).join("");
-$("presets").querySelectorAll("button").forEach((b) => b.onclick = () => pick(b.dataset.k));
+$("gal").onchange = () => { pick($("gal").value); announce(`Loaded ${gal.name}. ${shape(gal)}`); };
+$("presets").innerHTML = PRESETS.map((p, i) => `<button type="button" class="ss-start${i === 0 ? " primary" : ""}" data-k="${p.name}" aria-pressed="false"><span class="n">${p.n}</span><b>${p.t}</b><span class="d">${p.d}</span><span class="go" aria-hidden="true">Load it →</span></button>`).join("");
+$("presets").querySelectorAll("button").forEach((b) => b.onclick = () => { pick(b.dataset.k); announce(`Loaded ${gal.name}. ${shape(gal)}`); });
 $("ups").oninput = () => { yd = 10 ** +$("ups").value; drawVisible(); window.ssJourney(2); };
-document.querySelectorAll("#guess button").forEach((b) => b.onclick = () => { guess = b.dataset.g; document.querySelectorAll("#guess button").forEach((x) => x.classList.toggle("on", x === b)); window.ssJourney(2); });
+document.querySelectorAll("#guess button").forEach((b) => b.onclick = () => { guess = b.dataset.g; pressed(document.querySelectorAll("#guess button"), b); window.ssJourney(2); });
 $("run").onclick = reveal;
 $("run-many").onclick = runMany;
+$("h-rho").oninput = $("h-rc").oninput = (e) => { const r = drawMine(); say(e.target, r.msg); };
+
+// Jump to any galaxy from step 4: move focus to step 1 so keyboard and screen-reader users land there too.
+function openGalaxy(name) {
+  pick(name);
+  scrollToEl($("inspect"));
+  $("inspect-h").focus({ preventScroll: true });
+  announce(`Opened ${name}. ${shape(gal)}`);
+}
+$("errors-out").addEventListener("click", (e) => { const b = e.target.closest("button.open"); if (b) openGalaxy(b.dataset.n); });
 pick("NGC3198");
 </script>
 </body>
