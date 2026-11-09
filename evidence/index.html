@@ -96,7 +96,7 @@
 <main>
   <div class="eyebrow">THE SCIENCE OF DETECTION · EVIDENCE</div>
   <h1>What we found, and how sure we are.</h1>
-  <p class="lead">SpaceSift asks one question of three kinds of sky data: <b>when a search says “found it”, how often is it right, and what does it miss?</b> Each investigation below states its data, method and baseline, counts its errors in both directions, names its limits, and shows how to rerun it.</p>
+  <p class="lead">SpaceSift asks one question of three kinds of sky data, and of two famous discoveries in its physics labs: <b>when a search says “found it”, how often is it right, and what does it miss?</b> Each investigation below states its data, method and baseline, counts its errors in both directions, names its limits, and shows how to rerun it.</p>
 
   <div class="glance">
     <div class="g"><h3>WHAT WE BUILT</h3><p>An <b>injection-recovery pipeline</b> that has run <b id="n-searches">72,440</b> planet searches with known answers; a <b>star classifier</b> matched against 123 real spectra; a <b>live ranking</b> of new asteroid candidates.</p></div>
@@ -205,7 +205,57 @@ python src/predict.py ./d2 && python src/make_dashboard.py</pre>
       <p class="muted">Runs automatically every Monday (GitHub Actions: <code>neocp-retrain</code>); results in <a href="/outputs/training_results.json">outputs/training_results.json</a>.</p></div></details>
   </section>
 
-  <footer>SpaceSift · the science of detection · open code and data on <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">GitHub</a>. Data: NASA Kepler (MAST), Sloan Digital Sky Survey, Minor Planet Center, NASA JPL Sentry.</footer>
+  <!-- ====================================================================== 04 -->
+  <section class="inv" id="gw">
+    <div class="inv-head"><div><div class="k">PHYSICS LAB 04 · GRAVITATIONAL WAVES</div><h2>How often does a LIGO-style search find a black-hole merger in noise, and how often is it fooled?</h2></div><a class="open" href="/gw/">Open the Gravitational Wave Lab →</a></div>
+    <div class="verdict" id="gw-verdict"><span class="ss-skel line"></span><span class="ss-skel line short"></span></div>
+    <div class="results"><div class="rrow"><figure><h5>Hidden mergers found, by loudness</h5><div class="sub" id="gw-eff-sub">200 hidden mergers at each signal-to-noise ratio, with 95% intervals</div><div id="ch-gw-eff"><span class="ss-skel block" aria-label="Loading chart"></span></div>
+        <figcaption>A merger counts as found only if the search crosses the threshold at the right time (within 0.1 s). Dashed: the detection threshold on the match score.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="gw-pl-eff">Loudness is measured as signal-to-noise ratio (SNR). Below the threshold, a merger is no louder than the noise's own random peaks, so it is lost; a little above it, the search almost never misses.</p></aside></div><div class="rrow"><figure><h5>Fooled by pure noise</h5><div class="sub" id="gw-fa-sub">False alarms in noise-only stretches the threshold was not tuned on</div><div id="ch-gw-fa"><span class="ss-skel block" aria-label="Loading chart"></span></div>
+        <figcaption>The threshold was set on one set of noise; this checks it on a second, independent set.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="gw-pl-fa">A threshold is only honest if it holds on data it was not tuned on.</p></aside></div></div>
+    <div class="two">
+      <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul id="gw-errors"></ul></div>
+      <div class="ss-limits"><h4>LIMITATIONS</h4><ul>
+        <li><b>Simulated, idealized noise.</b> Real detector noise has glitches that can mimic chirps; that is why LIGO requires SNR around 8 and agreement between two detectors.</li>
+        <li><b>Inspiral-only templates</b> at leading (Newtonian) order, equal masses, no spin, no merger or ringdown.</li>
+        <li><b>One detector, 4-second stretches.</b> False-alarm rates are per stretch; LIGO quotes them per year of data, which needs far higher thresholds.</li>
+        <li><b>A replication, not a discovery:</b> this shows how the method behaves, using simulated data modelled on GW150914.</li>
+      </ul></div>
+    </div>
+  <details class="method"><summary>Full methodology: data, method, checks and how to rerun</summary><div class="facts3">
+      <div class="fact"><h4>DATA</h4><p>Simulated whitened detector noise, 4 s at 1,024 samples per second. Hidden mergers: equal-mass inspiral chirps from 25 Hz to the last stable orbit, chirp mass 15–60 M<sub>☉</sub>, random start time and phase, scaled to a chosen optimal SNR.</p></div>
+      <div class="fact"><h4>METHOD</h4><p>Matched filter: 48 templates from 15 to 60 M<sub>☉</sub>, each correlated with the data at every start time by Fourier transform (two phases, so the unknown phase doesn't matter). The loudest match is the detection statistic.</p></div>
+      <div class="fact"><h4>CHECKS</h4><p>Threshold = 99th percentile of the loudest match in 2,000 noise-only stretches, then tested on 2,000 different ones. Completeness from 1,800 hidden mergers. All seeds are fixed, so the run is reproducible.</p></div>
+    </div><div class="rerun"><h4>Rerun this evaluation</h4><pre>node gw/eval/run.mjs        # about 3 minutes: 5,800 searches -> gw/eval/results.json
+node gw/test/gw.test.mjs    # engine checks: chirp physics, filter, threshold, completeness</pre>
+      <p class="muted">Results file: <a href="/gw/eval/results.json">gw/eval/results.json</a>. Engine: <code>gw/gw.js</code>, the same code the lab runs in your browser.</p></div></details>
+  </section>
+
+  <!-- ====================================================================== 05 -->
+  <section class="inv" id="darkmatter">
+    <div class="inv-head"><div><div class="k">PHYSICS LAB 05 · DARK MATTER</div><h2>Can the matter we can see explain how fast real galaxies spin?</h2></div><a class="open" href="/darkmatter/">Open the Dark Matter Detective →</a></div>
+    <div class="verdict" id="dm-verdict"><span class="ss-skel line"></span><span class="ss-skel line short"></span></div>
+    <div class="results"><div class="rrow"><figure><h5>Which explanation fits</h5><div class="sub" id="dm-fit-sub">Galaxies, out of the SPARC quality sample</div><div class="legend"><span><i style="background:var(--c2)"></i>Visible matter only</span><span><i style="background:var(--c1)"></i>Visible matter + dark halo</span></div><div id="ch-dm-fit"><span class="ss-skel block" aria-label="Loading chart"></span></div>
+        <figcaption>"Fits well": reduced χ² of 2 or less. Visible matter only also has to keep its stars believably light (mass-to-light ratio at most 1 at 3.6 µm).</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="dm-pl-fit">Each galaxy's measured rotation speeds are compared with what its stars and gas alone would produce, and with stars and gas plus an invisible halo.</p></aside></div><div class="rrow"><figure><h5>How much more mass than we can see</h5><div class="sub">Total mass inside the outermost measured radius ÷ visible mass, one count per galaxy</div><div id="ch-dm-ratio"><span class="ss-skel block" aria-label="Loading chart"></span></div>
+        <figcaption>Total mass from the rotation speed (M = v²r/G); visible mass from stars at the stellar-population mass-to-light ratio, plus gas.</figcaption></figure><aside class="ss-plain"><h4>IN PLAIN WORDS</h4><p id="dm-pl-ratio">A ratio of 1 would mean no missing mass at all.</p></aside></div></div>
+    <div class="two">
+      <div class="box"><h4>ERRORS IN BOTH DIRECTIONS</h4><ul id="dm-errors"></ul></div>
+      <div class="ss-limits"><h4>LIMITATIONS</h4><ul>
+        <li><b>One halo shape</b> (pseudo-isothermal) and a fixed stellar mass-to-light ratio for the halo fit; other halo shapes fit some galaxies better.</li>
+        <li><b>It doesn't rule out modified gravity.</b> The same data follow a tight relation between seen and observed acceleration, which theories like MOND also predict; the lab shows that relation too.</li>
+        <li><b>Data systematics:</b> distances, inclinations, warps and non-circular motions all shift the measured speeds, and quoted errors may be too small.</li>
+        <li><b>A replication, not a discovery:</b> the missing-mass problem has been known since the 1970s; this lets you check it yourself on real data.</li>
+      </ul></div>
+    </div>
+  <details class="method"><summary>Full methodology: data, method, checks and how to rerun</summary><div class="facts3">
+      <div class="fact"><h4>DATA</h4><p>SPARC (Lelli, McGaugh &amp; Schombert 2016): rotation curves and 3.6 µm photometry for 175 galaxies. The standard quality cut (quality flag below 3, inclination 30° or more) leaves 153.</p></div>
+      <div class="fact"><h4>METHOD</h4><p>Visible matter only: gas plus stars, with the stellar mass-to-light ratio free (the most generous case for "no dark matter"). With a halo: stars at the stellar-population value (0.5), gas, plus a pseudo-isothermal halo with free density and core radius. Both fit by χ².</p></div>
+      <div class="fact"><h4>CHECKS</h4><p>The engine reproduces textbook cases (NGC 3198's flat curve, the dark-matter-dominated dwarf DDO 154) and the published 153-galaxy sample size. The run is deterministic.</p></div>
+    </div><div class="rerun"><h4>Rerun this evaluation</h4><pre>node darkmatter/eval/run.mjs        # about 1 second -> darkmatter/eval/results.json
+node darkmatter/test/dm.test.mjs    # physics checks and known galaxies</pre>
+      <p class="muted">Results file: <a href="/darkmatter/eval/results.json">darkmatter/eval/results.json</a>. Engine: <code>darkmatter/dm.js</code>, the same code the lab runs in your browser.</p></div></details>
+  </section>
+
+  <footer>SpaceSift · the science of detection · open code and data on <a href="https://github.com/LeahS-blip/Planetary-Defense-Spacesift">GitHub</a>. Data: NASA Kepler (MAST), Sloan Digital Sky Survey, Minor Planet Center, NASA JPL Sentry, SPARC.</footer>
 </main>
 <script src="/shared/nav.js"></script>
 <script type="module">
@@ -372,6 +422,66 @@ if (tr && !tr.inputs) {
     $("ast-about").hidden = false;
   }
 }
+
+// ======================================================================= physics labs (04, 05)
+const gw = await fetch("/gw/eval/results.json").then((r) => r.json()).catch(() => null);
+if (gw) {
+  const thr = gw.threshold, fa = gw.falseAlarm, c = gw.completeness, full = c.find((r) => r.p >= 0.995);
+  $("gw-verdict").innerHTML = `<span class="tag good">CLEAR RESULT</span>The search finds <b>half of hidden mergers at SNR ${gw.snr50.toFixed(1)}</b> and ${full ? `<b>every one from SNR ${full.snr}</b>` : "most loud ones"}, while pure noise fools it in <b>${pct(fa.rate, 1)}</b> of stretches it was not tuned on (target 1%). Found mergers' chirp masses are measured to within about ${pct(gw.chirpMassError.below7)} when faint and ${pct(gw.chirpMassError.from7, 1)} when loud. Simulated noise; a check of the method, not a discovery.`;
+  // completeness curve with 95% intervals
+  { const h = 230, f = frame(h), sx = (x) => f.x0 + (x - 2.5) / 10 * (f.x1 - f.x0), sy = (y) => f.y1 - y * (f.y1 - f.y0);
+    let b = "";
+    for (const y of [0, 0.25, 0.5, 0.75, 1]) b += `<line x1="${f.x0}" x2="${f.x1}" y1="${sy(y)}" y2="${sy(y)}" stroke="rgba(140,160,220,.12)"/><text class="lbl" x="${f.x0 - 6}" y="${sy(y) + 4}" text-anchor="end">${pct(y)}</text>`;
+    for (const x of [3, 4, 5, 6, 7, 8, 9, 10, 12]) b += `<text class="lbl" x="${sx(x)}" y="${h - 16}" text-anchor="middle">${x}</text>`;
+    b += `<text class="lbl" x="${(f.x0 + f.x1) / 2}" y="${h - 2}" text-anchor="middle">SNR of the hidden merger</text>`;
+    b += `<line x1="${sx(thr)}" x2="${sx(thr)}" y1="${f.y0}" y2="${f.y1}" stroke="#eef2fc" stroke-dasharray="4 4" opacity=".6"/><text class="lbl" x="${sx(thr) + 5}" y="${f.y0 + 10}">threshold ${thr}</text>`;
+    b += `<polyline fill="none" stroke="${C.c1}" stroke-width="2" points="${c.map((r) => `${sx(r.snr)},${sy(r.p)}`).join(" ")}"/>`;
+    for (const r of c) b += `<line x1="${sx(r.snr)}" x2="${sx(r.snr)}" y1="${sy(r.ci[0])}" y2="${sy(r.ci[1])}" stroke="${C.c1}"/><circle class="hit" cx="${sx(r.snr)}" cy="${sy(r.p)}" r="4" fill="${C.c1}"><title>SNR ${r.snr}: ${r.found} of ${r.n} found (${pct(r.ci[0])}–${pct(r.ci[1])})</title></circle>`;
+    $("ch-gw-eff").innerHTML = svg(h, b, `Fraction of hidden mergers found: ${c.map((r) => `SNR ${r.snr} ${pct(r.p)}`).join(", ")}`); }
+  $("gw-pl-eff").innerHTML = `Loudness is signal-to-noise ratio (SNR). At SNR ${c[1].snr} the search finds only ${pct(c[1].p)}: such mergers are no louder than the noise's own random peaks. From SNR ${c[4].snr} it finds ${pct(c[4].p)}. The jump is steep because the threshold sits just above where noise alone can reach.`;
+  // false-alarm rate vs target
+  { const h = 120, f = { x0: 120, x1: W - 50, y0: 10 }, max = 0.03, sx = (v) => f.x0 + v / max * (f.x1 - f.x0);
+    let b = "";
+    for (const t of [0, 0.01, 0.02, 0.03]) b += `<line x1="${sx(t)}" x2="${sx(t)}" y1="${f.y0}" y2="${h - 24}" stroke="rgba(140,160,220,.12)"/><text class="lbl" x="${sx(t)}" y="${h - 8}" text-anchor="middle">${pct(t)}</text>`;
+    b += `<text class="lbl" x="${f.x0 - 10}" y="${f.y0 + 24}" text-anchor="end">measured</text><rect class="hit" x="${f.x0}" y="${f.y0 + 10}" width="${sx(fa.rate) - f.x0}" height="22" rx="4" fill="${C.c1}"><title>${fa.k} of ${fa.n}</title></rect>`;
+    b += `<line x1="${sx(fa.ci[0])}" x2="${sx(fa.ci[1])}" y1="${f.y0 + 21}" y2="${f.y0 + 21}" stroke="#eef2fc" stroke-width="1.5"/><text class="vlbl" x="${sx(fa.ci[1]) + 6}" y="${f.y0 + 26}">${pct(fa.rate, 1)} (${fa.k} of ${fa.n.toLocaleString()})</text>`;
+    b += `<text class="lbl" x="${f.x0 - 10}" y="${f.y0 + 64}" text-anchor="end">target</text><line x1="${sx(0.01)}" x2="${sx(0.01)}" y1="${f.y0 + 46}" y2="${f.y0 + 74}" stroke="#eef2fc" stroke-dasharray="4 4" opacity=".7"/><text class="vlbl" x="${sx(0.01) + 6}" y="${f.y0 + 64}">1%</text>`;
+    $("ch-gw-fa").innerHTML = svg(h, b, `False-alarm rate ${pct(fa.rate, 1)}, 95% interval ${pct(fa.ci[0], 1)} to ${pct(fa.ci[1], 1)}, target 1%`); }
+  $("gw-fa-sub").textContent = `False alarms in ${fa.n.toLocaleString()} noise-only stretches the threshold was not tuned on, with 95% interval`;
+  $("gw-pl-fa").innerHTML = `The threshold (${thr}) was set so 1% of noise-only stretches pass it, using ${gw.calibration.n.toLocaleString()} stretches. On ${fa.n.toLocaleString()} new ones, <b>${fa.k}</b> passed: ${pct(fa.rate, 1)}, interval ${pct(fa.ci[0], 1)}–${pct(fa.ci[1], 1)}. The calibration holds.`;
+  const miss = c.filter((r) => r.snr < thr).reduce((a, r) => [a[0] + r.n - r.found, a[1] + r.n], [0, 0]);
+  $("gw-errors").innerHTML = `<li><b>Missed mergers (false negatives):</b> ${miss[0]} of ${miss[1]} hidden below the threshold's loudness were lost; a missed merger looks exactly like no merger.</li>
+    <li><b>False alarms (false positives):</b> ${fa.k} of ${fa.n.toLocaleString()} noise-only stretches crossed the threshold.</li>
+    <li><b>Mismeasured:</b> found mergers' chirp masses were off by a median ${pct(gw.chirpMassError.below7)} below SNR 7 and ${pct(gw.chirpMassError.from7, 1)} above (${gw.chirpMassError.n.toLocaleString()} detections).</li>`;
+}
+
+const dm = await fetch("/darkmatter/eval/results.json").then((r) => r.json()).catch(() => null);
+if (dm) {
+  const n = dm.sample.quality, v = dm.visibleOnly, hl = dm.halo, mr = dm.massRatio;
+  $("dm-verdict").innerHTML = `<span class="tag good">CLEAR RESULT</span><b>No, for almost all of them.</b> Of ${n} well-measured galaxies, visible matter alone fits only <b>${v.explained}</b> with believably light stars; ${v.needsHeavyStars} would need stars heavier than stellar populations allow. Adding a dark halo fits better in <b>${dm.haloBetter} of ${n}</b> (well in ${hl.goodFit}). At the edge of the measured disc, galaxies hold a median <b>${mr.median.toFixed(1)}×</b> the mass we can see. A replication of a known result, on real data.`;
+  $("dm-fit-sub").textContent = `Galaxies out of ${n} in the SPARC quality sample`;
+  { const h = 150, f = { x0: 150, x1: W - 40, y0: 10 }, sx = (k) => f.x0 + k / n * (f.x1 - f.x0);
+    const rows = [["Visible only: fits well", v.explained, C.c2], ["With dark halo: fits well", hl.goodFit, C.c1], ["With dark halo: fits badly", hl.badFit, "#5b6275"]];
+    let b = "";
+    rows.forEach(([lab, k, col], i) => { const y = f.y0 + i * 40;
+      b += `<text class="lbl" x="${f.x0 - 10}" y="${y + 18}" text-anchor="end">${lab}</text><rect x="${f.x0}" y="${y + 4}" width="${f.x1 - f.x0}" height="22" rx="4" fill="rgba(140,160,220,.1)"/><rect class="hit" x="${f.x0}" y="${y + 4}" width="${Math.max(3, sx(k) - f.x0)}" height="22" rx="4" fill="${col}"><title>${lab}: ${k} of ${n}</title></rect><text class="vlbl" x="${Math.min(sx(k) + 6, f.x1 - 40)}" y="${y + 20}">${k}</text>`; });
+    $("ch-dm-fit").innerHTML = svg(h, b, rows.map(([l, k]) => `${l}: ${k} of ${n}`).join(", ")); }
+  $("dm-pl-fit").innerHTML = `Visible matter alone, even with its stars allowed to be as heavy as needed, matches only <b>${v.explained}</b> galaxies believably. With an invisible halo added, <b>${hl.goodFit}</b> fit well, and the halo model wins in every one of the ${n}.`;
+  { const h = 210, f = frame(h), vals = mr.values, bins = Array(12).fill(0);
+    for (const x of vals) bins[Math.min(11, Math.max(0, Math.floor(x) - 1))]++;
+    const ymax = Math.max(...bins), bw = (f.x1 - f.x0) / 12, sy = (k) => f.y1 - k / ymax * (f.y1 - f.y0);
+    let b = "";
+    bins.forEach((k, i) => { b += `<rect class="hit" x="${f.x0 + i * bw + 1}" y="${sy(k)}" width="${bw - 2}" height="${f.y1 - sy(k)}" fill="${C.c1}" rx="2"><title>${i + 1}${i === 11 ? "+" : "–" + (i + 2)}×: ${k} galaxies</title></rect><text class="lbl" x="${f.x0 + (i + 0.5) * bw}" y="${h - 16}" text-anchor="middle">${i + 1}${i === 11 ? "+" : ""}</text>`; });
+    const mx = f.x0 + (mr.median - 1) * bw;
+    b += `<line x1="${mx}" x2="${mx}" y1="${f.y0}" y2="${f.y1}" stroke="#eef2fc" stroke-dasharray="4 4" opacity=".7"/><text class="lbl" x="${mx + 5}" y="${f.y0 + 10}">median ${mr.median.toFixed(1)}×</text>`;
+    b += `<text class="lbl" x="${(f.x0 + f.x1) / 2}" y="${h - 2}" text-anchor="middle">total mass ÷ visible mass</text>`;
+    $("ch-dm-ratio").innerHTML = svg(h, b, `Mass ratios for ${n} galaxies, median ${mr.median.toFixed(1)}`); }
+  $("dm-pl-ratio").innerHTML = `A ratio of 1 would mean no missing mass. ${mr.over2} of ${n} galaxies hold more than twice their visible mass; the middle 80% range from ${mr.p10.toFixed(1)}× to ${mr.p90.toFixed(1)}×.`;
+  $("dm-errors").innerHTML = `<li><b>Where the halo explanation fails:</b> ${hl.badFit} of ${n} galaxies are still fit badly with a halo (reduced χ² above 5), led by ${dm.haloFailures.slice(0, 4).map((f) => f.name).join(", ")}. Usual suspects: warps, bars, non-circular motions or distance errors, or a halo shape this simple model can't make.</li>
+    <li><b>Where visible matter seems enough:</b> ${v.explained} galaxies fit without dark matter. These may truly have little, or their data may be too sparse to tell.</li>
+    <li><b>Generous on purpose:</b> letting stellar mass float can make visible matter fit, but ${v.needsHeavyStars} galaxies then need stars heavier than any stellar population (mass-to-light above ${dm.yMaxPlausible} at 3.6 µm).</li>`;
+}
+
 // Anything still showing a placeholder here failed to load: say so instead of shimmering forever.
 for (const el of document.querySelectorAll(".verdict, [id^='ch-']")) if (el.querySelector(".ss-skel")) el.innerHTML = `<p class="muted" style="margin:8px 0">Couldn't load this result. Try reloading the page.</p>`;
 </script>

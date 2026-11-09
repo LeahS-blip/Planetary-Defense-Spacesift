@@ -379,6 +379,8 @@ try {
   #finale .tools { justify-content:flex-start; }
   #finale .fine { margin-top:12vh; }
   .bignum { -webkit-text-stroke:1px rgba(140,160,220,.08) !important; }
+  .fres { display:block; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.02); color:var(--body); font-size:13.5px; line-height:1.5; }
+  .fres:empty { display:none; } .fcard .fres b { font:inherit; font-weight:600; color:var(--ink); } .fres i { font:600 9.5px var(--title); font-style:normal; letter-spacing:.06em; color:var(--acc); margin-right:6px; }
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -451,10 +453,12 @@ try {
       <a class="fcard reveal" href="/gw/"><div class="ftop"><span class="fk">GRAVITATIONAL WAVES</span><span class="ftag lab">PHYSICS LAB</span></div>
         <b class="fnum">Find the chirp <small>two black holes merging, buried in noise</small></b>
         <span class="fs">Slide templates across detector data the way LIGO does, then run <b>600 searches with known answers</b> to measure false alarms and missed mergers. Simulated noise; modelled on GW150914.</span>
+        <span class="fres" id="gw-res"></span>
         <span class="fgo">Open the Gravitational Wave Lab →</span></a>
       <a class="fcard reveal" href="/darkmatter/"><div class="ftop"><span class="fk">DARK MATTER</span><span class="ftag lab">PHYSICS LAB</span></div>
         <b class="fnum">Weigh a galaxy <small>with 175 real rotation curves</small></b>
         <span class="fs">Can the stars and gas we see explain how fast galaxies spin? Fit visible matter against a dark halo on <b>real SPARC data</b>, then find the galaxies where both models fail.</span>
+        <span class="fres" id="dm-res"></span>
         <span class="fgo">Open Dark Matter Detective →</span></a>
     </div>
   </section>
@@ -1175,6 +1179,12 @@ fetch("/outputs/training_results.json").then((r) => r.json()).then((tr) => {
     (ci ? ` 95% intervals: ${ci.model[0].toFixed(2)}–${ci.model[1].toFixed(2)} vs ${ci.baseline[0].toFixed(2)}–${ci.baseline[1].toFixed(2)}.` : "") + " Retested weekly as data accrues.";
 }).catch(() => {});
 
+// ------------------------------------------------------------ physics-lab results (from the same files the Evidence page uses)
+Promise.all([fetch("/gw/eval/results.json").then((r) => r.json()), fetch("/darkmatter/eval/results.json").then((r) => r.json())]).then(([gw, dm]) => {
+  document.getElementById("gw-res").innerHTML = `<i>RESULT</i> Half of hidden mergers found at <b>SNR ${gw.snr50.toFixed(1)}</b>; pure noise fools it <b>${(100 * gw.falseAlarm.rate).toFixed(1)}%</b> of the time (target 1%).`;
+  document.getElementById("dm-res").innerHTML = `<i>RESULT</i> Visible matter alone explains <b>${dm.visibleOnly.explained} of ${dm.sample.quality}</b> galaxies; they hold a median <b>${dm.massRatio.median.toFixed(1)}×</b> the mass we can see.`;
+}).catch(() => {});
+
 // ------------------------------------------------------------ reveals and counters
 const io = new IntersectionObserver((es) => es.forEach((e) => {
   if (!e.isIntersecting) return;
@@ -1225,6 +1235,11 @@ if (finePointer && !reduce) {
     ['<span class="lab">STARLIGHT</span>', "Star type read to within <b>1 subclass</b> (median) on 11 real SDSS test stars (first model: 5)"],
     ['<span class="lab">STARLIGHT</span>', "<b>123</b> real reference stars, from blue O to red M"],
   ];
+  try {
+    const [gw, dm] = await Promise.all([fetch("/gw/eval/results.json").then((r) => r.json()), fetch("/darkmatter/eval/results.json").then((r) => r.json())]);
+    items.push(['<span class="lab">GRAVITATIONAL WAVES</span>', `Simulated mergers: half found at SNR <b>${gw.snr50.toFixed(1)}</b>, false alarms <b>${(100 * gw.falseAlarm.rate).toFixed(1)}%</b>`]);
+    items.push(['<span class="lab">DARK MATTER</span>', `Visible matter alone explains <b>${dm.visibleOnly.explained} of ${dm.sample.quality}</b> real galaxies`]);
+  } catch {}
   try {
     const tr = await fetch("/outputs/training_results.json").then((r) => r.json());
     if (tr.inputs && tr.holdout) items.push(['<span class="lab">NEW ASTEROIDS</span>', `Ranking on later candidates: ROC-AUC <b>${tr.holdout.roc_auc.model.toFixed(2)}</b> vs <b>${tr.holdout.roc_auc.baseline.toFixed(2)}</b> for digest2 alone`]);
