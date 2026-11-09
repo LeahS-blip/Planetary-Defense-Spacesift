@@ -54,6 +54,23 @@
       <div id="chart-obs" class="chart"></div>
       <div class="facts" id="facts"></div>
     </div>
+    <div class="chart-card model3d" id="model" aria-labelledby="model-h">
+      <div class="chart-head"><span id="model-h">See it spin, in 3D</span><b id="g3-mode"></b></div>
+      <canvas id="g3" class="m3" tabindex="0" role="img" aria-label="3D model of the selected galaxy: a disk of stars and gas with two spiral arms, turning at its measured speeds inside a faint purple sphere that shows the dark halo."></canvas>
+      <p class="m3-status" id="g3-status">Loading the 3D model…</p>
+      <p class="cap" id="g3-real"></p>
+      <div class="tool">
+        <div class="row" role="group" aria-label="What holds the galaxy together">
+          <button type="button" id="g3-dm" aria-pressed="true">With the unseen mass</button>
+          <button type="button" id="g3-nodm" aria-pressed="false">Remove the dark matter</button>
+          <button type="button" id="g3-play" aria-pressed="true">❚❚ Pause</button>
+          <button type="button" id="g3-reset">↺ Start again</button>
+        </div>
+        <p class="note">Removing the dark matter keeps every star's measured speed but leaves only the gravity of the gas and stars we can see.</p>
+      </div>
+      <p class="keys">Drag to turn it. Or click it, then: <kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> turn, <kbd>+</kbd> <kbd>−</kbd> zoom, <kbd>Space</kbd> pause.</p>
+      <p class="cap">The speeds are this galaxy's real measurements; the stars are drawn to match its size, but their exact layout is illustrative. Purple glow: the dark halo fitted in step 3, brightest where you look through the most of it. Dashed ring: the last measured point.</p>
+    </div>
     <div class="ss-plain"><h4>WHAT TO LOOK FOR</h4><p>If most of a galaxy's mass sits where its light is, near the centre, then far out the speed should <b>fall</b> with distance, as v ∝ 1/√r, just like the planets. Does it?</p></div>
   </section>
 
@@ -208,8 +225,10 @@ function pick(name) {
     gal.rows.map((r) => [r[0].toFixed(2), r[1].toFixed(1), r[2].toFixed(1), r[3].toFixed(1), r[4].toFixed(1), r[5].toFixed(1)]));
   drawVisible();
   drawMine();
+  G3?.setGalaxy(gal);
   window.ssJourney(1);
 }
+let G3 = null;
 
 // Step 3 warm-up: the reader shapes a halo by hand.
 function drawMine() {
@@ -367,6 +386,24 @@ function openGalaxy(name) {
 }
 $("errors-out").addEventListener("click", (e) => { const b = e.target.closest("button.open"); if (b) openGalaxy(b.dataset.n); });
 pick("NGC3198");
+
+// The 3D galaxy. Loaded separately, so the lab still works if WebGL or the 3D library is unavailable.
+import("/darkmatter/galaxy3d.js").then(({ galaxyScene }) => {
+  const sc = galaxyScene($("g3"), { onStatus: (s) => { $("g3-status").textContent = s.text; $("g3-real").textContent = s.real; $("g3-mode").textContent = s.mode === "dm" ? "WITH DARK MATTER" : "VISIBLE MATTER ONLY";
+    pressed([$("g3-dm"), $("g3-nodm")], s.mode === "dm" ? $("g3-dm") : $("g3-nodm")); } });
+  if (!sc) throw new Error("no WebGL");
+  $("g3").ssScene = sc; // handy for checking frames from the console
+  G3 = sc;
+  const setMode = (m) => { sc.setMode(m); if (!sc.view.playing) sc.view.setPlaying(true);
+    announce(m === "dm" ? "Dark matter back: the galaxy spins steadily at its measured speeds." : "Dark matter removed: watch the outer stars fly away."); };
+  $("g3-dm").onclick = () => setMode("dm");
+  $("g3-nodm").onclick = () => setMode("nodm");
+  const playLabel = (p) => { $("g3-play").textContent = p ? "❚❚ Pause" : "▶ Play"; $("g3-play").setAttribute("aria-pressed", p ? "true" : "false"); };
+  $("g3-play").onclick = () => sc.view.setPlaying(!sc.view.playing);
+  $("g3").addEventListener("ss-play", (e) => playLabel(e.detail));
+  $("g3-reset").onclick = () => sc.reset();
+  sc.setGalaxy(gal); playLabel(sc.view.playing);
+}).catch(() => { $("g3").hidden = true; $("g3-status").textContent = "The 3D model needs WebGL, which isn't available in this browser. The rest of the lab works without it."; });
 </script>
 </body>
 </html>

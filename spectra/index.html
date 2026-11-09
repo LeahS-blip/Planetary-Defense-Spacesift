@@ -551,6 +551,9 @@ function cellTexture(seed, G = 8, N = 192) {
   return c;
 }
 let CELLS = null; // built on first use
+// Real 3D star and asteroid (WebGL). Loaded in the background; until then, or without WebGL, the 2D drawings below are used.
+let M3D = null;
+import("/shared/models3d.js").then((m) => { if (m.ok()) { M3D = m; kickOrbs(); } }).catch(() => {});
 function rockShape(seed) {
   const rng = S.makeRng(seed), r = () => rng() * 2 - 1;
   return {
@@ -637,6 +640,7 @@ class Orb {
   }
   drawStar(b, W, c, R, t) {
     const col = this.rgb, g = this.g, fl = 1 + 0.03 * Math.sin(t * 2.1) + 0.018 * Math.sin(t * 5.3 + 1.7) + 0.01 * Math.sin(t * 11.7);
+    if (M3D?.star(b, W, R, t, col, g, fl)) return;
     // Corona: a soft glow, with a few faint streamers turning very slowly.
     let gd = b.createRadialGradient(c, c, R * 0.92, c, c, c);
     gd.addColorStop(0, rgba(col, 0.6 * fl)); gd.addColorStop(0.3, rgba(col, 0.2 * fl)); gd.addColorStop(1, rgba(col, 0));
@@ -681,6 +685,7 @@ class Orb {
     let gd = b.createRadialGradient(c, c, R * 0.6, c, c, c); // faint halo so it reads on the dark card
     gd.addColorStop(0, rgba(col, 0.22)); gd.addColorStop(1, rgba(col, 0));
     b.fillStyle = gd; b.fillRect(0, 0, W, W);
+    if (M3D?.rock(b, W, R, t, col, this.seed)) return;
     // Shade per pixel at half resolution, then scale up.
     const n = Math.ceil(W / 2), Rb = R / 2, ang = sh.spin + t * 0.14, ca = Math.cos(ang), sa = Math.sin(ang);
     this.rbuf ??= document.createElement("canvas");

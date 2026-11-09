@@ -95,5 +95,13 @@ details.table th { position:sticky; top:0; background:#0b1020; color:var(--ss-in
 .keys { color:var(--ss-dim); font-size:12.5px; margin:4px 0 0; }
 kbd { font:600 11.5px var(--ss-title); border:1px solid var(--ss-line); border-bottom-width:2px; border-radius:4px; padding:0 5px; color:var(--ss-ink); background:rgba(255,255,255,.04); }
 
+/* 3D models ---------------------------------------------------------------- */
+.model3d { padding:26px 0 4px; }
+.m3 { display:block; width:100%; height:440px; border-radius:8px; background:radial-gradient(ellipse at 50% 45%, rgba(40,60,140,.28), rgba(4,6,13,.0) 70%); outline-offset:-2px; }
+.m3:focus-visible { outline:2px solid var(--ss-acc); }
+@media (max-width:760px) { .m3 { height:320px; } }
+.m3-status { font:600 13.5px var(--ss-title); color:var(--ss-ink); margin:8px 4px 2px; min-height:1.4em; }
+.model3d .tool { margin:8px 0; }
+
 .pl-foot { max-width:980px; margin:0 auto; padding:20px 20px 40px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; color:var(--ss-dim); font-size:13px; border-top:1px solid var(--ss-line); }
 .pl-foot a { color:var(--ss-acc); text-decoration:none; }

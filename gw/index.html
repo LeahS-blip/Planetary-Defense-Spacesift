@@ -29,6 +29,27 @@
 </nav>
 
 <main id="main" tabindex="-1">
+  <!-- 3D model ------------------------------------------------------------ -->
+  <section class="model3d" id="model" aria-labelledby="model-h">
+    <div class="chart-card">
+      <div class="chart-head"><span id="model-h">What LIGO is listening for, in 3D</span><b id="m3-phase"></b></div>
+      <canvas id="m3" class="m3" tabindex="0" role="img" aria-label="3D animation: two black holes orbit each other on a grid that stands for spacetime, sinking into wells. They spiral closer and faster while ripples spread outward in a two-armed spiral, then they merge in a flash into one black hole that rings briefly and settles."></canvas>
+      <p class="m3-status" id="m3-status">Loading the 3D model…</p>
+      <p class="cap" id="m3-real"></p>
+      <div class="tool">
+        <div class="slider-row">
+          <label for="m3-mc">Chirp mass of the pair</label>
+          <input type="range" id="m3-mc" min="15" max="60" step="1" value="30">
+          <output id="m3-mc-out" for="m3-mc">30 M<sub>☉</sub></output>
+        </div>
+        <div class="row"><button type="button" id="m3-play" aria-pressed="true">❚❚ Pause</button><button type="button" id="m3-restart">↺ Start again</button>
+          <span class="note">Lighter pairs orbit longer before they merge; heavier ones merge sooner, at a lower pitch.</span></div>
+      </div>
+      <p class="keys">Drag to turn it. Or click it, then: <kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> turn, <kbd>+</kbd> <kbd>−</kbd> zoom, <kbd>Space</kbd> pause.</p>
+      <p class="cap"><b>Not to scale.</b> The grid is a picture of spacetime: the wells show gravity, and the ripples are the gravitational waves, made about 10<sup>21</sup> times bigger than the real stretch LIGO measures. The orbit follows the same physics as the lab's templates, slowed down so you can watch it; the line above gives the real pitch and timing.</p>
+    </div>
+  </section>
+
   <!-- 1 ------------------------------------------------------------------ -->
   <section class="step" id="inspect">
     <div class="step-n">STEP 1 · INSPECT THE DATA</div>
@@ -437,6 +458,24 @@ const injLabel = () => {
     : "Loud enough to see, and maybe hear.";
 };
 $("inj-mc").oninput = $("inj-snr").oninput = injLabel;
+
+// The 3D merger. Loaded separately, so the lab still works if WebGL or the 3D library is unavailable.
+import("/gw/merger3d.js").then(({ mergerScene }) => {
+  const sc = mergerScene($("m3"), { onStatus: (s) => { $("m3-status").textContent = s.text; $("m3-real").textContent = s.real; $("m3-phase").textContent = s.phase; } });
+  if (!sc) throw new Error("no WebGL");
+  $("m3").ssScene = sc; // handy for checking frames from the console
+  const setM = () => {
+    const mc = +$("m3-mc").value;
+    $("m3-mc-out").innerHTML = `${mc} M<sub>☉</sub>`; $("m3-mc").setAttribute("aria-valuetext", `${mc} solar masses`);
+    sc.setMass(mc);
+  };
+  const playLabel = (p) => { $("m3-play").textContent = p ? "❚❚ Pause" : "▶ Play"; $("m3-play").setAttribute("aria-pressed", p ? "true" : "false"); };
+  $("m3-mc").oninput = setM;
+  $("m3-play").onclick = () => sc.view.setPlaying(!sc.view.playing);
+  $("m3").addEventListener("ss-play", (e) => playLabel(e.detail));
+  $("m3-restart").onclick = () => { sc.restart(); if (!sc.view.playing) sc.view.setPlaying(true); };
+  setM(); playLabel(sc.view.playing);
+}).catch(() => { $("m3").hidden = true; $("m3-status").textContent = "The 3D model needs WebGL, which isn't available in this browser. The rest of the lab works without it."; });
 $("inj-go").onclick = () => {
   const mc = +$("inj-mc").value, snr = +$("inj-snr").value;
   const t = load({ key: "custom", custom: true, n: "YOURS", t: "Your hidden merger", mc, snr }, null);
